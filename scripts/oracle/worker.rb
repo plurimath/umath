@@ -114,15 +114,17 @@ def outcome_for(preprocess, raw)
   end
 end
 
-result_io = IO.for_fd(3, "wb")
-request = JSON.parse($stdin.read)
+# Bundler may re-exec this process to switch to the Bundler version in
+# scripts/oracle/Gemfile.lock, so it is set up before the request is read.
+# The pinned Plurimath checkout then goes first on the load path.
 require "bundler/setup"
-# The pinned Plurimath checkout goes first on the load path, after Bundler
-# has set up the oracle bundle.
 $LOAD_PATH.unshift(ENV.fetch("ORACLE_LIB"))
 require "plurimath"
 require "plurimath/version"
 warn "plurimath loaded from #{$LOADED_FEATURES.grep(%r{/plurimath\.rb\z}).first}"
+
+result_io = IO.for_fd(3, "wb")
+request = JSON.parse($stdin.read)
 
 input = decode_input(request.fetch("input"))
 options = request.fetch("options")

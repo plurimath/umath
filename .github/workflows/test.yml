@@ -47,11 +47,6 @@ jobs:
           BUNDLE_GEMFILE: ${{ github.workspace }}/scripts/oracle/Gemfile
           BUNDLE_PATH: ${{ github.workspace }}/vendor/oracle-bundle
           BUNDLE_FROZEN: "true"
-      - name: Debug worker environment (temporary)
-        run: |
-          env | grep -E '^(BUNDLE|BUNDLER|RUBY|GEM)' | sort
-          cat .bundle/config || true
-          bundle exec ruby -e 'p ENV.keys.grep(/BUNDLE|RUBY|GEM/); pid = Process.spawn(ENV.keys.grep(/\A(BUNDLE_|BUNDLER_|RUBYOPT\z|RUBYLIB\z|GEM_HOME\z|GEM_PATH\z)/).to_h { [_1, nil] }.merge("BUNDLE_GEMFILE" => "#{Dir.pwd}/scripts/oracle/Gemfile"), RbConfig.ruby, "-e", "p [defined?(Bundler), ENV.keys.grep(/BUNDLE|RUBY|GEM/), $stdin.read]", in: "README.adoc"); Process.wait(pid)' | head -c 3000
       - name: Capture the smoke rows
         run: >-
           bundle exec ruby scripts/oracle/capture.rb

@@ -2,7 +2,7 @@
   "schema": "unicodemath-oracle-row/1",
   "id": "smoke-refusal",
   "source": "corpora/oracle/inventory/smoke.yml",
-  "request_digest": "91a8c8753eda02d02260d284fcc1038e0c8f1795154168ba1e105012bce7cec7",
+  "request_digest": "725882496ee90eabe013072728f95501a5d6ae5ecad986321cccc5fd57cedc93",
   "outcome": "refused",
   "process": {
     "exitstatus": 0,

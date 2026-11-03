@@ -2,7 +2,7 @@
   "schema": "unicodemath-oracle-row/1",
   "id": "smoke-success",
   "source": "corpora/oracle/inventory/smoke.yml",
-  "request_digest": "898bdc3422b00f41840f15fcfba9421f1b08a40c1b2d27560237e38f3fda2991",
+  "request_digest": "ee334c60f08ee531829178708a7b4bffed518f1379fb4cb79caa105839c11dc2",
   "outcome": "succeeded",
   "process": {
     "exitstatus": 0,
