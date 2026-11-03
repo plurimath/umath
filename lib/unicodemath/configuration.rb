@@ -15,10 +15,15 @@ module Unicodemath
 
     ARTIFACT_DIR = File.expand_path("../../artifacts", __dir__)
     DEFAULT_ARTIFACT_PATH = File.join(ARTIFACT_DIR, "unicodemath.json")
-    DEFAULT_BINDINGS_PATH = File.join(ARTIFACT_DIR, "unicodemath.ruby.bindings.json")
+    DEFAULT_BINDINGS_PATH = File.join(ARTIFACT_DIR, "unicodemath.bindings.ruby.json")
+    DATA_DIR = File.expand_path("../../data", __dir__)
+    SYMBOLS_PATH = File.join(DATA_DIR, "unicodemath-symbols.json")
 
     # The capture under which the declared bindings carry the legacy tree.
     TREE_CAPTURE = :unicodemath_tree
+    # The binding path under which they carry the same tree as plain data,
+    # the input of the typed model's construction.
+    MODEL_BINDING = :model
 
     # Deepest bracket nesting sent to the native engine off the main thread,
     # where the machine stack is small.

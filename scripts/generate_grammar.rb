@@ -216,6 +216,7 @@ end
 class Generator
   # The capture (and wrapper rule) that carries the legacy tree.
   TREE = "unicodemath_tree"
+  MODEL = "model"
 
   def initialize(bytes)
     @bytes = bytes
@@ -275,12 +276,14 @@ class Generator
 
   private
 
-  # Syntax bindings: the legacy raw tree, unchanged, under one capture. They
-  # declare AST construction only. Which productions become which typed
-  # model fields is the model's decision, not the grammar export's.
+  # Two bindings of the one root capture: the legacy raw tree, unchanged
+  # (slices with offsets, for parity and positions), and the same tree as
+  # plain data under #{MODEL}, from which the typed model's declared
+  # attribute types construct it (Unicodemath::Model). They declare AST
+  # construction only; the model fields are the model's declarations.
   def bindings
     @markers.map do |m|
-      "bindings #{TREE}__#{m['entry']} {\n  #{TREE} -> #{TREE} (raw)\n}\n"
+      "bindings #{TREE}__#{m['entry']} {\n  #{TREE} -> #{TREE} (raw)\n  #{TREE} -> #{MODEL} (any)\n}\n"
     end
   end
 

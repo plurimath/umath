@@ -28,8 +28,8 @@ module Unicodemath
 
     # Loads the Ruby bindings artifact at +path+: kind, checksum, target and
     # binding version are verified, then it is paired with +parse+ (same
-    # grammar, version and source hash). Every entry must declare the tree
-    # capture.
+    # grammar, version and source hash). Every entry must bind the tree
+    # capture twice: raw (the legacy tree) and as plain data (the model input).
     def self.load_bindings(path, parse)
       raise ArtifactError, "bindings artifact not found: #{path}" unless File.file?(path)
 
@@ -37,10 +37,14 @@ module Unicodemath
                                                               target: "ruby")
       bindings.pair_with!(parse)
       Configuration::DECIMAL_ENTRIES.each_value do |entry|
-        declared = bindings.bindings(entry).map { |b| b["capture"] }
-        next if declared.include?(Configuration::TREE_CAPTURE.to_s)
+        declared = bindings.bindings(entry).map { |b| [b["capture"], b["path"], b["type"]] }
+        required = [[Configuration::TREE_CAPTURE.to_s, Configuration::TREE_CAPTURE.to_s, "raw"],
+                    [Configuration::TREE_CAPTURE.to_s, Configuration::MODEL_BINDING.to_s, "any"]]
+        missing = required - declared
+        next if missing.empty?
 
-        raise ArtifactError, "bindings artifact #{path} does not bind #{Configuration::TREE_CAPTURE} for entry #{entry}"
+        raise ArtifactError, "bindings artifact #{path} does not bind " \
+                             "#{missing.map { |c, p, t| "#{c} -> #{p} (#{t})" }.join(', ')} for entry #{entry}"
       end
       bindings
     rescue JSON::ParserError => e

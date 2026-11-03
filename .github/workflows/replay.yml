@@ -23,6 +23,7 @@ on:
       - "scripts/compile.rb"
       - "scripts/generate_grammar.rb"
       - "scripts/oracle/**"
+      - "scripts/replay_corpus.rb"
       - "spec/parser/**"
       - ".github/workflows/replay.yml"
 
@@ -98,12 +99,20 @@ jobs:
           UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
           UNICODEMATH_NATIVE_IDS: ${{ inputs.native_ids || '' }}
           UNICODEMATH_REQUIRE_NATIVE: "1"
+      - name: Replay through the typed model
+        if: ${{ !cancelled() }}
+        run: >-
+          bundle exec ruby scripts/replay_corpus.rb
+          --inventory "$RUNNER_TEMP/inventory.yml"
+          --rows "$RUNNER_TEMP/capture/rows"
+          --report "$RUNNER_TEMP/capture/model-report.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: replay-shard-${{ matrix.shard }}
           path: |
             ${{ runner.temp }}/capture/report.json
+            ${{ runner.temp }}/capture/model-report.json
             ${{ runner.temp }}/capture/rows
             ${{ runner.temp }}/capture/logs
 
@@ -144,11 +153,19 @@ jobs:
           UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
           UNICODEMATH_NATIVE_IDS: all
           UNICODEMATH_REQUIRE_NATIVE: "1"
+      - name: Replay through the typed model
+        if: ${{ !cancelled() }}
+        run: >-
+          bundle exec ruby scripts/replay_corpus.rb
+          --inventory spec/parser/fixtures/oracle/inventory/authored.yml
+          --rows "$RUNNER_TEMP/capture/rows"
+          --report "$RUNNER_TEMP/capture/model-report.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: replay-authored
           path: |
             ${{ runner.temp }}/capture/report.json
+            ${{ runner.temp }}/capture/model-report.json
             ${{ runner.temp }}/capture/rows
             ${{ runner.temp }}/capture/logs

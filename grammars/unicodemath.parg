@@ -431,12 +431,15 @@ entry arabic: unicodemath_tree__arabic
 
 bindings unicodemath_tree__comma {
   unicodemath_tree -> unicodemath_tree (raw)
+  unicodemath_tree -> model (any)
 }
 
 bindings unicodemath_tree__dot {
   unicodemath_tree -> unicodemath_tree (raw)
+  unicodemath_tree -> model (any)
 }
 
 bindings unicodemath_tree__arabic {
   unicodemath_tree -> unicodemath_tree (raw)
+  unicodemath_tree -> model (any)
 }

@@ -1,0 +1,816 @@
+# Representative typed-model rows: one or two inputs per construct of the
+# UnicodeMath model. Expectations are the gem's own output (producer
+# stage-gem, written by scripts/replay_corpus.rb --write), reviewed by hand;
+# they are regression data, not legacy parity (that is the raw-tree replay).
+schema: unicodemath-model-corpus/1
+producer:
+  kind: stage-gem
+  repository: https://github.com/plurimath/unicodemath
+rows:
+- id: model-fraction
+  input: a/b
+  expected:
+    model:
+      expression:
+        frac:
+          denominator:
+            factor:
+              atom:
+                alphanumeric:
+                  spelling: b
+                  value: b
+                  kind: unlisted
+          numerator:
+            atom:
+              alphanumeric:
+                spelling: a
+                value: a
+                kind: unlisted
+      decimal: "."
+- id: model-binomial
+  input: "(n¦k)"
+  expected:
+    model:
+      expression:
+        factor:
+          intermediate_exp:
+            close_paren:
+              literal:
+                spelling: ")"
+                value: ")"
+                kind: paren
+            frac:
+              atop: "&#xa6;"
+              denominator:
+                factor:
+                  atom:
+                    alphanumeric:
+                      spelling: k
+                      value: k
+                      kind: unlisted
+              numerator:
+                atom:
+                  alphanumeric:
+                    spelling: "n"
+                    value: "n"
+                    kind: unlisted
+            open_paren:
+              literal:
+                spelling: "("
+                value: "("
+                kind: paren
+      decimal: "."
+- id: model-sup
+  input: x^2
+  expected:
+    model:
+      expression:
+        sup_exp:
+          base:
+            symbol:
+              literal:
+                spelling: x
+                value: x
+                kind: unlisted
+          sup:
+            sup_script:
+              operand:
+                factor:
+                  digit:
+                    number: '2'
+      decimal: "."
+- id: model-subsup
+  input: x_i^2
+  expected:
+    model:
+      expression:
+        subsup_exp:
+          base:
+            symbol:
+              literal:
+                spelling: x
+                value: x
+                kind: unlisted
+          sub:
+            sub_script:
+              operand:
+                factor:
+                  atom:
+                    alphanumeric:
+                      spelling: i
+                      value: i
+                      kind: unlisted
+          sup:
+            sup_script:
+              operand:
+                factor:
+                  digit:
+                    number: '2'
+      decimal: "."
+- id: model-operators
+  input: a+b=c
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            expr:
+              expr:
+                factor:
+                  atom:
+                    alphanumeric:
+                      spelling: c
+                      value: c
+                      kind: unlisted
+              operator:
+                spelling: "="
+                value: "="
+                kind: symbol
+            factor:
+              atom:
+                alphanumeric:
+                  spelling: b
+                  value: b
+                  kind: unlisted
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        factor:
+          atom:
+            alphanumeric:
+              spelling: a
+              value: a
+              kind: unlisted
+      decimal: "."
+- id: model-decimal-dot
+  input: '3.14'
+  expected:
+    model:
+      expression:
+        factor:
+          decimal_number:
+            decimal: "."
+            fractional:
+              number: '14'
+            whole:
+              number: '3'
+      decimal: "."
+- id: model-decimal-comma
+  input: '3,14'
+  decimal: ","
+  expected:
+    model:
+      expression:
+        factor:
+          decimal_number:
+            decimal: ","
+            fractional:
+              number: '14'
+            whole:
+              number: '3'
+      decimal: ","
+- id: model-decimal-arabic
+  input: 3٫14
+  decimal: "٫"
+  expected:
+    model:
+      expression:
+        factor:
+          decimal_number:
+            decimal: "&#x66b;"
+            fractional:
+              number: '14'
+            whole:
+              number: '3'
+      decimal: "٫"
+- id: model-function
+  input: sin x
+  expected:
+    model:
+      expression:
+        unary_subsup:
+          first_value:
+            factor:
+              atom:
+                alphanumeric:
+                  spelling: x
+                  value: x
+                  kind: unlisted
+          unary_functions: sin
+      decimal: "."
+- id: model-nary
+  input: "∑_(i=1)^n i"
+  expected:
+    model:
+      expression:
+        nary:
+          nary_sub_sup:
+            subsup_exp:
+              nary_class:
+                spelling: "&#x2211;"
+                value: "∑"
+                kind: symbol
+              sub:
+                sub_script:
+                  operand:
+                    factor:
+                      intermediate_exp:
+                        close_paren:
+                          literal:
+                            spelling: ")"
+                            value: ")"
+                            kind: paren
+                        exp:
+                          exp:
+                            factor:
+                              digit:
+                                number: '1'
+                          operator:
+                            spelling: "="
+                            value: "="
+                            kind: symbol
+                        factor:
+                          atom:
+                            alphanumeric:
+                              spelling: i
+                              value: i
+                              kind: unlisted
+                        open_paren:
+                          literal:
+                            spelling: "("
+                            value: "("
+                            kind: paren
+              sup:
+                sup_script:
+                  operand:
+                    factor:
+                      atom:
+                        alphanumeric:
+                          spelling: "n"
+                          value: "n"
+                          kind: unlisted
+          naryand:
+            symbol:
+              literal:
+                spelling: i
+                value: i
+                kind: unlisted
+      decimal: "."
+- id: model-integral
+  input: "∫_0^1 f(x)dx"
+  expected:
+    model:
+      expression:
+        nary:
+          nary_sub_sup:
+            subsup_exp:
+              nary_class:
+                spelling: "&#x222b;"
+                value: "∫"
+                kind: symbol
+              sub:
+                sub_script:
+                  operand:
+                    factor:
+                      digit:
+                        number: '0'
+              sup:
+                sup_script:
+                  operand:
+                    factor:
+                      digit:
+                        number: '1'
+          naryand:
+            naryand_recursion:
+              close_paren:
+                literal:
+                  spelling: ")"
+                  value: ")"
+                  kind: paren
+              factor:
+                atom:
+                  alphanumeric:
+                    spelling: x
+                    value: x
+                    kind: unlisted
+              naryand_recursion:
+                expr:
+                  symbol:
+                    literal:
+                      spelling: x
+                      value: x
+                      kind: unlisted
+                symbol:
+                  literal:
+                    spelling: d
+                    value: d
+                    kind: unlisted
+              open_paren:
+                literal:
+                  spelling: "("
+                  value: "("
+                  kind: paren
+            symbol:
+              literal:
+                spelling: f
+                value: f
+                kind: unlisted
+      decimal: "."
+- id: model-sqrt
+  input: "√(x+1)"
+  expected:
+    model:
+      expression:
+        factor:
+          root:
+            first_value:
+              factor:
+                intermediate_exp:
+                  close_paren:
+                    literal:
+                      spelling: ")"
+                      value: ")"
+                      kind: paren
+                  exp:
+                    exp:
+                      factor:
+                        digit:
+                          number: '1'
+                    operator:
+                      spelling: "+"
+                      value: "+"
+                      kind: symbol
+                  factor:
+                    atom:
+                      alphanumeric:
+                        spelling: x
+                        value: x
+                        kind: unlisted
+                  open_paren:
+                    literal:
+                      spelling: "("
+                      value: "("
+                      kind: paren
+            root_symbol:
+              spelling: "&#x221a;"
+              value: "√"
+              kind: unlisted
+      decimal: "."
+- id: model-nthroot
+  input: "√(3&x)"
+  expected:
+    model:
+      expression:
+        factor:
+          root:
+            first_value:
+              expr:
+                factor:
+                  digit:
+                    number: '3'
+            second_value:
+              expr:
+                factor:
+                  atom:
+                    alphanumeric:
+                      spelling: x
+                      value: x
+                      kind: unlisted
+      decimal: "."
+- id: model-parens
+  input: "[a,b)"
+  expected:
+    model:
+      expression:
+        factor:
+          intermediate_exp:
+            close_paren:
+              literal:
+                spelling: ")"
+                value: ")"
+                kind: paren
+            comma:
+              spelling: ","
+              value: ","
+              kind: symbol
+            left_value:
+            - symbol:
+                literal:
+                  spelling: a
+                  value: a
+                  kind: unlisted
+            open_paren:
+              literal:
+                spelling: "["
+                value: "["
+                kind: paren
+            right_value:
+            - symbol:
+                literal:
+                  spelling: b
+                  value: b
+                  kind: unlisted
+      decimal: "."
+- id: model-matrix
+  input: "■(a&b@c&d)"
+  expected:
+    model:
+      expression:
+        table:
+          array:
+            tr:
+              td:
+                exp:
+                  factor:
+                    atom:
+                      alphanumeric:
+                        spelling: a
+                        value: a
+                        kind: unlisted
+              tds:
+                td:
+                  exp:
+                    factor:
+                      atom:
+                        alphanumeric:
+                          spelling: b
+                          value: b
+                          kind: unlisted
+            trs:
+              tr:
+                td:
+                  exp:
+                    factor:
+                      atom:
+                        alphanumeric:
+                          spelling: c
+                          value: c
+                          kind: unlisted
+                tds:
+                  td:
+                    exp:
+                      factor:
+                        atom:
+                          alphanumeric:
+                            spelling: d
+                            value: d
+                            kind: unlisted
+          matrixs: "&#x25a0;"
+      decimal: "."
+- id: model-text
+  input: '"speed"'
+  expected:
+    model:
+      expression:
+        text: speed
+      decimal: "."
+- id: model-greek-control-word
+  input: "\\alpha+\\beta"
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            factor:
+              ordinary_symbols:
+                spelling: beta
+                value: beta
+                kind: unlisted
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        factor:
+          ordinary_symbols:
+            spelling: alpha
+            value: α
+            kind: symbol
+      decimal: "."
+- id: model-greek-unicode
+  input: α+β
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            factor:
+              atom:
+                char:
+                  unicode_symbols:
+                    spelling: "&#x3b2;"
+                    value: β
+                    kind: symbol
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        factor:
+          ordinary_symbols:
+            spelling: "&#x3b1;"
+            value: α
+            kind: symbol
+      decimal: "."
+- id: model-primes
+  input: f′′(x)
+  expected:
+    model:
+      expression:
+        accents:
+        - first_value:
+            atom:
+              alphanumeric:
+                spelling: f
+                value: f
+                kind: unlisted
+          prime_accent_symbols:
+          - literal:
+              spelling: "&#x2032;&#x2032;"
+              value: "′′"
+              kind: unlisted
+        expr:
+          factor:
+            intermediate_exp:
+              close_paren:
+                literal:
+                  spelling: ")"
+                  value: ")"
+                  kind: paren
+              factor:
+                atom:
+                  alphanumeric:
+                    spelling: x
+                    value: x
+                    kind: unlisted
+              open_paren:
+                literal:
+                  spelling: "("
+                  value: "("
+                  kind: paren
+      decimal: "."
+- id: model-accent
+  input: â
+  expected:
+    model:
+      expression:
+        accents:
+        - first_value:
+            atom:
+              alphanumeric:
+                spelling: a
+                value: a
+                kind: unlisted
+        - accent_symbols:
+            spelling: "&#x302;"
+            value: "^"
+            kind: symbol
+      decimal: "."
+- id: model-font
+  input: "\U0001D400+ℂ"
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            factor:
+              atom:
+                char:
+                  unicode_symbols:
+                    spelling: "&#x2102;"
+                    value: ℂ
+                    kind: symbol
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        factor:
+          atom:
+            char:
+              unicode_symbols:
+                spelling: "&#x1d400;"
+                value: "\U0001D400"
+                kind: unlisted
+      decimal: "."
+- id: model-label
+  input: E=mc^2#(1)
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            sup_exp:
+              base:
+                expr:
+                  symbol:
+                    literal:
+                      spelling: c
+                      value: c
+                      kind: unlisted
+                symbol:
+                  literal:
+                    spelling: m
+                    value: m
+                    kind: unlisted
+              sup:
+                sup_script:
+                  operand:
+                    factor:
+                      digit:
+                        number: '2'
+          operator:
+            spelling: "="
+            value: "="
+            kind: symbol
+        factor:
+          atom:
+            alphanumeric:
+              spelling: E
+              value: E
+              kind: unlisted
+      label: "(1)"
+      decimal: "."
+- id: model-comment
+  input: a⫷note⫸+b
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            factor:
+              atom:
+                alphanumeric:
+                  spelling: b
+                  value: b
+                  kind: unlisted
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        factor:
+          atom:
+            alphanumeric:
+              spelling: a
+              value: a
+              kind: unlisted
+      decimal: "."
+- id: model-u-escape
+  input: "\\u03B1+b"
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            factor:
+              atom:
+                alphanumeric:
+                  spelling: b
+                  value: b
+                  kind: unlisted
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        factor:
+          atom:
+            char:
+              unicode_symbols:
+                spelling: "&#x03B1;"
+                value: α
+                kind: unlisted
+      decimal: "."
+- id: model-overbrace
+  input: "⏞(a+b)"
+  expected:
+    model:
+      expression:
+        factor:
+          first_value:
+            close_paren:
+              literal:
+                spelling: ")"
+                value: ")"
+                kind: paren
+            exp:
+              exp:
+                factor:
+                  atom:
+                    alphanumeric:
+                      spelling: b
+                      value: b
+                      kind: unlisted
+              operator:
+                spelling: "+"
+                value: "+"
+                kind: symbol
+            factor:
+              atom:
+                alphanumeric:
+                  spelling: a
+                  value: a
+                  kind: unlisted
+            open_paren:
+              literal:
+                spelling: "("
+                value: "("
+                kind: paren
+          hbracket_class: "&#x23de;"
+      decimal: "."
+- id: model-color
+  input: "✎(red&x)"
+  expected:
+    model:
+      expression:
+        factor:
+          color:
+            color_value: red
+            first_value:
+              expr:
+                factor:
+                  atom:
+                    alphanumeric:
+                      spelling: x
+                      value: x
+                      kind: unlisted
+      decimal: "."
+- id: model-mini-scripts
+  input: x²+y₁
+  expected:
+    model:
+      expression:
+        expr:
+          expr:
+            mini_sub:
+              base:
+                symbol:
+                  literal:
+                    spelling: "y"
+                    value: "y"
+                    kind: unlisted
+              sub:
+                sub_digits: "&#x2081;"
+          operator:
+            spelling: "+"
+            value: "+"
+            kind: symbol
+        mini_sup:
+          base:
+            symbol:
+              literal:
+                spelling: x
+                value: x
+                kind: unlisted
+          sup:
+            sup_digits: "&#xb2;"
+      decimal: "."
+- id: model-negated
+  input: a/=b
+  expected:
+    model:
+      expression:
+        expr:
+          factor:
+            atom:
+              alphanumeric:
+                spelling: b
+                value: b
+                kind: unlisted
+        factor:
+          atom:
+            alphanumeric:
+              spelling: a
+              value: a
+              kind: unlisted
+        operand:
+          negated_operator:
+            spelling: "="
+            value: "="
+            kind: symbol
+      decimal: "."
+- id: refusal-close-paren
+  input: ")"
+  expected:
+    refusal:
+      error: ParseError
+      char_offset: 0
+      byte_offset: 0
+- id: refusal-multibyte
+  input: α)
+  expected:
+    refusal:
+      error: ParseError
+      char_offset: 1
+      byte_offset: 2
+- id: refusal-empty
+  input: ''
+  expected:
+    refusal:
+      error: ParseError
+      char_offset: 0
+      byte_offset: 0
+- id: refusal-label-only
+  input: "#"
+  expected:
+    refusal:
+      error: ParseError
+      char_offset: 0
+      byte_offset: 0
