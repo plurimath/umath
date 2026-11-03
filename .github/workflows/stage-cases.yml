@@ -2,7 +2,8 @@ name: stage-cases
 
 # Writes the next unicode stage generation of plurimath-testsuite with
 # scripts/stage_cases.rb (raw-tree rows from Unicodemath::RawParser on the
-# Ruby and native engines), checks it with the testsuite's own validators and
+# Ruby and native engines) in two independent runs, requires both to write the
+# same bytes, checks the result with the testsuite's own validators and
 # uploads it as the stage-generation artifact. The testsuite PR copies that
 # artifact unchanged.
 
@@ -20,8 +21,8 @@ permissions:
   contents: read
 
 env:
-  # plurimath-testsuite main with unicode generation 1 (layout revision 1).
-  TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || '6f8bc12602e6016290179f0939b6afd518ef44df' }}
+  # plurimath-testsuite main holding unicode generation 1 (layout revision 1).
+  TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || 'b4520d8041efe8546aa10d6ce4b59d56b8d9ffac' }}
 
 jobs:
   spec:
@@ -42,8 +43,12 @@ jobs:
       - run: bundle exec rspec spec/stage_cases
 
   generate:
-    name: generate and validate the next unicode generation
+    name: generate the next unicode generation (run ${{ matrix.run }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Two independent runs; the validate job requires equal bytes.
+        run: [ 1, 2 ]
     steps:
       - uses: actions/checkout@v4
       # The Ruby the committed artifact records, so the producer block names
@@ -65,14 +70,44 @@ jobs:
           bundle exec ruby scripts/stage_cases.rb
           --testsuite "$GITHUB_WORKSPACE/testsuite"
           --out "$RUNNER_TEMP/stage-generation"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-generation-run-${{ matrix.run }}
+          path: ${{ runner.temp }}/stage-generation
+          if-no-files-found: error
+
+  validate:
+    name: compare both runs and validate the generation
+    needs: generate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage-generation-run-1
+          path: run-1
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage-generation-run-2
+          path: run-2
+      - name: Require both runs to write the same bytes
+        run: diff -r run-1 run-2
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.TESTSUITE_COMMIT }}
+          path: testsuite
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
       - name: Validate it with the testsuite's validators
         run: |
-          cp -R "$RUNNER_TEMP/stage-generation/." testsuite/
+          cp -R run-1/. testsuite/
           cd testsuite
           ruby scripts/validate.rb
           ruby scripts/validate-stages.rb --base HEAD
       - uses: actions/upload-artifact@v4
         with:
           name: stage-generation
-          path: ${{ runner.temp }}/stage-generation
+          path: run-1
           if-no-files-found: error

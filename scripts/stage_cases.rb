@@ -45,7 +45,7 @@ module StageCases
   PRODUCER_NAME = "unicodemath-raw"
   CASES_SCHEMA = "plurimath-stage/unicode/cases/1"
   PROVENANCE_SCHEMA = "plurimath-stage/provenance/1"
-  ENGINES = %i[ruby native].freeze
+  ENGINES = %i[native ruby].freeze
   DECIMAL = "."
   ROW_SUFFIX = ".raw"
   PAYLOAD_PREFIX = "raw-"
@@ -323,7 +323,7 @@ module StageCases
         raise Failure, "#{id}: input is not a string" unless input.is_a?(String)
 
         @progress&.call(id)
-        { "id" => "#{id}#{ROW_SUFFIX}", "input" => Canonical.dump(input), "options" => {},
+        { "id" => "#{id}#{ROW_SUFFIX}", "input" => Canonical.dump(input), "options" => { "decimal" => DECIMAL },
           "expected" => Outcome.agreed(id, input) }
       end
       payload = {
@@ -377,16 +377,15 @@ module StageCases
             "artifact" => file(commit, "artifacts/unicodemath.json")
           },
           "binding" => {
-            "target" => "ruby", "checksum" => field.("bindings ruby checksum"),
+            "ruby_checksum" => field.("bindings ruby checksum"),
             "artifact" => file(commit, "artifacts/unicodemath.bindings.ruby.json")
           },
           "lml" => nil
         },
         "semantic_boundary" => "raw-tree",
         "configuration" => {
-          "entry_point" => "Unicodemath::RawParser.parse", "decimal" => DECIMAL,
-          "engines" => ENGINES.map(&:to_s), "engines_must_agree" => true,
-          "native_available" => true,
+          "decimal" => DECIMAL, "engines" => ENGINES.map(&:to_s),
+          "entry_point" => "Unicodemath::RawParser.parse",
           "source_generation" => {
             "repository" => TESTSUITE_REPOSITORY, "commit" => source.commit, "language" => LANGUAGE,
             "generation" => source.generation, "snapshot_digest" => source.entry["snapshot_digest"]
@@ -409,8 +408,8 @@ module StageCases
       specs = Bundler::LockfileParser.new(File.read(path)).specs
       { "path" => "Gemfile.lock", "committed" => false,
         "sha256" => Digest::SHA256.file(path).hexdigest,
-        "resolved_gems" => specs.map(&:name).uniq.size,
-        "bundler" => Bundler::VERSION }
+        "bundler" => Bundler::VERSION,
+        "resolved" => specs.sort_by(&:name).to_h { |spec| [spec.name, spec.version.to_s] } }
     end
 
     def git(*args)
