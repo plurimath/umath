@@ -251,7 +251,7 @@ module UnicodemathOracle
     end
 
     def parse_payload(buffer)
-      payload = JSON.parse(buffer.force_encoding(Encoding::UTF_8))
+      payload = JSON.parse(buffer.force_encoding(Encoding::UTF_8), max_nesting: false)
       return nil unless payload.is_a?(Hash)
       return nil unless payload["protocol"] == PROTOCOL
       return nil unless DATA_OUTCOMES.include?(payload["outcome"])
@@ -318,7 +318,7 @@ module UnicodemathOracle
       path = row_path(id)
       return nil unless File.file?(path)
 
-      doc = JSON.parse(File.read(path))
+      doc = JSON.parse(File.read(path), max_nesting: false)
       return nil unless doc["request_digest"] == digest
       return nil unless DATA_OUTCOMES.include?(doc["outcome"])
 
@@ -338,7 +338,7 @@ module UnicodemathOracle
         "detail" => result.detail,
         "result" => result.payload,
       }
-      UnicodemathOracle.atomic_write(row_path(row["id"]), "#{JSON.pretty_generate(doc)}\n")
+      UnicodemathOracle.atomic_write(row_path(row["id"]), "#{JSON.pretty_generate(doc, max_nesting: false)}\n")
     end
 
     def summary(attempted, reused, stopped_early, timings)
@@ -348,7 +348,7 @@ module UnicodemathOracle
         path = row_path(id)
         next unless File.file?(path)
 
-        doc = JSON.parse(File.read(path))
+        doc = JSON.parse(File.read(path), max_nesting: false)
         found[id] = doc if doc["request_digest"] == request_digest(@rows.find { |r| r["id"] == id })
       end
       counts = OUTCOMES.to_h { |o| [o, found.values.count { |d| d["outcome"] == o }] }

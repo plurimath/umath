@@ -105,6 +105,7 @@ jobs:
           path: |
             ${{ runner.temp }}/capture/report.json
             ${{ runner.temp }}/capture/rows
+            ${{ runner.temp }}/capture/logs
 
   authored:
     name: authored rows replay (Ruby and native)
@@ -150,3 +151,4 @@ jobs:
           path: |
             ${{ runner.temp }}/capture/report.json
             ${{ runner.temp }}/capture/rows
+            ${{ runner.temp }}/capture/logs
