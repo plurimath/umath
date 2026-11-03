@@ -1,0 +1,67 @@
+name: test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  oracle-harness:
+    name: oracle harness specs (Ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.2", "3.3", "3.4" ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - run: bundle exec rspec spec/oracle
+
+  oracle-smoke:
+    name: oracle smoke capture
+    runs-on: ubuntu-latest
+    env:
+      ORACLE_COMMIT: e7ab4a5186c9be96f62d670574bc2c72f9365ad4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath
+          ref: ${{ env.ORACLE_COMMIT }}
+          path: oracle
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Install the oracle bundle from its lockfile
+        run: bundle install
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/scripts/oracle/Gemfile
+          BUNDLE_PATH: ${{ github.workspace }}/vendor/oracle-bundle
+          BUNDLE_FROZEN: "true"
+      - name: Capture the smoke rows
+        run: >-
+          bundle exec ruby scripts/oracle/capture.rb
+          --oracle "$GITHUB_WORKSPACE/oracle"
+          --ids smoke-success,smoke-refusal
+          --out "$RUNNER_TEMP/oracle-smoke"
+      - name: Compare with the committed smoke rows
+        run: |
+          for id in smoke-success smoke-refusal; do
+            jq -S '.outcome, .result.boundaries' "corpora/oracle/smoke/rows/$id.json" > "$RUNNER_TEMP/expected-$id.json"
+            jq -S '.outcome, .result.boundaries' "$RUNNER_TEMP/oracle-smoke/rows/$id.json" > "$RUNNER_TEMP/actual-$id.json"
+            diff -u "$RUNNER_TEMP/expected-$id.json" "$RUNNER_TEMP/actual-$id.json"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: oracle-smoke
+          path: ${{ runner.temp }}/oracle-smoke

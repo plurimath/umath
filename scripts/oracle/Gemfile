@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+
+# Isolated environment for the legacy Plurimath oracle.
+#
+# The oracle code itself is a plain checkout of plurimath/plurimath at the
+# pinned commit (see docs/parser-contract.adoc), put on the load path by
+# scripts/oracle/capture.rb. This Gemfile carries only that commit's runtime
+# dependencies, copied from its plurimath.gemspec, so that Gemfile.lock next
+# to it fixes the exact versions the oracle runs with.
+
+source "https://rubygems.org"
+
+gem "amath", "~> 0.1"
+gem "bigdecimal"
+gem "htmlentities"
+gem "lutaml-model", "~> 0.8.155"
+gem "mml", "~> 2.4.2"
+gem "omml", "~> 0.2.5"
+gem "ostruct"
+gem "ox"
+gem "parsanol", "~> 1.3", ">= 1.3.116"
+gem "parslet"
+gem "thor"
+gem "unitsml", "~> 0.6.4"

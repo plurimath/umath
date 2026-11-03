@@ -1,0 +1,12 @@
+# Tiny inventory used to check the capture harness against the real oracle
+# before any bulk capture. One input the legacy grammar accepts and one it
+# refuses.
+schema: unicodemath-oracle-inventory/1
+source:
+  kind: authored
+  note: Hand-written smoke rows for scripts/oracle/capture.rb.
+rows:
+  - id: smoke-success
+    input: "a/b"
+  - id: smoke-refusal
+    input: ")"
