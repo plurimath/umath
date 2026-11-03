@@ -16,7 +16,7 @@ module ArtifactSpecHelpers
   TARGETS = Parsanol::PARG::Bindings::Artifact::TARGETS
 
   def bindings_path(target)
-    File.join(ROOT, "artifacts", "unicodemath.#{target}.bindings.json")
+    File.join(ROOT, "artifacts", "unicodemath.bindings.#{target}.json")
   end
 
   def manifest

@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   end
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "parsanol", "~> 1.3", ">= 1.3.129"
+  spec.add_dependency "parsanol", "~> 1.3", ">= 1.3.131"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 end
