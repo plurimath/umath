@@ -146,5 +146,6 @@ result = {
     "writers" => writers,
   },
 }
-result_io.write(JSON.generate(result))
+# Raw trees of nested input go deeper than JSON's default limit of 100.
+result_io.write(JSON.generate(result, max_nesting: false))
 result_io.close

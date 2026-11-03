@@ -103,9 +103,12 @@ module UnicodemathOracle
       end
     end
 
-    # Hex object addresses in exception messages change on every run.
+    # Hex object addresses in exception messages change on every run. A
+    # message that quotes input which is not valid UTF-8 is scrubbed as bytes
+    # and kept in the tagged "bytes" form, like any other such string.
     def scrub_message(message)
-      message.to_s.gsub(/0x[0-9a-f]{6,}/, "0xADDR")
+      scrubbed = message.to_s.b.gsub(/0x[0-9a-f]{6,}/n, "0xADDR").force_encoding(Encoding::UTF_8)
+      scrubbed.valid_encoding? ? scrubbed : string(scrubbed)
     end
   end
 end

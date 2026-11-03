@@ -1,0 +1,59 @@
+# Hand-written parity rows for preprocessing, decimal markers, labels,
+# refusal positions, invalid UTF-8 and nesting. Their legacy rows are
+# captured and replayed in CI (.github/workflows/replay.yml, job
+# "authored"), not committed.
+schema: unicodemath-oracle-inventory/1
+source:
+  kind: sample
+  note: Authored raw-tree parity rows.
+rows:
+- id: auth-decimal-dot
+  input: '1.5'
+- id: auth-decimal-comma-default
+  input: '1,5'
+- id: auth-decimal-comma-fr
+  input: '1,5'
+  options:
+    locale: fr
+- id: auth-decimal-dot-fr
+  input: '1.5'
+  options:
+    locale: fr
+- id: auth-decimal-arabic-ar
+  input: 1٫5
+  options:
+    locale: ar
+- id: auth-decimal-arabic-default
+  input: 1٫5
+- id: auth-label
+  input: a+b#(1)
+- id: auth-label-multi
+  input: a#b#c
+- id: auth-label-pen
+  input: "✎(a#b)"
+- id: auth-label-pen-and-label
+  input: "✎(a#b)#(2)"
+- id: auth-label-only
+  input: "#b"
+- id: auth-hash-only
+  input: "#"
+- id: auth-empty
+  input: ''
+- id: auth-comment
+  input: a⫷note⫸+b
+- id: auth-u-escape
+  input: "\\u03B1+b"
+- id: auth-double-backslash
+  input: a\\b
+- id: auth-entities
+  input: a<b>c'd"e&f
+- id: auth-whitespace
+  input: "  a\t+\nb  "
+- id: auth-math-alphanumeric
+  input: "\U0001D400+ℂ"
+- id: auth-multibyte-refusal
+  input: α)
+- id: auth-deep-20
+  input: "((((((((((((((((((((a))))))))))))))))))))"
+- id: auth-invalid-utf8
+  input_base64: Yf9i

@@ -1,0 +1,67 @@
+# Bounded parity sample for the raw-tree boundary (spec/parser), replayed
+# by every CI run from the committed oracle rows in ../rows/.
+#
+# The rows are copied from
+#   plurimath-testsuite @ 281059b213026a54a193cb020a5816f57cabf3a8
+#   fixtures/unicode-expectations.yaml sha256:c60d185e6f993b9c1626298eca93cb81f3cf0568fade5f6e9ed45bfad8541e7b
+# (cases whose index is 1 modulo 20 or that the fixtures expect to be
+# refused, up to index 381; numeric YAML inputs as their text), without the
+# leading 1 or 0 flag that the fixtures' own harness removes before
+# parsing. ../rows/ was written by scripts/oracle/capture.rb (the command
+# is in spec/parser/oracle_parity_spec.rb). The full fixture set is
+# replayed by .github/workflows/replay.yml.
+schema: unicodemath-oracle-inventory/1
+source:
+  kind: sample
+  note: Raw-tree parity sample for spec/parser.
+rows:
+- id: unicode-external-001
+  input: a+b
+- id: unicode-external-021
+  input: "(a + b)^n = ∑_(k=0)^n▒(n¦k) a^k b^(n-k)"
+- id: unicode-external-033
+  input: "(a│b)/"
+- id: unicode-external-041
+  input: "(ℕ_+)⃗"
+- id: unicode-external-061
+  input: "+ α_1 β_(y z) y z + α_1 β_(z x) z x + α_1 β_(x y) x y + α_1 β_(x y z) x
+    y z"
+- id: unicode-external-081
+  input: "+ α_(z x) β_1 z x + α_(z x) β_x z x^2 - α_(z x) β_y x z y - α_(z x) β_z
+    x z z"
+- id: unicode-external-101
+  input: "+ α_y β_(y z) 1 z + α_y β_(z x) x y z - α_y β_(x y) x y^2 - α_y β_(x y z)
+    x y^2z"
+- id: unicode-external-121
+  input: "- α_(x y z) β_(y z) x y^2z^2 + α_(x y z) β_(z x) x y 1 x + α_(x y z) β_(x
+    y) x x y zy + α_(x y z) β_(x y z) y z x x y z"
+- id: unicode-external-141
+  input: "= α_1 + α_(y z) yz + α_(z x) z x + α_(x y) x y + α_(x y z) x y z"
+- id: unicode-external-161
+  input: A_n \\⌋ B_m = ⟨ A_n B_m ⟩_{m-n}
+- id: unicode-external-181
+  input: '"test"+(_n^m)(1,2)_n^m'
+- id: unicode-external-201
+  input: "^⊺ \U0001D434=0"
+- id: unicode-external-210
+  input: a^
+- id: unicode-external-211
+  input: a_
+- id: unicode-external-221
+  input: a b = (2 x) (4 x + 3 y) = 8 + 6 x y
+- id: unicode-external-241
+  input: a^(1_2)_3_4
+- id: unicode-external-261
+  input: ab/cd/ef/√(10&gh)
+- id: unicode-external-281
+  input: a′′′
+- id: unicode-external-301
+  input: a⃢
+- id: unicode-external-321
+  input: f(ξ)=∫_a▒f(x)ⅇ^(2πⅈxξ) ⅆx#[1]
+- id: unicode-external-341
+  input: sinx
+- id: unicode-external-361
+  input: x y z
+- id: unicode-external-381
+  input: "{■(a@b)〗§"
