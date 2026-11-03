@@ -92,9 +92,9 @@ module UnicodemathOracle
       env = { "BUNDLE_GEMFILE" => File.join(ORACLE_DIR, "Gemfile"),
               "BUNDLE_PATH" => ENV.fetch("ORACLE_BUNDLE_PATH",
                                          File.join(ROOT, "vendor", "oracle-bundle")),
-              "BUNDLE_FROZEN" => "true" }
-      [[RbConfig.ruby, "-I", File.join(oracle, "lib"), "-rbundler/setup", LEGACY_WORKER],
-       clean_env(env)]
+              "BUNDLE_FROZEN" => "true",
+              "ORACLE_LIB" => File.join(oracle, "lib") }
+      [[RbConfig.ruby, LEGACY_WORKER], clean_env(env)]
     end
 
     # Drops the variables `bundle exec` sets for the harness bundle so the

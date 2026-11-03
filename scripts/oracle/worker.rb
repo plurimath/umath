@@ -116,8 +116,13 @@ end
 
 result_io = IO.for_fd(3, "wb")
 request = JSON.parse($stdin.read)
+require "bundler/setup"
+# The pinned Plurimath checkout goes first on the load path, after Bundler
+# has set up the oracle bundle.
+$LOAD_PATH.unshift(ENV.fetch("ORACLE_LIB"))
 require "plurimath"
 require "plurimath/version"
+warn "plurimath loaded from #{$LOADED_FEATURES.grep(%r{/plurimath\.rb\z}).first}"
 
 input = decode_input(request.fetch("input"))
 options = request.fetch("options")

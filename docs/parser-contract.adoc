@@ -234,8 +234,12 @@ bundle exec ruby scripts/oracle/capture.rb --oracle ORACLE_CHECKOUT \
 Set `ORACLE_BUNDLE_PATH` when the oracle bundle is installed somewhere other
 than `vendor/oracle-bundle`.
 
-`corpora/oracle/smoke/` holds the rows and report of the smoke capture: one
-accepted input and one refused input, run before any bulk capture.
+`corpora/oracle/smoke/rows/` holds the rows of the smoke capture: one
+accepted input and one refused input, run before any bulk capture. CI runs
+the smoke capture again and compares each row's outcome and boundaries with
+these files. To regenerate them, run the capture above with
+`--out corpora/oracle/smoke` and delete the `logs/` and `report.json` it also
+writes there.
 
 The harness specs in `spec/oracle/` use a fake worker instead of Plurimath.
 They cover success, refusal, a real deadline, crashes, end-of-file before
