@@ -113,9 +113,15 @@ RSpec.describe Unicodemath::RawParser do
       loaded = Unicodemath.artifacts
       shape = loaded.parse.root_atom("dot").parse("a/b", compatibility: :parslet)
       bound = loaded.bindings.apply("dot", shape)
-      expect(bound.keys).to eq([:unicodemath_tree])
+      expect(bound.keys).to eq(%i[unicodemath_tree model])
       expect(bound[:unicodemath_tree]).to equal(shape[:unicodemath_tree])
       expect(canonical(parse("a/b").tree)).to eq(canonical(shape[:unicodemath_tree]))
+    end
+
+    it "carry the same tree as plain data for the model" do
+      result = parse("a/b")
+      expect(result.model_data).to eq("frac" => { "numerator" => { "atom" => { "alphanumeric" => "a" } },
+                                                  "denominator" => { "factor" => { "atom" => { "alphanumeric" => "b" } } } })
     end
   end
 end

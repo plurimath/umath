@@ -10,10 +10,23 @@ https://github.com/plurimath/plurimath/issues/530[plurimath/plurimath#530].
 
 == Status
 
-Work in progress, not yet released to RubyGems. The repository has the
-grammar, its compiled artifacts and an internal raw-tree parser that is
-compared against the legacy Plurimath parser. The public parsing API is
-not available yet. See link:docs/parser-contract.adoc[].
+Work in progress, not yet released to RubyGems.
+
+== Usage
+
+[source,ruby]
+----
+require "unicodemath"
+
+document = Unicodemath.parse("a/b")
+document.expression.frac.numerator   # => Unicodemath::Model::Expression
+Unicodemath.parse("1,5", decimal: ",", engine: :ruby)
+----
+
+`Unicodemath.parse` returns a `Unicodemath::Model::Document`, a typed model
+declared with LutaML Model. Refused input raises `Unicodemath::ParseError`
+with character and byte offsets into the input. See
+link:docs/model-contract.adoc[] and link:docs/parser-contract.adoc[].
 
 == License
 

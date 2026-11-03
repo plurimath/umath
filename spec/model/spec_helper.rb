@@ -32,5 +32,5 @@ module ModelSpecHelpers
 end
 
 RSpec.configure do |config|
-  config.include ModelSpecHelpers
+  config.include ModelSpecHelpers, file_path: %r{/spec/model/}
 end

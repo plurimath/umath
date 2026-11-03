@@ -8,20 +8,18 @@ parser inside Plurimath does today, which parts of it this gem takes over,
 and how that legacy behaviour is captured so the gem can be compared against
 it.
 
-The gem will have one public entry point, `Unicodemath.parse(input, ...)`,
-which returns a typed language model declared with LutaML Model (LML). That
-model, its fields and the code that builds it are not defined here. They
-belong to the later model work, which also moves the legacy transform logic
-into the gem.
+The gem has one public entry point, `Unicodemath.parse(input, ...)`, which
+returns a typed language model declared with LutaML Model (LML). That model
+is described in link:model-contract.adoc[the model contract].
 
 The raw parse tree that the grammar produces is not public API. It is an
 internal boundary that the gem and its tests use, and it is the boundary
 the parity captures compare first.
 
 The repository holds the grammar, its compiled artifacts, the internal
-raw-tree parser (`Unicodemath::RawParser`), the exported symbol catalog and
-the capture harness in `scripts/oracle/`. The public `Unicodemath.parse`
-is not available yet.
+raw-tree parser (`Unicodemath::RawParser`), the typed model and the public
+parser, the exported symbol catalog and the capture harness in
+`scripts/oracle/`.
 
 == Legacy source
 
@@ -85,8 +83,9 @@ grammar sees it. In order, as written in `parser.rb`:
 The grammar consumes this encoded text, not the caller's text. Positions in
 grammar errors and in raw-tree slices are positions in the encoded text.
 
-The gem's public `parse` will own this preprocessing. The low-level parse of
-already preprocessed text is an internal boundary.
+The gem's public `parse` owns this preprocessing and reports refusal
+positions in the caller's text (see the model contract). The low-level parse
+of already preprocessed text is an internal boundary.
 
 === 3. Raw grammar tree
 
@@ -147,8 +146,11 @@ checksums and the sha256 of every file. CI compiles again with the compiler
 and Ruby version that the committed artifact records, and fails if any file
 differs.
 
-At load time the gem checks the bindings artifact's kind, checksum, target
-and version and pairs it with the parse artifact. It never falls back to
+Each entry binds its root capture twice: `unicodemath_tree` as `raw`, the
+legacy tree with slices and offsets, and as `any` under the path `model`,
+the plain tree that the typed model is built from. At load time the gem
+checks the bindings artifact's kind, checksum, target and version, pairs it
+with the parse artifact and requires both bindings. It never falls back to
 another artifact.
 
 == Symbol catalog
