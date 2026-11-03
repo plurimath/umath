@@ -10,8 +10,10 @@ https://github.com/plurimath/plurimath/issues/530[plurimath/plurimath#530].
 
 == Status
 
-Work in progress. There is no code here yet, and the gem has not been
-released to RubyGems.
+Work in progress, not yet released to RubyGems. The repository has the
+grammar, its compiled artifacts and an internal raw-tree parser that is
+compared against the legacy Plurimath parser. The public parsing API is
+not available yet. See link:docs/parser-contract.adoc[].
 
 == License
 
