@@ -1,0 +1,78 @@
+name: stage-cases
+
+# Writes the next unicode stage generation of plurimath-testsuite with
+# scripts/stage_cases.rb (raw-tree rows from Unicodemath::RawParser on the
+# Ruby and native engines), checks it with the testsuite's own validators and
+# uploads it as the stage-generation artifact. The testsuite PR copies that
+# artifact unchanged.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      testsuite_commit:
+        description: plurimath-testsuite commit holding the source generation
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  # plurimath-testsuite main with unicode generation 1 (layout revision 1).
+  TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || '6f8bc12602e6016290179f0939b6afd518ef44df' }}
+
+jobs:
+  spec:
+    name: stage-cases specs (Ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.2", "3.3", "3.4" ]
+    env:
+      UNICODEMATH_REQUIRE_NATIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - run: bundle exec rspec spec/stage_cases
+
+  generate:
+    name: generate and validate the next unicode generation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The Ruby the committed artifact records, so the producer block names
+      # the Ruby whose Unicode tables built the grammar.
+      - name: Use the Ruby the committed artifact records
+        run: echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/unicodemath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.ARTIFACT_RUBY }}
+          bundler-cache: true
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.TESTSUITE_COMMIT }}
+          path: testsuite
+          persist-credentials: false
+      - name: Write the generation
+        run: >-
+          bundle exec ruby scripts/stage_cases.rb
+          --testsuite "$GITHUB_WORKSPACE/testsuite"
+          --out "$RUNNER_TEMP/stage-generation"
+      - name: Validate it with the testsuite's validators
+        run: |
+          cp -R "$RUNNER_TEMP/stage-generation/." testsuite/
+          cd testsuite
+          ruby scripts/validate.rb
+          ruby scripts/validate-stages.rb --base HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-generation
+          path: ${{ runner.temp }}/stage-generation
+          if-no-files-found: error
