@@ -1,0 +1,242 @@
+= UnicodeMath parser contract
+:toc:
+
+== Status and scope
+
+This document covers syntax only. It records what the legacy UnicodeMath
+parser inside Plurimath does today, which parts of it this gem takes over,
+and how that legacy behaviour is captured so the gem can be compared against
+it.
+
+The gem will have one public entry point, `Unicodemath.parse(input, ...)`,
+which returns a typed language model declared with LutaML Model (LML). That
+model, its fields and the code that builds it are not defined here. They
+belong to the later model work, which also moves the legacy transform logic
+into the gem.
+
+The raw parse tree that the grammar produces is not public API. It is an
+internal boundary that the gem and its tests use, and it is the boundary
+the parity captures compare first.
+
+There is no gem code yet. This repository currently holds this contract and
+the capture harness in `scripts/oracle/`.
+
+== Legacy source
+
+All legacy facts below come from one pinned commit:
+
+* Repository: https://github.com/plurimath/plurimath
+* Commit: `e7ab4a5186c9be96f62d670574bc2c72f9365ad4` (Plurimath 0.11.17)
+
+The capture harness refuses to run against any other commit or against a
+checkout with local changes.
+
+The UnicodeMath code at that commit (line counts from `wc -l`):
+
+[cols="2,1,4"]
+|===
+| File | Lines | Role
+
+| `lib/plurimath/unicode_math.rb` | 22 | Facade class: `new(text).to_formula`
+| `lib/plurimath/unicode_math/parser.rb` | 56 | Preprocessing, then grammar, then transform
+| `lib/plurimath/unicode_math/parse.rb` | 302 | Grammar class (`Parsanol::Parser`), root rule `expression`
+| `lib/plurimath/unicode_math/parsing_rules/*.rb` | 800 | Grammar rule modules: masked, sub/sup, common, constants, absence, helper
+| `lib/plurimath/unicode_math/constants.rb` | 1029 | Symbol tables used by the grammar and the transform
+| `lib/plurimath/unicode_math/transform.rb` | 4058 | Tree to `Plurimath::Math::Formula` transform
+| `lib/plurimath/unicode_math/utility.rb` | 294 | Transform helpers; subclass of `Plurimath::Utility`
+|===
+
+== Boundaries
+
+A UnicodeMath parse passes four boundaries. The capture harness records each
+one separately, so a difference can be traced to the first boundary where it
+appears.
+
+=== 1. Caller input and options
+
+The caller passes a string and, optionally, `locale:`. Through
+`Plurimath::Math.parse(text, :unicode, locale: ...)` the locale sets
+`Plurimath.configuration.locale` for the duration of the call, and the
+grammar reads its decimal marker from that configuration. Without a locale
+the decimal marker is the configuration default.
+
+Input bytes are kept exactly. Input that is not valid UTF-8 is recorded as
+bytes, not repaired.
+
+=== 2. Preprocessing
+
+`Plurimath::UnicodeMath::Parser.new(text)` rewrites the input before the
+grammar sees it. In order, as written in `parser.rb`:
+
+. Labels. A `#` inside `✎(...)` is protected; the text is then split on
+  `#`. The first part is kept as the formula and, when there was more than
+  one part, the last part becomes the label (`@splitted`). Parts between the
+  first and the last are dropped.
+. The formula text is HTML-entity encoded with hexadecimal references, then
+  `&#x26;` and `&#x22;` are turned back into `&` and `"`.
+. Comments: everything from the first `&#x2af7;` (`⫷`) to the last
+  `&#x2af8;` (`⫸`) is removed.
+. `\\` becomes `\`.
+. `\uXXXX` escapes (one to five hex digits) become `&#xXXXX;`.
+. Leading and trailing whitespace is stripped.
+
+The grammar consumes this encoded text, not the caller's text. Positions in
+grammar errors and in raw-tree slices are positions in the encoded text.
+
+The gem's public `parse` will own this preprocessing. The low-level parse of
+already preprocessed text is an internal boundary.
+
+=== 3. Raw grammar tree
+
+`Plurimath::UnicodeMath::Parse.new.parse(text)` runs the grammar with
+Parsanol in `compatibility: :parslet` mode. The result is a tree of hashes
+and arrays whose leaves are `Parsanol::Slice` objects. When preprocessing
+found a label, the facade wraps the tree as
+`{labeled_tr_value: tree, labeled_tr_id: label}` before the transform; the
+capture records the grammar tree and the label separately.
+
+The grammar refuses input by raising `Parsanol::ParseFailed`. The error
+message names the expected alternatives and a line and character position
+in the encoded text.
+
+The grammar is not self-contained: `ConstantsRules` builds alternations from
+`Constants` when the grammar loads, and `Constants.wrapper_symbols` reads
+Plurimath's symbol catalog (`Utility.symbols_hash(:unicodemath)`). The
+decimal-marker rule reads `Plurimath.configuration`. A gem grammar must take
+these inputs from committed data, not from a live Plurimath.
+
+=== 4. Facade formula and writers
+
+`Plurimath::Math.parse` applies the transform and returns a
+`Plurimath::Math::Formula`. Grammar refusals and transform failures both
+surface as `Plurimath::Math::ParseError`. The capture records the formula
+object graph and the exact output of the `to_asciimath`, `to_latex`,
+`to_mathml`, `to_unicodemath`, `to_omml` and `to_html` writers.
+
+== What the gem must keep (syntax)
+
+* Every input the legacy grammar accepts at the pinned commit is accepted,
+  and every input it refuses is refused.
+* For accepted input, the internal raw tree matches the legacy raw tree in
+  the canonical tagged form below: same keys, same order, same slice text
+  and offsets.
+* Preprocessing matches the legacy preprocessing for the same input and
+  locale, including label splitting and comment removal.
+* A refusal reports an error category and a position. The position is part
+  of the contract; the wording of the grammar's error message is not, unless
+  a corpus row depends on it.
+
+== Capture harness
+
+`scripts/oracle/capture.rb` records the legacy behaviour for rows of an
+inventory.
+
+=== Inventory
+
+Inventory files live in `corpora/oracle/inventory/` and use schema
+`unicodemath-oracle-inventory/1`. Each row has an `id`, exactly one of
+`input` (text) or `input_base64` (exact bytes) and optional `options`
+(currently `locale`). Ids must be unique across all files and safe as file
+names. The harness stops before running anything if an id is duplicated or
+a requested id is missing.
+
+=== Processes and deadlines
+
+Each row runs in a fresh worker process, so class-level caches in the legacy
+grammar never leak from one locale to another. The worker reads its request
+on standard input and writes one JSON result to file descriptor 3. Its
+standard output and error go to log files, so stray output from Plurimath
+cannot corrupt the result.
+
+The supervisor measures a deadline with the monotonic clock. Reaching
+end-of-file on the result pipe does not end the wait: the supervisor keeps
+polling the process status until the process exits or the same deadline
+passes. Only the deadline produces a timeout. A timed-out worker gets
+`TERM`, then `KILL` after a grace period, sent to its process group.
+
+=== Outcomes
+
+[cols="1,3"]
+|===
+| Outcome | Meaning
+
+| `succeeded` | The grammar produced a raw tree.
+| `refused` | The grammar raised `Parsanol::ParseFailed`. This is data.
+| `errored` | Preprocessing or the grammar raised another exception. This is data.
+| `timed_out` | No exit before the deadline. The capture is incomplete.
+| `crashed` | The worker died, exited non-zero, or exited without a complete, valid result. The capture is incomplete.
+|===
+
+Only the worker can report `succeeded`, `refused` or `errored`; a worker
+result that claims any other outcome is treated as a crash. A timeout or
+crash is never counted as a refusal.
+
+Exceptions at the formula and writer boundaries are recorded inside the row
+and do not change the row's outcome.
+
+=== Checkpoints and resume
+
+Each finished row is written as its own file, `rows/<id>.json`, through a
+temporary file and a rename, so a row file is either complete or absent.
+Each row stores a digest of its request and of the harness identity (oracle
+commit, harness file checksums, Ruby version). On a rerun, rows with the same
+digest and a data outcome are reused; timed-out, crashed and changed rows are
+run again. `--max-attempts N` stops after N new rows, which the specs use to
+test resuming.
+
+=== Report
+
+The report (schema `unicodemath-oracle-report/1`) lists the expected ids,
+counts per outcome, missing ids, the checksum of every row file, the
+inventory files with their checksums and the harness identity. It is
+`complete` only when every expected id has a row and no row timed out or
+crashed. The capture exits 0 when the report is complete, 2 when it is not
+and 1 when it could not start.
+
+=== Canonical tagged form
+
+Values are stored in a tagged form that keeps apart everything the parity
+comparison needs to see:
+
+* hash (`"t": "hash"`, entries in insertion order) and array (`"t": "array"`);
+* symbol (`"sym"`) and string (`"str"`), for keys and values alike;
+* a nil value (`"nil"`) and a missing key (no entry);
+* the empty string and the empty array;
+* parser slices (`"slice"`), with their text, character offset and byte
+  offset;
+* any other object (`"obj"`), with its class and its instance variables in
+  definition order;
+* strings that are not valid UTF-8 (`"bytes"`, base64);
+* numbers as their Ruby string form, never converted.
+
+Object addresses in exception messages are replaced with `0xADDR`, because
+they change on every run.
+
+== Running the capture
+
+The oracle runs in its own bundle, separate from the gem's development
+bundle. `scripts/oracle/Gemfile` lists the runtime dependencies of the
+pinned Plurimath commit and `scripts/oracle/Gemfile.lock` fixes their
+versions.
+
+[source,sh]
+----
+git clone https://github.com/plurimath/plurimath ORACLE_CHECKOUT
+git -C ORACLE_CHECKOUT checkout e7ab4a5186c9be96f62d670574bc2c72f9365ad4
+
+BUNDLE_GEMFILE=scripts/oracle/Gemfile BUNDLE_PATH=vendor/oracle-bundle \
+  bundle install
+
+bundle exec ruby scripts/oracle/capture.rb --oracle ORACLE_CHECKOUT \
+  --ids smoke-success,smoke-refusal --out tmp/oracle-capture
+----
+
+Set `ORACLE_BUNDLE_PATH` when the oracle bundle is installed somewhere other
+than `vendor/oracle-bundle`.
+
+`corpora/oracle/smoke/` holds the rows and report of the smoke capture: one
+accepted input and one refused input, run before any bulk capture.
+
+The harness specs in `spec/oracle/` use a fake worker instead of Plurimath.
+They cover success, refusal, a real deadline, crashes, end-of-file before
+exit and resuming after a stop or a killed supervisor.

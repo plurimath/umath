@@ -1,0 +1,68 @@
+{
+  "schema": "unicodemath-oracle-report/1",
+  "identity": {
+    "oracle": {
+      "repository": "https://github.com/plurimath/plurimath",
+      "commit": "e7ab4a5186c9be96f62d670574bc2c72f9365ad4"
+    },
+    "worker": "legacy",
+    "harness_sha256": {
+      "capture.rb": "b2b2ec6fbd1ce85753004b8137176d3902a14fb612dd9e8e17deea56ba1450fd",
+      "harness.rb": "6fd497cc5bb6cfd2780336ba40e72a078b258ea511fb841b3904ff01d2290323",
+      "canonical.rb": "7617fbb4459ab57bdb9e5b0363b4a2c785d506d918329e3f9bf9b37ef7709f90",
+      "worker.rb": "ab38e8b4c3f4dd510d6b1a7c4f7c4149014e773d13e9cc358c4831b67a2633a9",
+      "Gemfile": "6facb7d8278a76285ba1a9a1a4fbadaf0dd51b905521a5226e5fda472cca9d4d",
+      "Gemfile.lock": "3bf054f9ca6922e60a26e1df5ec52b912c376e1761c4af12d1a761aeaafd7cc6"
+    },
+    "ruby": "4.0.1"
+  },
+  "expected": 2,
+  "expected_ids": [
+    "smoke-success",
+    "smoke-refusal"
+  ],
+  "attempted_this_run": 2,
+  "reused": 0,
+  "counts": {
+    "succeeded": 1,
+    "refused": 1,
+    "errored": 0,
+    "timed_out": 0,
+    "crashed": 0
+  },
+  "rows_found": 2,
+  "missing": [],
+  "stopped_early": false,
+  "complete": true,
+  "rows": [
+    {
+      "id": "smoke-success",
+      "outcome": "succeeded",
+      "sha256": "f5928ccf6feb6507f0296d677daeef4d37ea03783a872fd9e0a28f354fc6e604"
+    },
+    {
+      "id": "smoke-refusal",
+      "outcome": "refused",
+      "sha256": "1d67d77b69a3ba6891e97babd4d37f9537de79509bfa3304190d66183b2e336c"
+    }
+  ],
+  "timings": {
+    "smoke-success": {
+      "elapsed": 16.36,
+      "eof_before_exit": true
+    },
+    "smoke-refusal": {
+      "elapsed": 16.139,
+      "eof_before_exit": true
+    }
+  },
+  "inventory": [
+    {
+      "path": "corpora/oracle/inventory/smoke.yml",
+      "sha256": "c471ab5c9d2e695ff4fbf8656105f1260912db8c819300042856ebe36b73193a",
+      "rows": 2
+    }
+  ],
+  "out_dir": "corpora/oracle/smoke",
+  "deadline": 300.0
+}
