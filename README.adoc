@@ -1,0 +1,18 @@
+= Unicodemath: UnicodeMath parser for Ruby
+
+== Purpose
+
+Unicodemath will be a parser for
+https://www.unicode.org/notes/tn28/[UnicodeMath], the linear format for
+mathematics described in Unicode Technical Note 28. It is being extracted
+from https://github.com/plurimath/plurimath[Plurimath] as part of
+https://github.com/plurimath/plurimath/issues/530[plurimath/plurimath#530].
+
+== Status
+
+Work in progress. There is no code here yet, and the gem has not been
+released to RubyGems.
+
+== License
+
+Copyright Ribose Inc. Licensed under the BSD 2-Clause License; see link:LICENSE.md[].

@@ -1,0 +1,6 @@
+/.bundle/
+/vendor/
+/pkg/
+/Gemfile.lock
+/.rspec_status
+/*.gem
