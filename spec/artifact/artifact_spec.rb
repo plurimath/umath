@@ -12,7 +12,7 @@ RSpec.describe "the compiled artifacts" do
     files = manifest.filter_map { |l| l.match(%r{\A(\S+/\S+) sha256:(\h{64})\z}) }
     expect(files.map { |m| m[1] }).to include("artifacts/unicodemath.json", "grammars/unicodemath.parg",
                                               "data/unicodemath-grammar.json",
-                                              *ArtifactSpecHelpers::TARGETS.map { |t| "artifacts/unicodemath.#{t}.bindings.json" })
+                                              *ArtifactSpecHelpers::TARGETS.map { |t| "artifacts/unicodemath.bindings.#{t}.json" })
     files.each do |m|
       expect(Digest::SHA256.file(File.join(ArtifactSpecHelpers::ROOT, m[1])).hexdigest).to eq(m[2]), m[1]
     end
@@ -90,8 +90,9 @@ RSpec.describe Unicodemath::Artifact do
       doc = JSON.parse(File.read(ArtifactSpecHelpers::ARTIFACT))
       doc["entries"].delete("arabic")
       doc.delete("checksum")
+      doc.delete("byte_checksum")
       doc["checksum"] = Parsanol::PARG::Compiler.checksum(doc)
-      expect { described_class.load_parse(write(dir, "a.json", JSON.generate(doc))) }
+      expect { described_class.load_parse(write(dir, "a.json", Parsanol::PARG::Compiler.seal_json(doc))) }
         .to raise_error(Unicodemath::ArtifactError, /lacks required entries: arabic/)
     end
   end
