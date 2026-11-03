@@ -1,0 +1,225 @@
+{
+  "schema": "unicodemath-oracle-row/1",
+  "id": "unicode-external-341",
+  "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
+  "request_digest": "f2677613775822cbf5772d09aa2486f7754d96b0023f9f265231d3f92df3b045",
+  "outcome": "succeeded",
+  "process": {
+    "exitstatus": 0,
+    "termsig": null
+  },
+  "detail": null,
+  "result": {
+    "protocol": "unicodemath-oracle/1",
+    "id": "unicode-external-341",
+    "outcome": "succeeded",
+    "environment": {
+      "ruby": "4.0.1",
+      "plurimath": "0.11.17",
+      "parsanol": "1.3.130",
+      "parslet": "2.0.0",
+      "htmlentities": "4.4.2"
+    },
+    "boundaries": {
+      "input": {
+        "text": {
+          "t": "str",
+          "v": "sinx"
+        },
+        "options": {}
+      },
+      "preprocess": {
+        "status": "ok",
+        "text": {
+          "t": "str",
+          "v": "sinx"
+        },
+        "label_defined": false
+      },
+      "raw": {
+        "status": "ok",
+        "tree": {
+          "t": "hash",
+          "entries": [
+            [
+              {
+                "t": "sym",
+                "v": "unary_subsup"
+              },
+              {
+                "t": "hash",
+                "entries": [
+                  [
+                    {
+                      "t": "sym",
+                      "v": "unary_functions"
+                    },
+                    {
+                      "t": "slice",
+                      "class": "Parsanol::Slice",
+                      "text_kind": "str",
+                      "v": "sin",
+                      "charpos": 0,
+                      "bytepos": 0,
+                      "offset": 0
+                    }
+                  ],
+                  [
+                    {
+                      "t": "sym",
+                      "v": "first_value"
+                    },
+                    {
+                      "t": "hash",
+                      "entries": [
+                        [
+                          {
+                            "t": "sym",
+                            "v": "factor"
+                          },
+                          {
+                            "t": "hash",
+                            "entries": [
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "atom"
+                                },
+                                {
+                                  "t": "hash",
+                                  "entries": [
+                                    [
+                                      {
+                                        "t": "sym",
+                                        "v": "alphanumeric"
+                                      },
+                                      {
+                                        "t": "slice",
+                                        "class": "Parsanol::Slice",
+                                        "text_kind": "str",
+                                        "v": "x",
+                                        "charpos": 3,
+                                        "bytepos": 3,
+                                        "offset": 3
+                                      }
+                                    ]
+                                  ]
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "model": {
+        "status": "ok",
+        "formula": {
+          "t": "obj",
+          "class": "Plurimath::Math::Formula",
+          "ivars": [
+            [
+              "@value",
+              {
+                "t": "array",
+                "items": [
+                  {
+                    "t": "obj",
+                    "class": "Plurimath::Math::Function::Sin",
+                    "ivars": [
+                      [
+                        "@parameter_one",
+                        {
+                          "t": "obj",
+                          "class": "Plurimath::Math::Symbols::Symbol",
+                          "ivars": [
+                            [
+                              "@value",
+                              {
+                                "t": "str",
+                                "v": "x"
+                              }
+                            ]
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ],
+            [
+              "@left_right_wrapper",
+              {
+                "t": "true"
+              }
+            ],
+            [
+              "@displaystyle",
+              {
+                "t": "true"
+              }
+            ],
+            [
+              "@input_string",
+              {
+                "t": "str",
+                "v": "sinx"
+              }
+            ]
+          ]
+        }
+      },
+      "writers": {
+        "asciimath": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "sinx"
+          }
+        },
+        "latex": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "\\sin{x}"
+          }
+        },
+        "mathml": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mrow>\n      <mo rspace=\"thickmathspace\"/>\n      <mrow>\n        <mi>sin</mi>\n        <mi>x</mi>\n      </mrow>\n    </mrow>\n  </mstyle>\n</math>\n"
+          }
+        },
+        "unicodemath": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "sin⁡x"
+          }
+        },
+        "omml": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "<m:oMathPara xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:mo=\"http://schemas.microsoft.com/office/mac/office/2008/main\" xmlns:mv=\"urn:schemas-microsoft-com:mac:vml\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:wp14=\"http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing\" xmlns:wpc=\"http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas\" xmlns:wpg=\"http://schemas.microsoft.com/office/word/2010/wordprocessingGroup\" xmlns:wpi=\"http://schemas.microsoft.com/office/word/2010/wordprocessingInk\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\">\n  <m:oMath>\n    <m:func>\n      <m:funcPr>\n        <m:ctrlPr>\n          <w:rPr>\n            <w:rFonts w:ascii=\"Cambria Math\" w:hAnsi=\"Cambria Math\"/>\n            <w:i/>\n          </w:rPr>\n        </m:ctrlPr>\n      </m:funcPr>\n      <m:fName>\n        <m:r>\n          <w:rPr>\n            <w:rFonts w:ascii=\"Cambria Math\" w:hAnsi=\"Cambria Math\"/>\n          </w:rPr>\n          <m:t>sin</m:t>\n        </m:r>\n      </m:fName>\n      <m:e>\n        <m:r>\n          <m:t>x</m:t>\n        </m:r>\n      </m:e>\n    </m:func>\n  </m:oMath>\n</m:oMathPara>\n"
+          }
+        },
+        "html": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "<i>sin</i><i>x</i>"
+          }
+        }
+      }
+    }
+  }
+}

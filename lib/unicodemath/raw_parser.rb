@@ -1,0 +1,56 @@
+# frozen_string_literal: true
+
+module Unicodemath
+  # The internal raw-tree boundary: the legacy preprocessing, then the
+  # grammar, then the declared syntax bindings, which carry the legacy tree.
+  #
+  # Internal and for tests and parity replay only; not public API. The
+  # public Unicodemath.parse, which returns the typed language model, is
+  # built on top of it.
+  module RawParser
+    # +text+: the grammar input (see Preprocessor::Result), nil when the
+    # input has no formula part; +label+/+labeled+: the label split off by
+    # preprocessing; +tree+: the legacy raw tree (Hashes, Arrays and
+    # Parsanol::Slice leaves), nil when +text+ is nil; +engine+: the engine
+    # that produced it.
+    Result = Struct.new(:text, :label, :labeled, :tree, :engine, keyword_init: true)
+
+    module_function
+
+    def parse(input, decimal: ".", engine: :auto)
+      entry = entry_for(decimal)
+      mode = Engine.resolve(engine)
+      pre = Preprocessor.call(normalize_input(input))
+      result = Result.new(text: pre.text, label: pre.label, labeled: pre.labeled)
+      return result if pre.text.nil?
+
+      loaded = Unicodemath.artifacts
+      shape = Engine.run(loaded.parse, entry, pre.text, mode, fallback: engine == :auto)
+      result.tree = loaded.bindings.apply(entry, shape).fetch(Configuration::TREE_CAPTURE) do
+        raise ArtifactError, "the declared bindings did not produce #{Configuration::TREE_CAPTURE}"
+      end
+      result.engine = Engine.last_engine
+      result
+    end
+
+    def entry_for(decimal)
+      Configuration::DECIMAL_ENTRIES.fetch(decimal) do
+        raise ArgumentError,
+              "unsupported decimal marker #{decimal.inspect} " \
+              "(supported: #{Configuration::DECIMAL_ENTRIES.keys.map(&:inspect).join(', ')})"
+      end
+    end
+
+    # +input+ as valid UTF-8, or an ArgumentError.
+    def normalize_input(input)
+      raise ArgumentError, "input must be a String, got #{input.class}" unless input.is_a?(String)
+
+      text = input.encoding == Encoding::UTF_8 ? input : input.encode(Encoding::UTF_8)
+      raise ArgumentError, "input is not valid UTF-8" unless text.valid_encoding?
+
+      text
+    rescue EncodingError => e
+      raise ArgumentError, "input cannot be converted to UTF-8: #{e.message}"
+    end
+  end
+end

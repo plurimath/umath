@@ -24,6 +24,65 @@ jobs:
           bundler-cache: true
       - run: bundle exec rspec spec/oracle
 
+  artifact:
+    name: grammar and artifact regeneration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the compiler the committed artifact records
+        run: echo "PARSANOL_VERSION=$(awk '$1 == "compiler_version" { print $2 }' artifacts/unicodemath.checksums.txt)" >> "$GITHUB_ENV"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Regenerate the grammar, compile twice, rewrite the manifest
+        run: bundle exec ruby scripts/compile.rb --determinism
+      - name: Check the artifact against its source
+        run: bundle exec parsanol parg check --source grammars/unicodemath.parg --artifact artifacts/unicodemath.json
+      - name: Require the committed files to equal the regenerated ones
+        run: git diff --exit-code -- grammars artifacts
+
+  parser:
+    name: artifact and parser specs (Ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.2", "3.3", "3.4" ]
+    env:
+      # Parsanol ships a precompiled native extension for x86_64 Linux;
+      # fail instead of skipping the native-engine examples if it is missing.
+      UNICODEMATH_REQUIRE_NATIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - run: bundle exec rspec spec/artifact spec/parser
+
+  gem:
+    name: gem build and installed smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+      - run: gem build unicodemath.gemspec
+      - name: Install the built gem alone and parse with it
+        run: |
+          export GEM_HOME="$RUNNER_TEMP/gems"
+          gem install --no-document ./unicodemath-*.gem
+          cd "$RUNNER_TEMP"
+          ruby -e '
+            require "unicodemath"
+            r = Unicodemath::RawParser.parse("a/b", engine: :ruby)
+            abort "unexpected tree #{r.tree.inspect}" unless r.tree.key?(:frac)
+            abort "loaded from the checkout" unless $LOADED_FEATURES.grep(%r{/unicodemath\.rb\z}).first.start_with?(ENV["GEM_HOME"])
+            puts "ok #{r.tree.keys.inspect} #{Unicodemath.artifact_paths.first}"
+          '
+
   oracle-smoke:
     name: oracle smoke capture
     runs-on: ubuntu-latest

@@ -1,0 +1,152 @@
+name: replay
+
+# Full raw-tree replay: captures the legacy oracle for every case of the
+# pinned testsuite's UnicodeMath fixtures (seconds to minutes per case, so in
+# shards) and for the authored rows in spec/parser/fixtures/oracle/, and
+# replays them through spec/parser/oracle_parity_spec.rb.
+
+on:
+  workflow_dispatch:
+    inputs:
+      native_ids:
+        description: Ids also replayed on the native engine ("all" for every row; empty for none)
+        required: false
+        default: ""
+  schedule:
+    - cron: "17 3 * * 1"
+  pull_request:
+    paths:
+      - "artifacts/**"
+      - "data/**"
+      - "grammars/**"
+      - "lib/**"
+      - "scripts/compile.rb"
+      - "scripts/generate_grammar.rb"
+      - "scripts/oracle/**"
+      - "spec/parser/**"
+      - ".github/workflows/replay.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  replay:
+    name: full replay (shard ${{ matrix.shard }} of 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+    env:
+      ORACLE_COMMIT: e7ab4a5186c9be96f62d670574bc2c72f9365ad4
+      TESTSUITE_COMMIT: 281059b213026a54a193cb020a5816f57cabf3a8
+      FIXTURES_SHA256: c60d185e6f993b9c1626298eca93cb81f3cf0568fade5f6e9ed45bfad8541e7b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath
+          ref: ${{ env.ORACLE_COMMIT }}
+          path: oracle
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.TESTSUITE_COMMIT }}
+          path: testsuite
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Install the oracle bundle from its lockfile
+        run: bundle install
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/scripts/oracle/Gemfile
+          BUNDLE_PATH: ${{ github.workspace }}/vendor/oracle-bundle
+          BUNDLE_FROZEN: "true"
+      - name: Write this shard's inventory from the pinned fixtures
+        run: |
+          echo "$FIXTURES_SHA256  testsuite/fixtures/unicode-expectations.yaml" | sha256sum -c -
+          ruby -ryaml -e '
+            doc = YAML.safe_load_file("testsuite/fixtures/unicode-expectations.yaml")
+            shard = Integer(ARGV[0])
+            rows = doc.fetch("cases").select { |c| c.fetch("index") % 16 == shard }
+                      .map { |c| { "id" => c.fetch("id"), "input" => c.fetch("input").to_s } }
+            # The fixtures prefix each input with a 1 or 0 flag that their
+            # own harness removes before parsing (remove_prefix).
+            rows.each { |r| r["input"] = r["input"].start_with?("1") ? r["input"].delete_prefix("1") : r["input"].delete_prefix("0") }
+            abort "empty shard" if rows.empty?
+            inventory = { "schema" => "unicodemath-oracle-inventory/1",
+                          "source" => { "kind" => "fixture",
+                                        "note" => "plurimath-testsuite fixtures/unicode-expectations.yaml, index mod 16 = #{shard}" },
+                          "rows" => rows }
+            File.write(ARGV[1], YAML.dump(inventory))
+            puts "#{rows.size} rows"
+          ' "${{ matrix.shard }}" "$RUNNER_TEMP/inventory.yml"
+      - name: Capture the legacy oracle
+        run: >-
+          bundle exec ruby scripts/oracle/capture.rb
+          --oracle "$GITHUB_WORKSPACE/oracle"
+          --inventory "$RUNNER_TEMP/inventory.yml"
+          --out "$RUNNER_TEMP/capture"
+      - name: Replay through the raw-tree boundary
+        run: bundle exec rspec spec/parser/oracle_parity_spec.rb
+        env:
+          UNICODEMATH_ORACLE_INVENTORY: ${{ runner.temp }}/inventory.yml
+          UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
+          UNICODEMATH_NATIVE_IDS: ${{ inputs.native_ids || '' }}
+          UNICODEMATH_REQUIRE_NATIVE: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replay-shard-${{ matrix.shard }}
+          path: |
+            ${{ runner.temp }}/capture/report.json
+            ${{ runner.temp }}/capture/rows
+
+  authored:
+    name: authored rows replay (Ruby and native)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ORACLE_COMMIT: e7ab4a5186c9be96f62d670574bc2c72f9365ad4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath
+          ref: ${{ env.ORACLE_COMMIT }}
+          path: oracle
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Install the oracle bundle from its lockfile
+        run: bundle install
+        env:
+          BUNDLE_GEMFILE: ${{ github.workspace }}/scripts/oracle/Gemfile
+          BUNDLE_PATH: ${{ github.workspace }}/vendor/oracle-bundle
+          BUNDLE_FROZEN: "true"
+      - name: Capture the legacy oracle
+        run: >-
+          bundle exec ruby scripts/oracle/capture.rb
+          --oracle "$GITHUB_WORKSPACE/oracle"
+          --inventory spec/parser/fixtures/oracle/inventory/authored.yml
+          --out "$RUNNER_TEMP/capture"
+      - name: Replay through the raw-tree boundary on both engines
+        run: bundle exec rspec spec/parser/oracle_parity_spec.rb
+        env:
+          UNICODEMATH_ORACLE_INVENTORY: ${{ github.workspace }}/spec/parser/fixtures/oracle/inventory/authored.yml
+          UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
+          UNICODEMATH_NATIVE_IDS: all
+          UNICODEMATH_REQUIRE_NATIVE: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replay-authored
+          path: |
+            ${{ runner.temp }}/capture/report.json
+            ${{ runner.temp }}/capture/rows

@@ -1,0 +1,816 @@
+{
+  "schema": "unicodemath-oracle-row/1",
+  "id": "unicode-external-181",
+  "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
+  "request_digest": "16c3fdd326d1aff82bc6531fdb8a629bc447d8751df3aa5b5f06138890b738e6",
+  "outcome": "succeeded",
+  "process": {
+    "exitstatus": 0,
+    "termsig": null
+  },
+  "detail": null,
+  "result": {
+    "protocol": "unicodemath-oracle/1",
+    "id": "unicode-external-181",
+    "outcome": "succeeded",
+    "environment": {
+      "ruby": "4.0.1",
+      "plurimath": "0.11.17",
+      "parsanol": "1.3.130",
+      "parslet": "2.0.0",
+      "htmlentities": "4.4.2"
+    },
+    "boundaries": {
+      "input": {
+        "text": {
+          "t": "str",
+          "v": "\"test\"+(_n^m)(1,2)_n^m"
+        },
+        "options": {}
+      },
+      "preprocess": {
+        "status": "ok",
+        "text": {
+          "t": "str",
+          "v": "\"test\"+(_n^m)(1,2)_n^m"
+        },
+        "label_defined": false
+      },
+      "raw": {
+        "status": "ok",
+        "tree": {
+          "t": "hash",
+          "entries": [
+            [
+              {
+                "t": "sym",
+                "v": "text"
+              },
+              {
+                "t": "slice",
+                "class": "Parsanol::Slice",
+                "text_kind": "str",
+                "v": "test",
+                "charpos": 1,
+                "bytepos": 1,
+                "offset": 1
+              }
+            ],
+            [
+              {
+                "t": "sym",
+                "v": "expr"
+              },
+              {
+                "t": "hash",
+                "entries": [
+                  [
+                    {
+                      "t": "sym",
+                      "v": "operator"
+                    },
+                    {
+                      "t": "slice",
+                      "class": "Parsanol::Slice",
+                      "text_kind": "str",
+                      "v": "+",
+                      "charpos": 6,
+                      "bytepos": 6,
+                      "offset": 6
+                    }
+                  ],
+                  [
+                    {
+                      "t": "sym",
+                      "v": "expr"
+                    },
+                    {
+                      "t": "hash",
+                      "entries": [
+                        [
+                          {
+                            "t": "sym",
+                            "v": "pre_script"
+                          },
+                          {
+                            "t": "hash",
+                            "entries": [
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "open_paren"
+                                },
+                                {
+                                  "t": "slice",
+                                  "class": "Parsanol::Slice",
+                                  "text_kind": "str",
+                                  "v": "(",
+                                  "charpos": 7,
+                                  "bytepos": 7,
+                                  "offset": 7
+                                }
+                              ],
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "pre_subscript"
+                                },
+                                {
+                                  "t": "hash",
+                                  "entries": [
+                                    [
+                                      {
+                                        "t": "sym",
+                                        "v": "factor"
+                                      },
+                                      {
+                                        "t": "hash",
+                                        "entries": [
+                                          [
+                                            {
+                                              "t": "sym",
+                                              "v": "atom"
+                                            },
+                                            {
+                                              "t": "hash",
+                                              "entries": [
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "alphanumeric"
+                                                  },
+                                                  {
+                                                    "t": "slice",
+                                                    "class": "Parsanol::Slice",
+                                                    "text_kind": "str",
+                                                    "v": "n",
+                                                    "charpos": 9,
+                                                    "bytepos": 9,
+                                                    "offset": 9
+                                                  }
+                                                ]
+                                              ]
+                                            }
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                }
+                              ],
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "pre_supscript"
+                                },
+                                {
+                                  "t": "hash",
+                                  "entries": [
+                                    [
+                                      {
+                                        "t": "sym",
+                                        "v": "factor"
+                                      },
+                                      {
+                                        "t": "hash",
+                                        "entries": [
+                                          [
+                                            {
+                                              "t": "sym",
+                                              "v": "atom"
+                                            },
+                                            {
+                                              "t": "hash",
+                                              "entries": [
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "alphanumeric"
+                                                  },
+                                                  {
+                                                    "t": "slice",
+                                                    "class": "Parsanol::Slice",
+                                                    "text_kind": "str",
+                                                    "v": "m",
+                                                    "charpos": 11,
+                                                    "bytepos": 11,
+                                                    "offset": 11
+                                                  }
+                                                ]
+                                              ]
+                                            }
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                }
+                              ],
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "close_paren"
+                                },
+                                {
+                                  "t": "slice",
+                                  "class": "Parsanol::Slice",
+                                  "text_kind": "str",
+                                  "v": ")",
+                                  "charpos": 12,
+                                  "bytepos": 12,
+                                  "offset": 12
+                                }
+                              ],
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "base"
+                                },
+                                {
+                                  "t": "hash",
+                                  "entries": [
+                                    [
+                                      {
+                                        "t": "sym",
+                                        "v": "factor"
+                                      },
+                                      {
+                                        "t": "hash",
+                                        "entries": [
+                                          [
+                                            {
+                                              "t": "sym",
+                                              "v": "intermediate_exp"
+                                            },
+                                            {
+                                              "t": "hash",
+                                              "entries": [
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "open_paren"
+                                                  },
+                                                  {
+                                                    "t": "slice",
+                                                    "class": "Parsanol::Slice",
+                                                    "text_kind": "str",
+                                                    "v": "(",
+                                                    "charpos": 13,
+                                                    "bytepos": 13,
+                                                    "offset": 13
+                                                  }
+                                                ],
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "factor"
+                                                  },
+                                                  {
+                                                    "t": "hash",
+                                                    "entries": [
+                                                      [
+                                                        {
+                                                          "t": "sym",
+                                                          "v": "decimal_number"
+                                                        },
+                                                        {
+                                                          "t": "hash",
+                                                          "entries": [
+                                                            [
+                                                              {
+                                                                "t": "sym",
+                                                                "v": "whole"
+                                                              },
+                                                              {
+                                                                "t": "hash",
+                                                                "entries": [
+                                                                  [
+                                                                    {
+                                                                      "t": "sym",
+                                                                      "v": "number"
+                                                                    },
+                                                                    {
+                                                                      "t": "slice",
+                                                                      "class": "Parsanol::Slice",
+                                                                      "text_kind": "str",
+                                                                      "v": "1",
+                                                                      "charpos": 14,
+                                                                      "bytepos": 14,
+                                                                      "offset": 14
+                                                                    }
+                                                                  ]
+                                                                ]
+                                                              }
+                                                            ],
+                                                            [
+                                                              {
+                                                                "t": "sym",
+                                                                "v": "decimal"
+                                                              },
+                                                              {
+                                                                "t": "slice",
+                                                                "class": "Parsanol::Slice",
+                                                                "text_kind": "str",
+                                                                "v": ",",
+                                                                "charpos": 15,
+                                                                "bytepos": 15,
+                                                                "offset": 15
+                                                              }
+                                                            ],
+                                                            [
+                                                              {
+                                                                "t": "sym",
+                                                                "v": "fractional"
+                                                              },
+                                                              {
+                                                                "t": "hash",
+                                                                "entries": [
+                                                                  [
+                                                                    {
+                                                                      "t": "sym",
+                                                                      "v": "number"
+                                                                    },
+                                                                    {
+                                                                      "t": "slice",
+                                                                      "class": "Parsanol::Slice",
+                                                                      "text_kind": "str",
+                                                                      "v": "2",
+                                                                      "charpos": 16,
+                                                                      "bytepos": 16,
+                                                                      "offset": 16
+                                                                    }
+                                                                  ]
+                                                                ]
+                                                              }
+                                                            ]
+                                                          ]
+                                                        }
+                                                      ]
+                                                    ]
+                                                  }
+                                                ],
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "close_paren"
+                                                  },
+                                                  {
+                                                    "t": "slice",
+                                                    "class": "Parsanol::Slice",
+                                                    "text_kind": "str",
+                                                    "v": ")",
+                                                    "charpos": 17,
+                                                    "bytepos": 17,
+                                                    "offset": 17
+                                                  }
+                                                ]
+                                              ]
+                                            }
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                }
+                              ],
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "sub"
+                                },
+                                {
+                                  "t": "hash",
+                                  "entries": [
+                                    [
+                                      {
+                                        "t": "sym",
+                                        "v": "sub_script"
+                                      },
+                                      {
+                                        "t": "hash",
+                                        "entries": [
+                                          [
+                                            {
+                                              "t": "sym",
+                                              "v": "operand"
+                                            },
+                                            {
+                                              "t": "hash",
+                                              "entries": [
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "factor"
+                                                  },
+                                                  {
+                                                    "t": "hash",
+                                                    "entries": [
+                                                      [
+                                                        {
+                                                          "t": "sym",
+                                                          "v": "atom"
+                                                        },
+                                                        {
+                                                          "t": "hash",
+                                                          "entries": [
+                                                            [
+                                                              {
+                                                                "t": "sym",
+                                                                "v": "alphanumeric"
+                                                              },
+                                                              {
+                                                                "t": "slice",
+                                                                "class": "Parsanol::Slice",
+                                                                "text_kind": "str",
+                                                                "v": "n",
+                                                                "charpos": 19,
+                                                                "bytepos": 19,
+                                                                "offset": 19
+                                                              }
+                                                            ]
+                                                          ]
+                                                        }
+                                                      ]
+                                                    ]
+                                                  }
+                                                ]
+                                              ]
+                                            }
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                }
+                              ],
+                              [
+                                {
+                                  "t": "sym",
+                                  "v": "sup"
+                                },
+                                {
+                                  "t": "hash",
+                                  "entries": [
+                                    [
+                                      {
+                                        "t": "sym",
+                                        "v": "sup_script"
+                                      },
+                                      {
+                                        "t": "hash",
+                                        "entries": [
+                                          [
+                                            {
+                                              "t": "sym",
+                                              "v": "operand"
+                                            },
+                                            {
+                                              "t": "hash",
+                                              "entries": [
+                                                [
+                                                  {
+                                                    "t": "sym",
+                                                    "v": "factor"
+                                                  },
+                                                  {
+                                                    "t": "hash",
+                                                    "entries": [
+                                                      [
+                                                        {
+                                                          "t": "sym",
+                                                          "v": "atom"
+                                                        },
+                                                        {
+                                                          "t": "hash",
+                                                          "entries": [
+                                                            [
+                                                              {
+                                                                "t": "sym",
+                                                                "v": "alphanumeric"
+                                                              },
+                                                              {
+                                                                "t": "slice",
+                                                                "class": "Parsanol::Slice",
+                                                                "text_kind": "str",
+                                                                "v": "m",
+                                                                "charpos": 21,
+                                                                "bytepos": 21,
+                                                                "offset": 21
+                                                              }
+                                                            ]
+                                                          ]
+                                                        }
+                                                      ]
+                                                    ]
+                                                  }
+                                                ]
+                                              ]
+                                            }
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "model": {
+        "status": "ok",
+        "formula": {
+          "t": "obj",
+          "class": "Plurimath::Math::Formula",
+          "ivars": [
+            [
+              "@value",
+              {
+                "t": "array",
+                "items": [
+                  {
+                    "t": "obj",
+                    "class": "Plurimath::Math::Function::Text",
+                    "ivars": [
+                      [
+                        "@parameter_one",
+                        {
+                          "t": "str",
+                          "v": "test"
+                        }
+                      ],
+                      [
+                        "@lang",
+                        {
+                          "t": "nil"
+                        }
+                      ]
+                    ]
+                  },
+                  {
+                    "t": "obj",
+                    "class": "Plurimath::Math::Symbols::Plus",
+                    "ivars": [
+                      [
+                        "@value",
+                        {
+                          "t": "nil"
+                        }
+                      ]
+                    ]
+                  },
+                  {
+                    "t": "obj",
+                    "class": "Plurimath::Math::Function::Multiscript",
+                    "ivars": [
+                      [
+                        "@parameter_one",
+                        {
+                          "t": "obj",
+                          "class": "Plurimath::Math::Function::PowerBase",
+                          "ivars": [
+                            [
+                              "@parameter_one",
+                              {
+                                "t": "obj",
+                                "class": "Plurimath::Math::Function::Fenced",
+                                "ivars": [
+                                  [
+                                    "@parameter_one",
+                                    {
+                                      "t": "obj",
+                                      "class": "Plurimath::Math::Symbols::Paren::Lround",
+                                      "ivars": [
+                                        [
+                                          "@value",
+                                          {
+                                            "t": "nil"
+                                          }
+                                        ]
+                                      ]
+                                    }
+                                  ],
+                                  [
+                                    "@parameter_two",
+                                    {
+                                      "t": "array",
+                                      "items": [
+                                        {
+                                          "t": "obj",
+                                          "class": "Plurimath::Math::Number",
+                                          "ivars": [
+                                            [
+                                              "@value",
+                                              {
+                                                "t": "str",
+                                                "v": "1,2"
+                                              }
+                                            ],
+                                            [
+                                              "@mini_sub_sized",
+                                              {
+                                                "t": "false"
+                                              }
+                                            ],
+                                            [
+                                              "@mini_sup_sized",
+                                              {
+                                                "t": "false"
+                                              }
+                                            ],
+                                            [
+                                              "@base",
+                                              {
+                                                "t": "nil"
+                                              }
+                                            ]
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  [
+                                    "@parameter_three",
+                                    {
+                                      "t": "obj",
+                                      "class": "Plurimath::Math::Symbols::Paren::Rround",
+                                      "ivars": [
+                                        [
+                                          "@value",
+                                          {
+                                            "t": "nil"
+                                          }
+                                        ]
+                                      ]
+                                    }
+                                  ],
+                                  [
+                                    "@options",
+                                    {
+                                      "t": "hash",
+                                      "entries": []
+                                    }
+                                  ]
+                                ]
+                              }
+                            ],
+                            [
+                              "@parameter_two",
+                              {
+                                "t": "obj",
+                                "class": "Plurimath::Math::Symbols::Symbol",
+                                "ivars": [
+                                  [
+                                    "@value",
+                                    {
+                                      "t": "str",
+                                      "v": "n"
+                                    }
+                                  ]
+                                ]
+                              }
+                            ],
+                            [
+                              "@parameter_three",
+                              {
+                                "t": "obj",
+                                "class": "Plurimath::Math::Symbols::Symbol",
+                                "ivars": [
+                                  [
+                                    "@value",
+                                    {
+                                      "t": "str",
+                                      "v": "m"
+                                    }
+                                  ]
+                                ]
+                              }
+                            ]
+                          ]
+                        }
+                      ],
+                      [
+                        "@parameter_two",
+                        {
+                          "t": "array",
+                          "items": [
+                            {
+                              "t": "obj",
+                              "class": "Plurimath::Math::Symbols::Symbol",
+                              "ivars": [
+                                [
+                                  "@value",
+                                  {
+                                    "t": "str",
+                                    "v": "n"
+                                  }
+                                ]
+                              ]
+                            }
+                          ]
+                        }
+                      ],
+                      [
+                        "@parameter_three",
+                        {
+                          "t": "array",
+                          "items": [
+                            {
+                              "t": "obj",
+                              "class": "Plurimath::Math::Symbols::Symbol",
+                              "ivars": [
+                                [
+                                  "@value",
+                                  {
+                                    "t": "str",
+                                    "v": "m"
+                                  }
+                                ]
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ],
+            [
+              "@left_right_wrapper",
+              {
+                "t": "true"
+              }
+            ],
+            [
+              "@displaystyle",
+              {
+                "t": "true"
+              }
+            ],
+            [
+              "@input_string",
+              {
+                "t": "str",
+                "v": "\"test\"+(_n^m)(1,2)_n^m"
+              }
+            ]
+          ]
+        }
+      },
+      "writers": {
+        "asciimath": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "\"test\" + \\ _(n)^(m)(1,2)_(n)^(m)"
+          }
+        },
+        "latex": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "\\text{test} + {}_{n}^{m}( 1,2 )_{n}^{m}"
+          }
+        },
+        "mathml": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mtext>test</mtext>\n    <mo>+</mo>\n    <mmultiscripts>\n      <mrow>\n        <mo>(</mo>\n        <mn>1,2</mn>\n        <mo>)</mo>\n      </mrow>\n      <mi>n</mi>\n      <mi>m</mi>\n      <mprescripts/>\n      <mi>n</mi>\n      <mi>m</mi>\n    </mmultiscripts>\n  </mstyle>\n</math>\n"
+          }
+        },
+        "unicodemath": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "\"test\" + _(n)^(m) (1,2)_(n)^(m)"
+          }
+        },
+        "omml": {
+          "status": "ok",
+          "output": {
+            "t": "str",
+            "v": "<m:oMathPara xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:mo=\"http://schemas.microsoft.com/office/mac/office/2008/main\" xmlns:mv=\"urn:schemas-microsoft-com:mac:vml\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w14=\"http://schemas.microsoft.com/office/word/2010/wordml\" xmlns:w15=\"http://schemas.microsoft.com/office/word/2012/wordml\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:wp14=\"http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing\" xmlns:wpc=\"http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas\" xmlns:wpg=\"http://schemas.microsoft.com/office/word/2010/wordprocessingGroup\" xmlns:wpi=\"http://schemas.microsoft.com/office/word/2010/wordprocessingInk\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\">\n  <m:oMath>\n    <m:r>\n      <m:rPr>\n        <m:sty m:val=\"p\"/>\n      </m:rPr>\n      <m:t>test</m:t>\n    </m:r>\n    <m:r>\n      <m:t>+</m:t>\n    </m:r>\n    <m:sPre>\n      <m:e>\n        <m:sSubSup>\n          <m:sSubSupPr>\n            <m:ctrlPr>\n              <w:rPr>\n                <w:rFonts w:ascii=\"Cambria Math\" w:hAnsi=\"Cambria Math\"/>\n                <w:i/>\n              </w:rPr>\n            </m:ctrlPr>\n          </m:sSubSupPr>\n          <m:e>\n            <m:d>\n              <m:dPr>\n                <m:begChr m:val=\"(\"/>\n                <m:sepChr m:val=\"\"/>\n                <m:endChr m:val=\")\"/>\n              </m:dPr>\n              <m:e>\n                <m:r>\n                  <m:t>1,2</m:t>\n                </m:r>\n              </m:e>\n            </m:d>\n          </m:e>\n          <m:sub>\n            <m:r>\n              <m:t>n</m:t>\n            </m:r>\n          </m:sub>\n          <m:sup>\n            <m:r>\n              <m:t>m</m:t>\n            </m:r>\n          </m:sup>\n        </m:sSubSup>\n      </m:e>\n      <m:sub>\n        <m:r>\n          <m:t>n</m:t>\n        </m:r>\n      </m:sub>\n      <m:sup>\n        <m:r>\n          <m:t>m</m:t>\n        </m:r>\n      </m:sup>\n    </m:sPre>\n  </m:oMath>\n</m:oMathPara>\n"
+          }
+        },
+        "html": {
+          "status": "error",
+          "error": {
+            "class": "Plurimath::Math::ParseError",
+            "message": "[plurimath] Error: Failed to parse the following formula with type `html`.\n[plurimath] Please first manually validate the formula.\n[plurimath] If this is a bug, please report the formula at our issue tracker at:\n[plurimath] https://github.com/plurimath/plurimath/issues\n---- FORMULA BEGIN ----\n\"test\"+(_n^m)(1,2)_n^m\n---- FORMULA END ----\n",
+            "cause_class": "NoMethodError"
+          }
+        }
+      }
+    }
+  }
+}
