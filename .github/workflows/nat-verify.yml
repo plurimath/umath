@@ -1,0 +1,84 @@
+name: nat-verify
+
+# Verification only (not for merge): replays every pinned UnicodeMath
+# fixture input through Unicodemath::RawParser on the Ruby and native
+# engines, first with released parsanol 1.3.133, then with the
+# parsanol-ruby branch fix/native-compat-shared-atoms overlaid on it.
+
+on:
+  push:
+    branches: [nat/verify-parsanol-compat]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cross-engine:
+    name: cross-engine (shard ${{ matrix.shard }} of 12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    env:
+      PARSANOL_VERSION: "1.3.133"
+      TESTSUITE_COMMIT: 2a18ff43a26716a60c1c4330d5107c26dc73963c
+      FIXTURES_SHA256: c60d185e6f993b9c1626298eca93cb81f3cf0568fade5f6e9ed45bfad8541e7b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.TESTSUITE_COMMIT }}
+          path: testsuite
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: parsanol/parsanol-ruby
+          ref: fix/native-compat-shared-atoms
+          path: parsanol-patch
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - name: Write the comparison script
+        run: |
+          echo "$FIXTURES_SHA256  testsuite/fixtures/unicode-expectations.yaml" | sha256sum -c -
+          git -C parsanol-patch rev-parse --short HEAD
+          cat > "$RUNNER_TEMP/compare.rb" <<'RUBY'
+          require "unicodemath"; require "yaml"; require "json"
+          shard = Integer(ARGV[0]); label = ARGV[1]
+          doc = YAML.safe_load_file("testsuite/fixtures/unicode-expectations.yaml")
+          rows = doc.fetch("cases").select { |c| c.fetch("index") % 12 == shard }
+          outcome = lambda do |input, engine|
+            r = Unicodemath::RawParser.parse(input, engine: engine)
+            [:ok, r.engine, r.tree.inspect]
+          rescue Unicodemath::Error => e
+            [:error, e.class.name, e.respond_to?(:char_offset) ? e.char_offset : nil]
+          end
+          same = 0; diffs = []
+          rows.each do |c|
+            input = c.fetch("input").to_s
+            input = input.start_with?("1") ? input.delete_prefix("1") : input.delete_prefix("0")
+            ruby = outcome.call(input, :ruby); native = outcome.call(input, :native)
+            equal = ruby[0] == native[0] && ruby[2] == native[2] && (ruby[0] == :ok || ruby[1] == native[1])
+            equal ? same += 1 : diffs << c.fetch("id")
+          end
+          puts "#{label} parsanol=#{Parsanol::VERSION} rows=#{rows.size} same=#{same} differ=#{diffs.size} #{diffs.join(',')}"
+          File.write("#{ENV['RUNNER_TEMP']}/#{label}.json", JSON.generate(rows: rows.size, same: same, differ: diffs))
+          RUBY
+      - name: Released parsanol 1.3.133
+        run: bundle exec ruby "$RUNNER_TEMP/compare.rb" "${{ matrix.shard }}" released
+      - name: Patched parsanol-ruby (fix/native-compat-shared-atoms)
+        if: ${{ !cancelled() }}
+        run: bundle exec ruby "$RUNNER_TEMP/compare.rb" "${{ matrix.shard }}" patched
+        env:
+          RUBYLIB: ${{ github.workspace }}/parsanol-patch/lib
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: nat-verify-${{ matrix.shard }}
+          path: ${{ runner.temp }}/*.json
