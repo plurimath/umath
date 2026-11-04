@@ -20,15 +20,20 @@ Gem::Specification.new do |spec|
 
   spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
+  spec.metadata["homepage_uri"] = spec.homepage
+  spec.metadata["source_code_uri"] = "https://github.com/plurimath/unicodemath"
+  spec.metadata["changelog_uri"] = "https://github.com/plurimath/unicodemath/blob/main/CHANGELOG.md"
+  spec.metadata["rubygems_mfa_required"] = "true"
+
+  # Only what the gem reads at run time (the code, the parse and Ruby
+  # bindings artifacts and the symbol catalog), plus its documentation.
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
-    Dir["lib/**/*.rb", "artifacts/**/*", "data/unicodemath-symbols.json", "model/**/*", "docs/**/*",
-        "README.adoc", "LICENSE.md"]
+    Dir["lib/**/*.rb", "artifacts/unicodemath.json", "artifacts/unicodemath.bindings.ruby.json",
+        "data/unicodemath-symbols.json", "docs/*.adoc", "README.adoc", "CHANGELOG.md", "LICENSE.md"]
       .select { |f| File.file?(f) }
   end
   spec.require_paths = ["lib"]
 
   spec.add_dependency "lutaml-model", "~> 0.8", ">= 0.8.162"
   spec.add_dependency "parsanol", "~> 1.3", ">= 1.3.131"
-
-  spec.metadata["rubygems_mfa_required"] = "true"
 end
