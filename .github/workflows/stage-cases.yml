@@ -5,7 +5,9 @@ name: stage-cases
 # Ruby and native engines) in two independent runs, requires both to write the
 # same bytes, checks the result with the testsuite's own validators and
 # uploads it as the stage-generation artifact. The testsuite PR copies that
-# artifact unchanged.
+# artifact unchanged. The typed-model generation (--boundary typed-model,
+# typed models from Unicodemath.parse) is written the same way from
+# MODEL_TESTSUITE_COMMIT and uploaded as stage-generation-model.
 
 on:
   push:
@@ -29,6 +31,9 @@ env:
   # The raw-tree payloads written from generation 1 must equal its
   # generation 2's byte for byte.
   PINNED_COMMIT: 2a18ff43a26716a60c1c4330d5107c26dc73963c
+  # plurimath-testsuite main whose latest unicode generation (2) is the
+  # source of the typed-model generation.
+  MODEL_TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || '5e328516995cbf2917b6968eae627d377fbfa373' }}
 
 jobs:
   spec:
@@ -139,5 +144,82 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: stage-generation
+          path: run-1
+          if-no-files-found: error
+
+  generate-model:
+    name: generate the typed-model unicode generation (run ${{ matrix.run }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Two independent runs; the validate-model job requires equal bytes.
+        run: [ 1, 2 ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the Ruby the committed artifact records
+        run: echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/unicodemath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.ARTIFACT_RUBY }}
+          bundler-cache: true
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.MODEL_TESTSUITE_COMMIT }}
+          path: testsuite
+          persist-credentials: false
+      - name: Write the typed-model generation
+        run: >-
+          bundle exec ruby scripts/stage_cases.rb
+          --testsuite "$GITHUB_WORKSPACE/testsuite"
+          --out "$RUNNER_TEMP/stage-generation-model"
+          --boundary typed-model
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-generation-model-run-${{ matrix.run }}
+          path: ${{ runner.temp }}/stage-generation-model
+          if-no-files-found: error
+
+  validate-model:
+    name: compare both typed-model runs and validate the generation
+    needs: generate-model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage-generation-model-run-1
+          path: run-1
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage-generation-model-run-2
+          path: run-2
+      - name: Require both runs to write the same bytes
+        run: diff -r run-1 run-2
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.MODEL_TESTSUITE_COMMIT }}
+          path: testsuite
+          persist-credentials: false
+      - name: Require every source payload to be copied byte for byte
+        run: |
+          source=$(ls -d testsuite/stages/unicode/generations/* | sort | tail -1)
+          written=$(ls -d run-1/stages/unicode/generations/* | sort | tail -1)
+          for f in "$source"/payloads/*.yaml; do
+            cmp "$f" "$written/payloads/$(basename "$f")"
+          done
+          ls "$written"/payloads/model-*.yaml > /dev/null
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+      - name: Validate it with the testsuite's validators
+        run: |
+          cp -R run-1/. testsuite/
+          cd testsuite
+          ruby scripts/validate.rb
+          ruby scripts/validate-stages.rb --base HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage-generation-model
           path: run-1
           if-no-files-found: error
