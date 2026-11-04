@@ -34,6 +34,7 @@ on:
       - "scripts/unicodemath_shapes.rb"
       - "scripts/generate_model.rb"
       - "spec/parser/**"
+      - "spec/fixtures/testsuite-pin.yml"
       - ".github/workflows/replay.yml"
 
 permissions:
@@ -50,10 +51,16 @@ jobs:
         shard: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
     env:
       ORACLE_COMMIT: e7ab4a5186c9be96f62d670574bc2c72f9365ad4
-      TESTSUITE_COMMIT: 281059b213026a54a193cb020a5816f57cabf3a8
+      # The commit pinned in spec/fixtures/testsuite-pin.yml (a step checks
+      # it); fixtures/ is unchanged there since 281059b.
+      TESTSUITE_COMMIT: 2a18ff43a26716a60c1c4330d5107c26dc73963c
       FIXTURES_SHA256: c60d185e6f993b9c1626298eca93cb81f3cf0568fade5f6e9ed45bfad8541e7b
     steps:
       - uses: actions/checkout@v4
+      - name: Check TESTSUITE_COMMIT matches spec/fixtures/testsuite-pin.yml
+        run: |
+          pinned=$(awk '$1 == "commit:" { print $2 }' spec/fixtures/testsuite-pin.yml)
+          test "$pinned" = "$TESTSUITE_COMMIT" || { echo "TESTSUITE_COMMIT=$TESTSUITE_COMMIT but the pin has $pinned"; exit 1; }
       - uses: actions/checkout@v4
         with:
           repository: plurimath/plurimath

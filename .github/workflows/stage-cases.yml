@@ -21,8 +21,14 @@ permissions:
   contents: read
 
 env:
-  # plurimath-testsuite main holding unicode generation 1 (layout revision 1).
+  # plurimath-testsuite main holding unicode generation 1 (layout revision 1):
+  # the generator writes the generation after the latest one, so it reads
+  # the commit before the pinned generation 2.
   TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || 'b4520d8041efe8546aa10d6ce4b59d56b8d9ffac' }}
+  # The commit pinned in spec/fixtures/testsuite-pin.yml (a step checks it).
+  # The raw-tree payloads written from generation 1 must equal its
+  # generation 2's byte for byte.
+  PINNED_COMMIT: 2a18ff43a26716a60c1c4330d5107c26dc73963c
 
 jobs:
   spec:
@@ -91,6 +97,30 @@ jobs:
           path: run-2
       - name: Require both runs to write the same bytes
         run: diff -r run-1 run-2
+      - uses: actions/checkout@v4
+        with:
+          path: unicodemath
+          persist-credentials: false
+      - name: Check PINNED_COMMIT matches spec/fixtures/testsuite-pin.yml
+        run: |
+          pinned=$(awk '$1 == "commit:" { print $2 }' unicodemath/spec/fixtures/testsuite-pin.yml)
+          test "$pinned" = "$PINNED_COMMIT" || { echo "PINNED_COMMIT=$PINNED_COMMIT but the pin has $pinned"; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ env.PINNED_COMMIT }}
+          path: pinned
+          persist-credentials: false
+      - name: Require the raw-tree payloads to equal the pinned generation's
+        if: ${{ !inputs.testsuite_commit }}
+        run: |
+          written=run-1/stages/unicode/generations/000002/payloads
+          pinned=pinned/stages/unicode/generations/000002/payloads
+          ls "$written"/raw-*.yaml > /dev/null
+          for f in "$written"/raw-*.yaml; do
+            cmp "$f" "$pinned/$(basename "$f")"
+          done
+          test "$(ls "$written" | sort)" = "$(ls "$pinned" | sort)"
       - uses: actions/checkout@v4
         with:
           repository: plurimath/plurimath-testsuite
