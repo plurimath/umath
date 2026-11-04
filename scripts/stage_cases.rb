@@ -3,7 +3,10 @@
 # Writes the next unicode stage generation for plurimath-testsuite: every
 # payload of the source generation copied byte for byte, plus one raw-tree
 # payload (plurimath-stage/unicode/cases/1) per source payload with the
-# Unicodemath::RawParser outcome for each of its inputs.
+# Unicodemath::RawParser outcome for each of its inputs. The tree is written
+# in the legacy grammar's shape: the wrappers the capture-shape
+# normalization added are removed with scripts/unwrap.rb, so the rows stay
+# comparable with the legacy rows.
 #
 #   bundle exec ruby scripts/stage_cases.rb --testsuite TESTSUITE_CHECKOUT \
 #     --out OUT [--source-generation N]
@@ -33,6 +36,7 @@ require "open3"
 require "optparse"
 require "yaml"
 require "unicodemath"
+require_relative "unwrap"
 
 module StageCases
   class Failure < StandardError; end
@@ -52,6 +56,7 @@ module StageCases
   # Files whose bytes decide the rows; they must be committed as they are.
   PRODUCER_FILES = [
     GENERATOR_PATH,
+    "scripts/unwrap.rb",
     "lib",
     "artifacts",
     "grammars",
@@ -104,7 +109,7 @@ module StageCases
         raise Failure, "asked for the #{engine} engine, got #{result.engine}"
       end
 
-      { "preprocessed" => Canonical.dump(result.text), "tree" => Canonical.dump(result.tree) }
+      { "preprocessed" => Canonical.dump(result.text), "tree" => Canonical.dump(UnicodemathUnwrap.call(result.tree)) }
     rescue Unicodemath::NestingTooDeep => e
       raise Failure, "nesting too deep on the #{engine} engine (#{e.message}); not a refusal"
     rescue Unicodemath::ParseError => e

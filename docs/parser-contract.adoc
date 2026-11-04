@@ -8,20 +8,18 @@ parser inside Plurimath does today, which parts of it this gem takes over,
 and how that legacy behaviour is captured so the gem can be compared against
 it.
 
-The gem will have one public entry point, `Unicodemath.parse(input, ...)`,
-which returns a typed language model declared with LutaML Model (LML). That
-model, its fields and the code that builds it are not defined here. They
-belong to the later model work, which also moves the legacy transform logic
-into the gem.
+The gem has one public entry point, `Unicodemath.parse(input, ...)`, which
+returns a typed language model declared with LutaML Model (LML). That model
+is described in link:model-contract.adoc[the model contract].
 
 The raw parse tree that the grammar produces is not public API. It is an
 internal boundary that the gem and its tests use, and it is the boundary
 the parity captures compare first.
 
 The repository holds the grammar, its compiled artifacts, the internal
-raw-tree parser (`Unicodemath::RawParser`), the exported symbol catalog and
-the capture harness in `scripts/oracle/`. The public `Unicodemath.parse`
-is not available yet.
+raw-tree parser (`Unicodemath::RawParser`), the typed model and the public
+parser, the exported symbol catalog and the capture harness in
+`scripts/oracle/`.
 
 == Legacy source
 
@@ -85,8 +83,9 @@ grammar sees it. In order, as written in `parser.rb`:
 The grammar consumes this encoded text, not the caller's text. Positions in
 grammar errors and in raw-tree slices are positions in the encoded text.
 
-The gem's public `parse` will own this preprocessing. The low-level parse of
-already preprocessed text is an internal boundary.
+The gem's public `parse` owns this preprocessing and reports refusal
+positions in the caller's text (see the model contract). The low-level parse
+of already preprocessed text is an internal boundary.
 
 === 3. Raw grammar tree
 
@@ -119,9 +118,10 @@ object graph and the exact output of the `to_asciimath`, `to_latex`,
 
 * Every input the legacy grammar accepts at the pinned commit is accepted,
   and every input it refuses is refused.
-* For accepted input, the internal raw tree matches the legacy raw tree in
-  the canonical tagged form below: same keys, same order, same slice text
-  and offsets.
+* For accepted input, the internal raw tree, with the captures added by
+  the shape normalization removed (`scripts/unwrap.rb`, see below), matches
+  the legacy raw tree in the canonical tagged form below: same keys, same
+  order, same slice text and offsets.
 * Preprocessing matches the legacy preprocessing for the same input and
   locale, including label splitting and comment removal.
 * A refusal reports an error category and a position. The position is part
@@ -136,6 +136,52 @@ at the pinned commit, written by `scripts/generate_grammar.rb --export`.
 rules that read the decimal marker are emitted once per marker, giving the
 entries `dot`, `comma` and `arabic`.
 
+=== Capture-shape normalization
+
+Under Parslet's flattening rules the legacy grammar gives one capture name
+text, a hash or a list depending on which alternative matched. Before
+writing the grammar, `scripts/unicodemath_shapes.rb` rewrites the rules so
+that every capture always holds one kind. It only adds captures, which never
+changes what the grammar accepts. Rules N1 to N7 are the shared ones in
+`scripts/normalize_shapes.rb`, the same file in every stage gem; N8 and the
+checks below are UnicodeMath's, in `scripts/unicodemath_shapes.rb`:
+
+N1 text alternative:: a text-only alternative of a node slot becomes
+`(x) as literal`.
+N2 empty alternative:: an optional part of a node slot becomes
+`x / "" as empty`.
+N3 list in node slot:: a list in a node slot becomes `(x) as list`.
+N4 list slot:: a capture that can repeat always holds a list.
+N5 text sibling:: text next to captures in a sequence that legacy could
+fold to text becomes `literal` (or `literal_2`, ...).
+N6 forced rule:: a rule that can return text or a node is rewritten once,
+for all its call sites.
+N7 presence capture:: a capture of a lookahead (always nil) becomes
+`(x "" as present) as name`.
+N8 symbol spelling:: the text of a symbol capture (one the legacy
+transform looks up in the symbol catalog, listed in
+`scripts/generate_grammar.rb`) is captured as `spelling`; in the symbol
+captures that hold a node (`symbol`, `open_paren`, `close_paren`,
+`prime_accent_symbols`) N1 uses `spelling` instead of `literal`.
+
+Generation fails when a capture still holds more than one kind, or nil, when
+one sequence can carry the same added capture twice, or when a sequence can
+have more than one hash part after a `list` capture (legacy appends each of
+them to the list separately, and the unwrap could not tell them apart). The
+generator writes, beside the grammar, `grammars/unicodemath.wrappers.json`
+(the added capture names, how to remove each one, and how often each rule
+applied) and `grammars/unicodemath.normalized-rules.json` (the normalized
+rules, from which `scripts/generate_model.rb` writes the model classes).
+`ruby scripts/generate_grammar.rb --check` and
+`ruby scripts/generate_model.rb --check` fail when any of these files is
+stale; CI runs both.
+
+`scripts/unwrap.rb` is the test-only inverse. It replaces each added capture
+with the value legacy gave there and repeats Parslet's own folding
+(`Parsanol::Atoms::CanFlatten#merge_fold` and `#flatten_repetition`). The
+parity replay, the model replay and the stage-cases generator use it; the
+gem does not.
+
 `scripts/compile.rb` compiles the grammar with
 `parsanol parg compile ... --bindings all` (Parsanol 1.3.131 or later). That
 writes `artifacts/unicodemath.json` and one bindings artifact per Parsanol
@@ -147,8 +193,11 @@ checksums and the sha256 of every file. CI compiles again with the compiler
 and Ruby version that the committed artifact records, and fails if any file
 differs.
 
-At load time the gem checks the bindings artifact's kind, checksum, target
-and version and pairs it with the parse artifact. It never falls back to
+Each entry binds its root capture twice: `unicodemath_tree` as `raw`, the
+normalized tree with slices and offsets, and as `any` under the path `model`,
+the plain tree that the typed model is built from. At load time the gem
+checks the bindings artifact's kind, checksum, target and version, pairs it
+with the parse artifact and requires both bindings. It never falls back to
 another artifact.
 
 == Symbol catalog

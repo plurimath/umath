@@ -39,12 +39,16 @@ jobs:
         with:
           ruby-version: ${{ env.ARTIFACT_RUBY }}
           bundler-cache: true
+      - name: Check the normalized grammar, wrapper table and normalized rules against the export
+        run: ruby scripts/generate_grammar.rb --check
+      - name: Check the generated model classes against the normalized rules
+        run: ruby scripts/generate_model.rb --check
       - name: Regenerate the grammar, compile twice, rewrite the manifest
         run: bundle exec ruby scripts/compile.rb --determinism
       - name: Check the artifact against its source
         run: bundle exec parsanol parg check --source grammars/unicodemath.parg --artifact artifacts/unicodemath.json
       - name: Require the committed files to equal the regenerated ones
-        run: git diff --exit-code -- grammars artifacts
+        run: git diff --exit-code -- grammars artifacts lib/unicodemath/model/nodes.rb
 
   parser:
     name: artifact and parser specs (Ruby ${{ matrix.ruby }})
@@ -65,6 +69,27 @@ jobs:
           bundler-cache: true
       - run: bundle exec rspec spec/artifact spec/parser
 
+  model:
+    name: typed model, standalone and LML specs (Ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.2", "3.3", "3.4" ]
+    env:
+      UNICODEMATH_REQUIRE_NATIVE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - run: bundle exec rspec spec/model spec/standalone
+      - name: Verify the exported LML declarations and checksums
+        run: bundle exec ruby scripts/verify_lml.rb
+      - name: Replay the staged model corpus (raw and model boundaries)
+        run: bundle exec ruby scripts/replay_corpus.rb --staging corpora/model --boundary raw,model
+
   gem:
     name: gem build and installed smoke test
     runs-on: ubuntu-latest
@@ -81,10 +106,14 @@ jobs:
           cd "$RUNNER_TEMP"
           ruby -e '
             require "unicodemath"
-            r = Unicodemath::RawParser.parse("a/b", engine: :ruby)
-            abort "unexpected tree #{r.tree.inspect}" unless r.tree.key?(:frac)
+            d = Unicodemath.parse("a/b", engine: :ruby)
+            abort "unexpected model #{d.inspect}" unless d.expression.frac.is_a?(Unicodemath::Model::Frac)
+            abort "symbols unresolved" unless d.expression.frac.numerator.atom.alphanumeric.kind
+            empty = Unicodemath.parse("", engine: :ruby)
+            abort "empty input #{empty.inspect}" unless empty.is_a?(Unicodemath::Model::Document) && empty.expression.nil?
             abort "loaded from the checkout" unless $LOADED_FEATURES.grep(%r{/unicodemath\.rb\z}).first.start_with?(ENV["GEM_HOME"])
-            puts "ok #{r.tree.keys.inspect} #{Unicodemath.artifact_paths.first}"
+            abort "plurimath loaded" if defined?(Plurimath)
+            puts "ok #{d.to_json} #{Unicodemath.artifact_paths.first}"
           '
 
   oracle-smoke:

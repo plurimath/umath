@@ -27,11 +27,31 @@
 require "digest"
 require "json"
 require "set"
+require_relative "unicodemath_shapes"
 
 ROOT = File.expand_path("..", __dir__)
 EXPORT = File.join(ROOT, "data/unicodemath-grammar.json")
 OUT = File.join(ROOT, "grammars/unicodemath.parg")
+# The wrappers the shape normalization added (scripts/normalize_shapes.rb),
+# read by the test-only unwrap and by the model generator.
+WRAPPERS_OUT = File.join(ROOT, "grammars/unicodemath.wrappers.json")
+NORMALIZED_OUT = File.join(ROOT, "grammars/unicodemath.normalized-rules.json")
 FORMAT = "unicodemath-grammar-export/1"
+
+# The symbol captures (normalization rule N8, scripts/unicodemath_shapes.rb):
+# the captures whose legacy transform rules build a symbol through the
+# symbol catalog (Utility.symbols_class in Plurimath's unicode_math
+# transform). Their text is captured as +spelling+, and the model gives each
+# its catalog value and kind (Unicodemath::Symbols).
+SYMBOL_CAPTURES = %w[
+  accent_symbols alphanumeric binary_negated_operator binary_symbols combined_symbols comma
+  diacritic_belows diacritic_overlays exclamation_symbol infty ldots mid_symbol nary_class
+  negated_operator negative operator ordinary_negated_operator ordinary_symbols
+  paren_close_prefix paren_open_prefix positive prefixed_prime relational_symbols root_symbol
+  spaces unary_symbols unicode_symbols
+].freeze
+# Symbol captures that hold a node; text in them is captured as +spelling+.
+SYMBOL_NODE_CAPTURES = %w[close_paren open_paren prime_accent_symbols symbol].freeze
 
 ORACLE_REPOSITORY = "https://github.com/plurimath/plurimath"
 ORACLE_COMMIT = "e7ab4a5186c9be96f62d670574bc2c72f9365ad4"
@@ -214,14 +234,21 @@ end
 
 # Turns the export into PARG source.
 class Generator
-  # The capture (and wrapper rule) that carries the legacy tree.
+  # The capture (and wrapper rule) that carries the whole tree.
   TREE = "unicodemath_tree"
+  MODEL = "model"
+
+  attr_reader :normalizer
 
   def initialize(bytes)
     @bytes = bytes
     @doc = JSON.parse(bytes)
     abort "unsupported export format #{@doc['format'].inspect}" unless @doc["format"] == FORMAT
-    @rules = @doc.fetch("rules")
+    @normalizer = UnicodemathShapes.new(@doc.fetch("rules"), symbols: SYMBOL_CAPTURES,
+                                                              symbol_nodes: SYMBOL_NODE_CAPTURES).run
+    clash = @normalizer.collisions
+    abort "normalization leaves wrapper collisions: #{clash.join('; ')}" unless clash.empty?
+    @rules = @normalizer.rules
     abort "the export already uses the name #{TREE}" if bytes.include?("\"#{TREE}")
     @classes = @doc.fetch("classes")
     @markers = @doc.dig("inputs", "decimal_markers", "values")
@@ -240,6 +267,8 @@ class Generator
     end
     @hoisted = {}
   end
+
+  def root = @doc.fetch("root")
 
   def generate
     dependent = decimal_dependent
@@ -261,7 +290,7 @@ class Generator
       lines << "  decimal_marker__#{m['entry']} = #{literal(m['grammar_literal'])}"
     end
     # Each entry starts at a one-capture wrapper around the legacy root, so
-    # the declared bindings below can carry the whole legacy tree.
+    # the declared bindings below can carry the whole tree.
     @markers.each do |m|
       lines << "  #{TREE}__#{m['entry']} = (#{@names.fetch(root)}__#{m['entry']}) as #{TREE}"
     end
@@ -275,12 +304,14 @@ class Generator
 
   private
 
-  # Syntax bindings: the legacy raw tree, unchanged, under one capture. They
-  # declare AST construction only. Which productions become which typed
-  # model fields is the model's decision, not the grammar export's.
+  # Two bindings of the one root capture: the legacy raw tree, unchanged
+  # (slices with offsets, for parity and positions), and the same tree as
+  # plain data under #{MODEL}, from which the typed model's declared
+  # attribute types construct it (Unicodemath::Model). They declare AST
+  # construction only; the model fields are the model's declarations.
   def bindings
     @markers.map do |m|
-      "bindings #{TREE}__#{m['entry']} {\n  #{TREE} -> #{TREE} (raw)\n}\n"
+      "bindings #{TREE}__#{m['entry']} {\n  #{TREE} -> #{TREE} (raw)\n  #{TREE} -> #{MODEL} (any)\n}\n"
     end
   end
 
@@ -292,7 +323,10 @@ class Generator
              "# data/unicodemath-grammar.json sha256:#{Digest::SHA256.hexdigest(@bytes)}",
              "#",
              "# Every legacy rule is one rule here with the same alternatives, order and",
-             "# capture names (`space?` becomes space_opt). The input is the",
+             "# capture names (`space?` becomes space_opt), plus the captures that the",
+             "# shape normalization adds (scripts/normalize_shapes.rb, listed in",
+             "# grammars/unicodemath.wrappers.json), so that every capture holds one kind",
+             "# of value. The accepted language is unchanged. The input is the",
              "# entity-encoded text that the legacy preprocessing produces. Rules that",
              "# reach the decimal marker are emitted once per marker with a",
              "# __<entry> suffix:"]
@@ -356,6 +390,9 @@ class Generator
     when "as"
       cap = node["as"]
       abort "bad capture name #{cap.inspect}" unless cap.match?(/\A[A-Za-z_]\w*\z/) && !KEYWORDS.include?(cap)
+      # "" as name: PARG's zero-width marker (str("").as(:name)).
+      return "\"\" as #{cap}" if node["of"] == { "str" => "" }
+
       "(#{emit(node['of'], entry, dependent)}) as #{cap}"
     when "str" then literal(node["str"])
     when "re" then char_class(node["re"])
@@ -456,16 +493,27 @@ end
 check = ARGV.delete("--check")
 abort "usage: ruby scripts/generate_grammar.rb [--check | --export ORACLE_CHECKOUT]" unless ARGV.empty?
 
-grammar = Generator.new(File.binread(EXPORT)).generate
+generator = Generator.new(File.binread(EXPORT))
+grammar = generator.generate
+norm = generator.normalizer
+wrappers = "#{JSON.pretty_generate(
+  'format' => 'unicodemath-wrappers/1',
+  'wrappers' => norm.wrapper_list,
+  'rules' => norm.counts.sort.to_h,
+)}\n"
+normalized = "#{JSON.generate('format' => FORMAT, 'root' => generator.root, 'rules' => norm.rules)}\n"
+outputs = { OUT => grammar, WRAPPERS_OUT => wrappers, NORMALIZED_OUT => normalized }
 if check
-  current = File.exist?(OUT) ? File.read(OUT, encoding: "UTF-8") : nil
-  if current == grammar
-    puts "#{OUT.delete_prefix("#{ROOT}/")} is up to date"
+  stale = outputs.reject { |path, text| File.exist?(path) && File.read(path, encoding: "UTF-8") == text }.keys
+  if stale.empty?
+    puts "#{outputs.keys.map { |p| p.delete_prefix("#{ROOT}/") }.join(', ')} up to date"
   else
-    warn "#{OUT.delete_prefix("#{ROOT}/")} is stale; run ruby scripts/generate_grammar.rb"
+    warn "stale: #{stale.map { |p| p.delete_prefix("#{ROOT}/") }.join(', ')}; run ruby scripts/generate_grammar.rb"
     exit 1
   end
 else
-  File.write(OUT, grammar)
-  puts "wrote #{OUT.delete_prefix("#{ROOT}/")} bytes=#{grammar.bytesize} sha256:#{Digest::SHA256.hexdigest(grammar)}"
+  outputs.each do |path, text|
+    File.write(path, text)
+    puts "wrote #{path.delete_prefix("#{ROOT}/")} bytes=#{text.bytesize} sha256:#{Digest::SHA256.hexdigest(text)}"
+  end
 end

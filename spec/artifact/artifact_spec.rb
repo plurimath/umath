@@ -32,10 +32,12 @@ RSpec.describe "the compiled artifacts" do
     expect(parse.fresh_against?(File.read(ArtifactSpecHelpers::GRAMMAR, encoding: "UTF-8"))).to be(true)
   end
 
-  it "declares the tree capture as a raw syntax binding for every entry" do
+  it "binds the tree capture raw (legacy tree) and as plain data (model input) for every entry" do
     envelope["entries"].each_value do |entry|
       expect(entry["bindings"]).to eq([{ "capture" => "unicodemath_tree", "path" => "unicodemath_tree",
-                                         "type" => "raw", "card" => nil, "preprocess" => nil }])
+                                         "type" => "raw", "card" => nil, "preprocess" => nil },
+                                       { "capture" => "unicodemath_tree", "path" => "model",
+                                         "type" => "any", "card" => nil, "preprocess" => nil }])
     end
   end
 
@@ -140,7 +142,17 @@ RSpec.describe Unicodemath::Artifact do
       entries["dot"] = { "bindings" => [] }
       text = altered_bindings("ruby", entries: entries)
       expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /does not bind unicodemath_tree for entry dot/)
+        .to raise_error(Unicodemath::ArtifactError, /does not bind unicodemath_tree -> unicodemath_tree \(raw\), .* for entry dot/)
+    end
+  end
+
+  it "refuses bindings without the model binding" do
+    Dir.mktmpdir do |dir|
+      entries = JSON.parse(File.read(bindings_path("ruby")))["entries"]
+      entries["dot"]["bindings"].reject! { |b| b["path"] == "model" }
+      text = altered_bindings("ruby", entries: entries)
+      expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
+        .to raise_error(Unicodemath::ArtifactError, /does not bind unicodemath_tree -> model \(any\) for entry dot/)
     end
   end
 

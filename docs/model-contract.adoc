@@ -1,0 +1,184 @@
+= UnicodeMath model contract
+:toc:
+
+== Scope
+
+`Unicodemath.parse(input, decimal: ".", engine: :auto)` returns a
+`Unicodemath::Model::Document`, the typed UnicodeMath language model. This
+document describes that model: how it is built from the grammar, what its
+fields hold, and how it is checked. The rules shared by all stage gems
+(API shape, errors, engines, artifacts, corpus pins) are in the stage
+profile, amath's
+https://github.com/plurimath/amath/blob/main/docs/stage-contract.adoc[`docs/stage-contract.adoc`];
+this document only adds what is specific to UnicodeMath. The grammar,
+preprocessing, the capture-shape normalization and the raw tree are
+described in link:parser-contract.adoc[the parser contract].
+
+The model is the UnicodeMath model, not a shared one. Mapping it to
+Plurimath's `Formula` classes is Plurimath's job.
+
+== Construction
+
+The grammar is normalized so that every capture always holds one kind of
+value: text, a node (hash) or a list (see the parser contract). The grammar
+binds its one root capture twice. The `raw` binding keeps the tree with its
+slices and offsets, for parity replay and error positions. The `any`
+binding (path `model`) gives the same tree as plain hashes, arrays and
+strings. `Model::Document.new` receives that tree, and lutaml-model builds
+every nested node from the declared attribute types. No gem code walks the
+parse tree to build the model, and no class has a cast hook.
+
+After construction, one separate pass resolves symbols (see below).
+
+=== Classes and fields
+
+`scripts/generate_model.rb` writes the classes in
+`lib/unicodemath/model/nodes.rb` from the normalized rules
+(`grammars/unicodemath.normalized-rules.json`). The mapping is mechanical,
+because every capture holds one kind:
+
+* A capture that holds a node becomes a class named after it, for example
+  `frac` becomes `Model::Frac`. Three names are changed so they do not
+  shadow Ruby or model classes: `array` becomes `ArrayNode`, `symbol`
+  becomes `SymbolNode` and `root` becomes `RootNode`.
+* A capture that holds a list becomes a collection attribute of the class
+  `<Capture>Item`, for example `prime_accent_symbols` holds
+  `PrimeAccentSymbolsItem` elements.
+* A capture that holds text becomes a String attribute.
+* Each class declares one attribute for every capture that can appear
+  directly inside it. An attribute has the same name and the same type in
+  every class that declares it, because its type is the type of the
+  capture it names.
+* Captures that hold a whole expression (25 or more possible inner
+  captures, such as `expr`, `exp`, `factor`, `numerator`, `base`, `sub`,
+  `sup`, `first_value` and the root) share one class, `Model::Expression`,
+  which declares the union of their inner captures. The mini-script
+  captures (`mini_expr`, `sub_recursions` and the like) share
+  `Model::MiniExpression`, and `open_paren` and `close_paren` share
+  `Model::Paren`. lutaml-model compiles a serialization transformation for
+  every path through the class graph, and with one class per expression
+  capture that number grows past any practical time. The generator fails if
+  any other cycle of classes is left outside `Expression`.
+* The captures added by the normalization appear as ordinary fields:
+  `literal` (text that legacy folded into its parent), `empty` (an absent
+  optional part, legacy `""`), `list` (a list in a node slot) and `present`
+  (a lookahead that matched).
+
+These rules give 74 classes plus `Document`. The exported declarations,
+with every field and its type, are in `model/unicodemath.lml.json`.
+
+Text fields keep the text the grammar matched. The grammar runs on the
+preprocessed, entity-encoded input, so non-ASCII text appears as character
+references: a `text` capture for `"αβ"` holds `&#x3b1;&#x3b2;`. This is the
+same text the legacy transform received. The `value` of a symbol gives its
+Unicode text.
+
+=== Symbols
+
+The symbol captures are the captures whose legacy transform rules build a
+symbol through Plurimath's symbol catalog (`alphanumeric`, `operator`,
+`ordinary_symbols`, `relational_symbols`, `nary_class`, `unicode_symbols`,
+`accent_symbols`, the paren prefixes and others; the list is in
+`scripts/generate_grammar.rb`). The grammar captures their text as
+`spelling`, so each holds a `Model::MathSymbol` with `spelling`, `value`
+and `kind`. The symbol captures that hold a node (`symbol`, `open_paren`,
+`close_paren`, `prime_accent_symbols`) capture their own text the same way,
+and their classes (`SymbolNode`, `Paren`, `PrimeAccentSymbolsItem`) also
+declare `spelling`, `value` and `kind`. For example, the base of `x^2` is
+a `SymbolNode` with spelling `x`.
+
+=== Document
+
+`expression`:: The formula's tree, an `Expression`. Nil for input without
+a formula: an empty string, or a string made only of `#` label
+separators. The legacy facade fails on such input with `NoMethodError`, so
+it has no defined result to keep; like amath, the gem returns an empty
+result. An empty formula before a label, such as `#b`, reaches the grammar
+and is refused there.
+`label`:: The equation label: the text after the last `#`, or nil when the
+input has none. This follows the legacy facade. A `#` inside `✎(...)` does
+not start a label.
+`decimal`:: The decimal marker the input was parsed with.
+
+=== Numbers
+
+Numbers are kept as written. `number` is the digit string, and
+`DecimalNumber` has `whole`, `decimal` (the marker as matched, for example
+`.` or `&#x66b;`) and `fractional`. Nothing is converted to a float.
+
+== Symbol resolution
+
+`Unicodemath::Symbols.resolve` visits every node that has a `spelling` and
+looks it up in `data/unicodemath-symbols.json`. That file is the legacy
+symbol catalog exported from the pinned Plurimath commit. Like the legacy
+transform, the lookup uses the spelling with surrounding whitespace
+removed.
+
+`spelling`:: The token as the grammar matched it, for example `&#x3b1;` for
+`α` or `alpha` for `\alpha`.
+`value`:: The Unicode text the catalog entry writes as UnicodeMath, for
+example `α`.
+`kind`:: `symbol` or `paren` for catalog entries. When the catalog has no
+entry the kind is `unlisted`, and the value is the spelling with its
+character references decoded. The legacy transform keeps such a spelling
+as a plain symbol.
+
+== Errors and positions
+
+Errors follow the stage profile. A `ParseError` reports `input` (the
+caller's text as UTF-8), `char_offset` and `byte_offset`, both measured in
+the caller's text. The grammar reports positions in the preprocessed text.
+`Unicodemath::SourceMap` repeats each preprocessing step on the caller's
+text and records where every character came from, so a grammar position can
+be mapped back. Characters produced by one replacement, such as the
+`&#x3b1;` that stands for `α`, all map to the position of the original
+character. The end of the grammar input maps to the end of the formula part.
+
+`NestingTooDeep` is raised when the engine cannot handle the input's depth.
+That includes the Ruby stack running out while the model is built. In
+measurements on the Ruby engine the grammar reached its limit first in
+every case: 400 chained terms and 100 nested parentheses failed in the
+grammar, and every input the grammar accepted (200 chained terms, 50 nested
+parentheses, 100 nested fractions) was built and serialized without error.
+
+== Checks
+
+* `spec/model/model_shape_spec.rb` computes, from the normalized rules and
+  Parslet's flattening rules, which values each capture can hold, with code
+  written independently of the normalizer. It requires that every capture
+  holds exactly one kind and never nil, and that every capture is declared
+  with the type of its kind and every class declares exactly the captures
+  it can hold.
+* `scripts/generate_grammar.rb --check` and `scripts/generate_model.rb
+  --check` require the committed grammar, wrapper table, normalized rules
+  and model classes to equal a fresh generation.
+* `scripts/model_tree.rb` turns a model back into plain data and compares it
+  with the tree the bindings produced. lutaml-model ignores keys that a
+  class does not declare, so this is how a missing declaration is caught.
+  It also fails when an attribute holds a value of the wrong type.
+* `scripts/replay_corpus.rb --staging corpora/model` replays the
+  representative rows in `corpora/model/`. For each row it checks that the
+  model holds the bound tree and compares the document with the stored
+  expectation. The expectations are the gem's own output, so they guard
+  against regressions; they are not legacy parity.
+* In the replay workflow, every fixture and authored oracle row runs, on
+  the Ruby and the native engine, through the raw-tree parity spec
+  (`canonical(unwrap(raw tree)) == legacy tree`) and through
+  `scripts/replay_corpus.rb --inventory ... --rows ...`, which checks raw
+  parity again and that the model holds the bound tree. A row the legacy
+  grammar refused must raise `ParseError`, and a row without a formula
+  must give an empty document.
+  On the native engine, the rows in
+  `spec/parser/fixtures/oracle/native-divergences.yml` give another tree
+  than legacy, because Parsanol's native engine takes another alternative
+  of the same grammar. The grammar before the shape normalization gives the
+  same native trees, so the normalization does not cause them. Both checks
+  require those rows to still differ, so a fixed engine shows up as a
+  failure that asks to shorten the list.
+* `scripts/verify_lml.rb` exports every model class with
+  `Lutaml::Model::Lml.export`, requires the committed
+  `model/unicodemath.lml.json` and `model/unicodemath.lml.checksums.txt` to
+  be byte-identical to a fresh export, and runs `Lutaml::Model::Lml.verify`
+  on each document. `Lml.verify` re-exports the loaded Ruby class, so it
+  does not prove that another implementation can rebuild the model. The
+  model uses no union types, which LML export rejects.

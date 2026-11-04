@@ -2,7 +2,7 @@
 
 module Unicodemath
   # The internal raw-tree boundary: the legacy preprocessing, then the
-  # grammar, then the declared syntax bindings, which carry the legacy tree.
+  # grammar, then the declared syntax bindings, which carry the raw tree.
   #
   # Internal and for tests and parity replay only; not public API. The
   # public Unicodemath.parse, which returns the typed language model, is
@@ -10,10 +10,12 @@ module Unicodemath
   module RawParser
     # +text+: the grammar input (see Preprocessor::Result), nil when the
     # input has no formula part; +label+/+labeled+: the label split off by
-    # preprocessing; +tree+: the legacy raw tree (Hashes, Arrays and
-    # Parsanol::Slice leaves), nil when +text+ is nil; +engine+: the engine
-    # that produced it.
-    Result = Struct.new(:text, :label, :labeled, :tree, :engine, keyword_init: true)
+    # preprocessing; +tree+: the raw tree of the normalized grammar (Hashes,
+    # Arrays and Parsanol::Slice leaves; scripts/unwrap.rb turns it into the
+    # legacy tree), nil when +text+ is nil; +model_data+: the same
+    # tree as plain Hashes, Arrays and Strings with String keys (the typed
+    # model's construction input); +engine+: the engine that produced it.
+    Result = Struct.new(:text, :label, :labeled, :tree, :model_data, :engine, keyword_init: true)
 
     module_function
 
@@ -26,8 +28,9 @@ module Unicodemath
 
       loaded = Unicodemath.artifacts
       shape = Engine.run(loaded.parse, entry, pre.text, mode, fallback: engine == :auto)
-      result.tree = loaded.bindings.apply(entry, shape).fetch(Configuration::TREE_CAPTURE) do
-        raise ArtifactError, "the declared bindings did not produce #{Configuration::TREE_CAPTURE}"
+      bound = loaded.bindings.apply(entry, shape)
+      result.tree, result.model_data = [Configuration::TREE_CAPTURE, Configuration::MODEL_BINDING].map do |key|
+        bound.fetch(key) { raise ArtifactError, "the declared bindings did not produce #{key}" }
       end
       result.engine = Engine.last_engine
       result

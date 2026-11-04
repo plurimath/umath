@@ -11,6 +11,12 @@ RSpec.describe "the grammar build inputs" do
     expect(status).to be_success, out
   end
 
+  it "generates the model classes from the normalized rules (generate_model.rb --check)" do
+    out, status = Open3.capture2e(RbConfig.ruby, File.join(ArtifactSpecHelpers::ROOT, "scripts", "generate_model.rb"),
+                                  "--check")
+    expect(status).to be_success, out
+  end
+
   it "records the pinned oracle and its source files" do
     expect(export["format"]).to eq("unicodemath-grammar-export/1")
     expect(export["oracle"]).to include("repository" => "https://github.com/plurimath/plurimath",
