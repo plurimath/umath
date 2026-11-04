@@ -196,7 +196,7 @@ module UnicodemathReplayCorpus
   # The source id of a raw-tree row (the row id without its .raw suffix),
   # which spec/parser/fixtures/oracle/native-divergences.yml names.
   def source_id(id)
-    id.delete_suffix(StageCases::ROW_SUFFIX)
+    id.delete_suffix(StageCases::ROW_SUFFIXES.fetch("raw-tree"))
   end
 
   # [failures, rows replayed on native as listed divergences]
