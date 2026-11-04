@@ -25,18 +25,6 @@ require "set"
 #   N7 presence capture   a capture that always holds nil (it captures a
 #                         lookahead) becomes `(x "" as present) as name`,
 #                         so the model can tell it from an absent key
-#   N8 symbol spelling    a symbol capture (one the legacy transform looks
-#                         up in the symbol catalog) that holds text becomes
-#                         `((x) as spelling) as name`; in a symbol capture
-#                         that holds a node, N1 wraps text as `spelling`
-#                         instead of `literal`. The model then gives every
-#                         symbol its spelling, value and kind
-#
-# After the rewrite #run requires that no capture holds more than one kind
-# or nil, that no sequence carries one wrapper key twice (#collisions), and
-# that no sequence has more than one hash part after a list wrapper
-# (#list_tails): there legacy appends each hash to the list separately, and
-# the unwrap could not tell two parts from one.
 #
 # A wrapper never changes the slice it holds. WRAPPERS describes how the
 # test-only unwrap maps each wrapper back to the legacy value.
@@ -46,7 +34,6 @@ class ShapeNormalizer
     "empty" => "text: legacy produced the empty String \"\" (absent optional)",
     "list" => "list: legacy produced this list (an empty list was \"\")",
     "present" => "nil: legacy produced nil (a capture of a lookahead)",
-    "spelling" => "text: the symbol's slice (N8)",
   }.freeze
 
   Shape = Struct.new(:kinds, :hash_keys, :array_keys) do
@@ -62,13 +49,8 @@ class ShapeNormalizer
   attr_reader :rules, :counts, :captures, :sites
 
   # +normalized+: the rules were already normalized (shape queries only).
-  # +symbols+: the symbol captures (N8) that hold text; +symbol_nodes+: the
-  # symbol captures that hold a node.
-  def initialize(rules, normalized: false, symbols: [], symbol_nodes: [])
+  def initialize(rules, normalized: false)
     @rules = deep_copy(rules)
-    @symbols = symbols.to_set
-    @symbol_nodes = symbol_nodes.to_set
-    @text_wrapper = "literal"
     @counts = Hash.new(0)
     @sites = Hash.new { |h, k| h[k] = Set.new }
     collisions = capture_names(@rules).select { |k| wrapper?(k) }
@@ -80,7 +62,7 @@ class ShapeNormalizer
     8.times do
       solve
       targets = @captures.select { |_, s| s.mixed? }.keys.to_set
-      return spell.check! if targets.empty? && @captures.none? { |k, s| s.solid.empty? && !WRAPPERS.key?(k) }
+      return self if targets.empty? && @captures.none? { |k, s| s.solid.empty? && !WRAPPERS.key?(k) }
 
       @forced_rules = Set.new
       @rules.each_key do |name|
@@ -88,24 +70,11 @@ class ShapeNormalizer
         @rules[name] = visit(@rules[name], targets)
       end
     end
-    raise "normalization did not converge: #{bad_captures.join(', ')}"
-  end
-
-  # Captures that hold more than one kind, nil, or nothing at all (the
-  # model could not tell nil from an absent key). Empty after #run.
-  def bad_captures
     solve
-    @captures.select { |_, s| s.mixed? || s.kinds.include?(:nil) || s.solid.empty? }
-             .map { |k, s| "#{k} (#{s.kinds.to_a.join('|')})" }
-  end
-
-  # Raises unless every capture holds one kind and no sequence is
-  # ambiguous for the unwrap. Returns self.
-  def check!
-    problems = bad_captures.map { |c| "capture #{c}" } +
-               collisions.map { |c| "wrapper collision #{c}" } +
-               list_tails.map { |c| "hash parts after a list #{c}" }
-    raise "normalization failed: #{problems.join('; ')}" unless problems.empty?
+    # No capture may be multi-kind, and none may hold nil (the model could
+    # not tell nil from an absent key).
+    left = @captures.select { |k, s| s.mixed? || (s.kinds.include?(:nil) && !WRAPPERS.key?(k)) }
+    raise "normalization did not converge: #{left.keys.join(', ')}" unless left.empty?
 
     self
   end
@@ -159,43 +128,6 @@ class ShapeNormalizer
     end
     @rules.each { |r, b| walk.call(b, r) }
     found
-  end
-
-  # Sequences with more than one part that can give a hash with ordinary
-  # (non-wrapper) keys after a part that can carry the list wrapper. Legacy
-  # folds such a sequence to list + [h1] + [h2]; the unwrap sees one hash
-  # after the list and would give list + [h1.merge(h2)]. Empty after a
-  # sound #run.
-  def list_tails
-    solve
-    found = []
-    each_node do |n, rule|
-      next unless n.key?("seq")
-
-      seen_list = false
-      tail = 0
-      n["seq"].each do |c|
-        keys = shape(c, false).hash_keys
-        tail += 1 if (seen_list || keys.include?("list")) && keys.any? { |key| !wrapper?(key) }
-        seen_list ||= keys.include?("list")
-      end
-      found << "in #{rule} (#{tail} parts)" if tail > 1
-    end
-    found
-  end
-
-  # Yields every node of every rule with the rule's name.
-  def each_node
-    walk = lambda do |n, rule|
-      yield n, rule
-      k = n.keys.first
-      case k
-      when "seq", "alt" then n[k].each { |c| walk.call(c, rule) }
-      when "rep", "look" then walk.call(n[k], rule)
-      when "as" then walk.call(n["of"], rule)
-      end
-    end
-    @rules.each { |r, b| walk.call(b, r) }
   end
 
   # Wrapper capture names the rewritten rules use, with their kind.
@@ -264,44 +196,11 @@ class ShapeNormalizer
         inner = { "seq" => [inner, { "as" => "present", "of" => { "str" => "" } }] }
       elsif targets.include?(node["as"])
         @sites[node["as"]] << @current
-        saved = @text_wrapper
-        @text_wrapper = @symbol_nodes.include?(node["as"]) ? "spelling" : "literal"
         inner = list_slot?(node["as"], inner) ? force_list(inner) : force_hash(inner, true)
-        @text_wrapper = saved
       end
       { "as" => node["as"], "of" => inner }
     else node
     end
-  end
-
-  # N8: every site of a text symbol capture gets its slice under
-  # +spelling+. Runs once, after the other rules converged. Returns self.
-  def spell
-    solve
-    unknown = (@symbols | @symbol_nodes).reject { |name| @captures.key?(name) }
-    raise "symbol captures not in the grammar: #{unknown.join(', ')}" unless unknown.empty?
-
-    wrong = @symbols.reject { |name| @captures[name].solid == Set[:string] } +
-            @symbol_nodes.reject { |name| @captures[name].solid.subset?(Set[:hash, :array]) }
-    raise "symbol captures of the wrong kind: #{wrong.join(', ')}" unless wrong.empty?
-
-    rewrite = lambda do |n|
-      k = n.keys.first
-      case k
-      when "seq", "alt" then { k => n[k].map(&rewrite) }
-      when "rep", "look" then n.merge(k => rewrite.call(n[k]))
-      when "as"
-        inner = rewrite.call(n["of"])
-        if @symbols.include?(n["as"])
-          count("N8 symbol spelling")
-          inner = { "as" => "spelling", "of" => inner }
-        end
-        { "as" => n["as"], "of" => inner }
-      else n
-      end
-    end
-    @rules.transform_values!(&rewrite)
-    self
   end
 
   # A capture whose value is a repetition (N4) stays a list.
@@ -318,7 +217,7 @@ class ShapeNormalizer
   def force_hash(node, named)
     s = shape(node, named)
     return node if s.solid.subset?(Set[:hash])
-    return wrap(node, @text_wrapper, "N1 text alternative") if s.solid.subset?(Set[:string])
+    return wrap(node, "literal", "N1 text alternative") if s.solid.subset?(Set[:string])
 
     case node.keys.first
     when "alt" then { "alt" => node["alt"].map { |c| force_hash(c, named) } }

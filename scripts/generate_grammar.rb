@@ -27,7 +27,7 @@
 require "digest"
 require "json"
 require "set"
-require_relative "normalize_shapes"
+require_relative "unicodemath_shapes"
 
 ROOT = File.expand_path("..", __dir__)
 EXPORT = File.join(ROOT, "data/unicodemath-grammar.json")
@@ -38,7 +38,7 @@ WRAPPERS_OUT = File.join(ROOT, "grammars/unicodemath.wrappers.json")
 NORMALIZED_OUT = File.join(ROOT, "grammars/unicodemath.normalized-rules.json")
 FORMAT = "unicodemath-grammar-export/1"
 
-# The symbol captures (normalization rule N8, scripts/normalize_shapes.rb):
+# The symbol captures (normalization rule N8, scripts/unicodemath_shapes.rb):
 # the captures whose legacy transform rules build a symbol through the
 # symbol catalog (Utility.symbols_class in Plurimath's unicode_math
 # transform). Their text is captured as +spelling+, and the model gives each
@@ -244,8 +244,8 @@ class Generator
     @bytes = bytes
     @doc = JSON.parse(bytes)
     abort "unsupported export format #{@doc['format'].inspect}" unless @doc["format"] == FORMAT
-    @normalizer = ShapeNormalizer.new(@doc.fetch("rules"), symbols: SYMBOL_CAPTURES,
-                                                           symbol_nodes: SYMBOL_NODE_CAPTURES).run
+    @normalizer = UnicodemathShapes.new(@doc.fetch("rules"), symbols: SYMBOL_CAPTURES,
+                                                              symbol_nodes: SYMBOL_NODE_CAPTURES).run
     clash = @normalizer.collisions
     abort "normalization leaves wrapper collisions: #{clash.join('; ')}" unless clash.empty?
     @rules = @normalizer.rules

@@ -34,7 +34,7 @@
 # that holds more than one kind, nil, or nothing.
 
 require "json"
-require_relative "normalize_shapes"
+require_relative "unicodemath_shapes"
 
 ROOT = File.expand_path("..", __dir__)
 RULES = File.join(ROOT, "grammars/unicodemath.normalized-rules.json")
@@ -65,7 +65,7 @@ check = ARGV.delete("--check")
 abort "usage: ruby scripts/generate_model.rb [--check]" unless ARGV.empty?
 
 doc = JSON.parse(File.read(RULES, encoding: "UTF-8"))
-shapes = ShapeNormalizer.new(doc.fetch("rules"), normalized: true)
+shapes = UnicodemathShapes.new(doc.fetch("rules"), normalized: true)
 caps = shapes.solve
 # The generator wraps the root rule in the tree capture; add its shape.
 caps[TREE] = shapes.shape({ "ref" => doc.fetch("root") }, true)

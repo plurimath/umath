@@ -140,9 +140,11 @@ entries `dot`, `comma` and `arabic`.
 
 Under Parslet's flattening rules the legacy grammar gives one capture name
 text, a hash or a list depending on which alternative matched. Before
-writing the grammar, `scripts/normalize_shapes.rb` rewrites the rules so
+writing the grammar, `scripts/unicodemath_shapes.rb` rewrites the rules so
 that every capture always holds one kind. It only adds captures, which never
-changes what the grammar accepts:
+changes what the grammar accepts. Rules N1 to N7 are the shared ones in
+`scripts/normalize_shapes.rb`, the same file in every stage gem; N8 and the
+checks below are UnicodeMath's, in `scripts/unicodemath_shapes.rb`:
 
 N1 text alternative:: a text-only alternative of a node slot becomes
 `(x) as literal`.

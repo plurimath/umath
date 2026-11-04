@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require_relative "spec_helper"
-require_relative "../../scripts/normalize_shapes"
+require_relative "../../scripts/unicodemath_shapes"
 require_relative "../../scripts/unwrap"
 
-# The capture-shape normalization's checks and the test-only unwrap, on
-# small hand-written rule sets.
-RSpec.describe ShapeNormalizer do
+# The capture-shape normalization (shared rules plus the UnicodeMath ones)
+# and the test-only unwrap, on small hand-written rule sets.
+RSpec.describe UnicodemathShapes do
   def str(s) = { "str" => s }
   def cap(name, node) = { "as" => name, "of" => node }
 
@@ -25,6 +25,11 @@ RSpec.describe ShapeNormalizer do
   it "refuses a symbol capture that the grammar does not have" do
     expect { described_class.new({ "r" => cap("op", str("+")) }, symbols: ["other"]).run }
       .to raise_error(/not in the grammar: other/)
+  end
+
+  it "keeps the keys of a capture nested in a capture of the same name" do
+    rules = { "r" => cap("x", { "seq" => [cap("x", cap("a", str("1"))), cap("b", str("2"))] }) }
+    expect(described_class.new(rules, normalized: true).solve["x"].hash_keys.to_a.sort).to eq(%w[a b x])
   end
 
   it "reports a capture that holds nil" do

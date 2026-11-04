@@ -61,7 +61,8 @@ module Unicodemath
         if node.key?("alt") then node["alt"].map { |n| shape(n, false) }.reduce(:|)
         elsif node.key?("seq") then sequence(node["seq"].map { |n| shape(n, false) })
         elsif node.key?("as")
-          @captures[node["as"]] |= shape(node["of"], true)
+          inner = shape(node["of"], true) # before reading the capture: it may nest in itself
+          @captures[node["as"]] |= inner
           Shape.of(:hash, [node["as"]])
         elsif node.key?("ref") then @rule_shapes[node["ref"]]
         elsif node.key?("rep") then repetition(node, named)
