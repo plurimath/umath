@@ -91,29 +91,43 @@ jobs:
         run: bundle exec ruby scripts/replay_corpus.rb --staging corpora/model --boundary raw,model
 
   gem:
-    name: gem build and installed smoke test
+    name: gem build and installed smoke test (Ruby ${{ matrix.ruby }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ "3.2", "3.4" ]
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.4"
+          ruby-version: ${{ matrix.ruby }}
       - run: gem build unicodemath.gemspec
+      - name: The gem holds only what it needs at run time
+        run: |
+          gem spec ./unicodemath-*.gem files | sed -n 's/^- //p' | sort > "$RUNNER_TEMP/files.txt"
+          cat "$RUNNER_TEMP/files.txt"
+          unexpected=$(grep -Ev '^(lib/.*\.rb|artifacts/unicodemath\.json|artifacts/unicodemath\.bindings\.ruby\.json|data/unicodemath-symbols\.json|docs/[^/]+\.adoc|README\.adoc|CHANGELOG\.md|LICENSE\.md)$' "$RUNNER_TEMP/files.txt" || true)
+          test -z "$unexpected" || { echo "unexpected files: $unexpected"; exit 1; }
+          for f in lib/unicodemath.rb lib/unicodemath/model/nodes.rb artifacts/unicodemath.json artifacts/unicodemath.bindings.ruby.json data/unicodemath-symbols.json LICENSE.md; do
+            grep -qx "$f" "$RUNNER_TEMP/files.txt" || { echo "missing $f"; exit 1; }
+          done
       - name: Install the built gem alone and parse with it
         run: |
-          export GEM_HOME="$RUNNER_TEMP/gems"
+          export GEM_HOME="$RUNNER_TEMP/gems" GEM_PATH="$RUNNER_TEMP/gems"
           gem install --no-document ./unicodemath-*.gem
           cd "$RUNNER_TEMP"
-          ruby -e '
-            require "unicodemath"
+          ruby -runicodemath -e '
+            abort "plurimath loaded" if defined?(Plurimath) || !$LOADED_FEATURES.grep(%r{/plurimath[/.]}).empty?
+            abort "loaded from the checkout" unless $LOADED_FEATURES.grep(%r{/unicodemath\.rb\z}).first.start_with?(ENV["GEM_HOME"])
             d = Unicodemath.parse("a/b", engine: :ruby)
             abort "unexpected model #{d.inspect}" unless d.expression.frac.is_a?(Unicodemath::Model::Frac)
             abort "symbols unresolved" unless d.expression.frac.numerator.atom.alphanumeric.kind
             empty = Unicodemath.parse("", engine: :ruby)
             abort "empty input #{empty.inspect}" unless empty.is_a?(Unicodemath::Model::Document) && empty.expression.nil?
-            abort "loaded from the checkout" unless $LOADED_FEATURES.grep(%r{/unicodemath\.rb\z}).first.start_with?(ENV["GEM_HOME"])
+            p Unicodemath.parse("a/b")
             abort "plurimath loaded" if defined?(Plurimath)
-            puts "ok #{d.to_json} #{Unicodemath.artifact_paths.first}"
+            puts "ok #{Unicodemath::VERSION} #{Unicodemath.last_engine} #{d.to_json} #{Unicodemath.artifact_paths.first}"
           '
 
   oracle-smoke:
