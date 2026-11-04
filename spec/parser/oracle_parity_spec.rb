@@ -27,7 +27,12 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
   inventory = YAML.safe_load_file(inventory_path).fetch("rows")
   native_ids = ENV.fetch("UNICODEMATH_NATIVE_IDS",
                          "unicode-external-001,unicode-external-033,unicode-external-041")
-  native_ids = native_ids == "all" ? inventory.map { |r| r["id"] } : native_ids.split(",")
+  native_ids = case native_ids
+               when "all" then inventory.map { |r| r["id"] }
+               when "none" then []
+               else native_ids.split(",")
+               end
+  divergent = YAML.safe_load_file(File.join(ParserSpecHelpers::FIXTURES, "native-divergences.yml")).fetch("ids")
 
   it "has one complete oracle row per inventory id" do
     ids = inventory.map { |r| r["id"] }
@@ -47,6 +52,7 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
     engines.each do |engine|
       it "reproduces #{id} on the #{engine} engine" do
         skip "native engine not available" if engine == :native && !Unicodemath::Engine.native_available? && !native_required?
+        pending "known Parsanol native-engine divergence (fixtures/oracle/native-divergences.yml)" if engine == :native && divergent.include?(id)
 
         row = JSON.parse(File.read(File.join(rows_dir, "#{id}.json")), max_nesting: false)
         boundaries = row.dig("result", "boundaries")

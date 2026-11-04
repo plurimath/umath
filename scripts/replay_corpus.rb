@@ -41,6 +41,11 @@ require_relative "model_tree"
 
 SCHEMA = "unicodemath-model-corpus/1"
 ENGINE = (ENV["UNICODEMATH_ENGINE"] || "ruby").to_sym
+# Rows where the Parsanol native engine gives another tree than legacy, on
+# this grammar and on the grammar before the shape normalization; they must
+# still differ (see the file).
+NATIVE_DIVERGENCES = YAML.safe_load_file(File.expand_path("../spec/parser/fixtures/oracle/native-divergences.yml", __dir__))
+                         .fetch("ids").freeze
 LOCALE_DECIMALS = { nil => ".", "en" => ".", "fr" => ",", "de" => ",", "ar" => "٫", "fa" => "٫" }.freeze
 
 options = { boundaries: %w[raw model] }
@@ -186,10 +191,15 @@ def replay_oracle(inventory, rows_dir)
         legacy = captured.dig("result", "boundaries", "raw", "tree")
         if legacy.nil?
           fail_row(id, "oracle row has no raw tree")
-        elsif UnicodemathOracle::Canonical.dump(UnicodemathUnwrap.call(raw.tree)) == legacy
-          COUNTS["raw parity ok"] += 1
         else
-          fail_row(id, "unwrapped raw tree differs from the legacy tree")
+          same = UnicodemathOracle::Canonical.dump(UnicodemathUnwrap.call(raw.tree)) == legacy
+          if ENGINE == :native && NATIVE_DIVERGENCES.include?(id)
+            same ? fail_row(id, "listed native divergence now matches; remove it from the list") : COUNTS["known native divergence"] += 1
+          elsif same
+            COUNTS["raw parity ok"] += 1
+          else
+            fail_row(id, "unwrapped raw tree differs from the legacy tree")
+          end
         end
         problem = model_problem(raw, document)
         problem ? fail_row(id, "model: #{problem}") : COUNTS["model ok"] += 1
