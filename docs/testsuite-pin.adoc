@@ -65,6 +65,11 @@ its commit and the pin's differ. The `stage-cases` workflow writes the
 generation after the latest one of its source commit, so it still reads
 generation 1 at b4520d8; it also checks out the pinned commit and requires the
 raw-tree payloads it writes to equal the pinned generation's byte for byte.
+The same workflow also writes a typed-model generation (`scripts/stage_cases.rb
+--boundary typed-model`) from the latest generation at 5e32851: every payload
+copied byte for byte plus a `model-<group>.yaml` payload of typed models from
+`Unicodemath.parse` for each legacy payload, uploaded as the
+`stage-generation-model` artifact.
 
 == Parity with the legacy parser
 
