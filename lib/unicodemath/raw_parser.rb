@@ -19,7 +19,7 @@ module Unicodemath
 
     module_function
 
-    def parse(input, decimal: ".", engine: :auto)
+    def parse(input, decimal: ".", engine: :ruby)
       entry = entry_for(decimal)
       mode = Engine.resolve(engine)
       pre = Preprocessor.call(normalize_input(input))

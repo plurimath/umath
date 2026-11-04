@@ -7,7 +7,7 @@ module Unicodemath
   module Parser
     module_function
 
-    def parse(input, decimal: ".", engine: :auto)
+    def parse(input, decimal: ".", engine: :ruby)
       text = RawParser.normalize_input(input)
       raw = begin
         RawParser.parse(text, decimal: decimal, engine: engine)

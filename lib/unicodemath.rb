@@ -32,14 +32,15 @@ module Unicodemath
     # Parses +input+ (a String) and returns its Unicodemath::Model::Document.
     #
     # +decimal+: the decimal marker, "." (default), "," or "٫" (U+066B).
-    # +engine+: :auto (native where available, else Ruby), :ruby or :native.
+    # +engine+: :ruby (default), :native, or :auto (native where available,
+    # else Ruby).
     #
     # Raises ParseError (with offsets into +input+) when the input is
     # refused, NestingTooDeep when the selected engine cannot handle its
     # depth, EngineUnavailable for an unavailable engine: :native,
     # ArtifactError for unusable bundled artifacts and ArgumentError for
     # invalid arguments.
-    def parse(input, decimal: ".", engine: :auto)
+    def parse(input, decimal: ".", engine: :ruby)
       Parser.parse(input, decimal: decimal, engine: engine)
     end
 
