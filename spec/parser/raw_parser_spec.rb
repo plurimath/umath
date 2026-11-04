@@ -81,6 +81,21 @@ RSpec.describe Unicodemath::RawParser do
       expect(Unicodemath::Engine.last_engine).to eq(:ruby)
     end
 
+    it "uses Ruby by default, also where the native extension is available" do
+      allow(Unicodemath::Engine).to receive(:native_available?).and_return(true)
+      expect(described_class.parse("a").engine).to eq(:ruby)
+      Unicodemath.parse("a")
+      expect(Unicodemath.last_engine).to eq(:ruby)
+    end
+
+    it "runs native when asked explicitly" do
+      skip "native engine not available" unless Unicodemath::Engine.native_available? || native_required?
+
+      expect(described_class.parse("a", engine: :native).engine).to eq(:native)
+      Unicodemath.parse("a", engine: :native)
+      expect(Unicodemath.last_engine).to eq(:native)
+    end
+
     it "raises EngineUnavailable for :native without the extension" do
       allow(Unicodemath::Engine).to receive(:native_available?).and_return(false)
       expect { described_class.parse("a", engine: :native) }.to raise_error(Unicodemath::EngineUnavailable)

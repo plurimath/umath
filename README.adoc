@@ -107,25 +107,26 @@ is invalid.
 
 == Engines
 
-Unicodemath runs its grammar on Parsanol's native engine or on its pure Ruby
-engine. The default, `engine: :auto`, uses the native engine where its
-extension is available and the Ruby engine elsewhere. You can choose one
-with `engine: :native` or `engine: :ruby`. Asking for the native engine where
-it cannot run raises `Unicodemath::EngineUnavailable` instead of quietly
-using Ruby. `Unicodemath.last_engine` tells you which engine handled the last
-call on the current thread.
+Unicodemath runs its grammar on Parsanol's pure Ruby engine or on its native
+engine. The default is `engine: :ruby`. You can opt into the native engine
+with `engine: :native`, or with `engine: :auto`, which uses the native
+engine where its extension is available and the Ruby engine elsewhere.
+Asking for `engine: :native` where it cannot run raises
+`Unicodemath::EngineUnavailable` instead of quietly using Ruby.
+`Unicodemath.last_engine` tells you which engine handled the last call on
+the current thread.
 
-The two engines do not always give the same result. For 18 of the inputs in
-the testsuite's `fixtures/unicode-expectations.yaml` that legacy Plurimath
-accepts, the native engine takes another alternative of the same grammar
-and returns a different tree from the Ruby engine; the Ruby engine returns
-the legacy tree for all of them. These inputs are listed in
+Ruby is the default because it is the engine that matches legacy Plurimath.
+For 18 of the inputs in the testsuite's `fixtures/unicode-expectations.yaml`
+that legacy Plurimath accepts, the native engine takes another alternative
+of the same grammar and returns a different tree from the Ruby engine; the
+Ruby engine returns the legacy tree for all of them. These inputs are listed
+in
 link:spec/parser/fixtures/oracle/native-divergences.yml[`spec/parser/fixtures/oracle/native-divergences.yml`],
 and CI checks that they still differ, so the list shrinks when the native
-engine changes. Because `engine: :auto` picks the native engine where it is
-available, it gives the native result for these inputs. Pass
-`engine: :ruby` if you need the legacy tree for every input. The Ruby engine
-is slower, especially on input it refuses.
+engine changes. The native engine is faster, and the Ruby engine is slower,
+especially on input it refuses. Choose `engine: :native` when speed matters
+more to you than the legacy tree for those inputs.
 
 == Testing against the Plurimath testsuite
 
