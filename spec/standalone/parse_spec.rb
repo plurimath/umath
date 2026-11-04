@@ -23,6 +23,15 @@ RSpec.describe "Unicodemath.parse" do
     expect(hash.dig("expression", "expr", "operator")).to eq("spelling" => "+", "value" => "+", "kind" => "symbol")
   end
 
+  it "returns an empty document for input without a formula (the legacy facade raises NoMethodError)" do
+    ["", "#", "###"].each do |input|
+      document = parse(input)
+      expect(document).to be_a(Unicodemath::Model::Document)
+      expect(document.expression).to be_nil
+      expect(document.decimal).to eq(".")
+    end
+  end
+
   it "records the engine" do
     parse("a")
     expect(Unicodemath.last_engine).to eq(:ruby)
@@ -53,13 +62,6 @@ RSpec.describe "Unicodemath.parse" do
       }
     end
 
-    it "refuses input without a formula (the legacy facade raises NoMethodError)" do
-      ["", "#", "###"].each do |input|
-        expect { parse(input) }.to raise_error(Unicodemath::ParseError) { |e|
-          expect([e.char_offset, e.byte_offset, e.input]).to eq([0, 0, input])
-        }
-      end
-    end
 
     it "refuses an empty formula before a label" do
       expect { parse("#b") }.to raise_error(Unicodemath::ParseError) { |e| expect(e.char_offset).to eq(0) }

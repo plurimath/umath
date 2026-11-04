@@ -111,7 +111,8 @@ RSpec.describe StageCases do
       outcome = described_class.agreed("t", "a/b")
       expect(outcome.keys).to eq(%w[preprocessed tree])
       expect(outcome["preprocessed"]).to eq("str" => "a/b")
-      expect(outcome["tree"]).to eq(StageCases::Canonical.dump(Unicodemath::RawParser.parse("a/b", engine: :ruby).tree))
+      legacy = UnicodemathUnwrap.call(Unicodemath::RawParser.parse("a/b", engine: :ruby).tree)
+      expect(outcome["tree"]).to eq(StageCases::Canonical.dump(legacy))
     end
 
     it "records a refusal with its category and byte offset" do

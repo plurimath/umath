@@ -38,17 +38,17 @@ module Unicodemath
       catalog.fetch(spelling.strip) { [decode(spelling), "unlisted"] }
     end
 
-    # Fills value and kind of every MathSymbol under +node+ (a model
-    # instance), iteratively over the declared attributes, and returns +node+.
+    # Fills value and kind of every node under +node+ (a model instance)
+    # that holds a spelling: each Model::MathSymbol, and the symbol nodes
+    # (SymbolNode, OpenParen, ...) whose text the grammar captured as
+    # spelling. Iterative over the declared attributes; returns +node+.
     def resolve(node)
       stack = [node]
       until stack.empty?
         current = stack.pop
-        if current.is_a?(Model::MathSymbol)
-          current.value, current.kind = lookup(current.spelling.to_s)
-          next
-        end
-        current.class.attributes.each_key do |name|
+        attributes = current.class.attributes
+        current.value, current.kind = lookup(current.spelling) if attributes.key?(:spelling) && current.spelling
+        attributes.each_key do |name|
           value = current.public_send(name)
           case value
           when Lutaml::Model::Serializable then stack << value

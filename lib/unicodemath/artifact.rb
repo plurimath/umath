@@ -29,7 +29,7 @@ module Unicodemath
     # Loads the Ruby bindings artifact at +path+: kind, checksum, target and
     # binding version are verified, then it is paired with +parse+ (same
     # grammar, version and source hash). Every entry must bind the tree
-    # capture twice: raw (the legacy tree) and as plain data (the model input).
+    # capture twice: raw (the tree with slices) and as plain data (the model input).
     def self.load_bindings(path, parse)
       raise ArtifactError, "bindings artifact not found: #{path}" unless File.file?(path)
 

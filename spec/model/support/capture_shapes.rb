@@ -5,14 +5,15 @@ require "set"
 
 module Unicodemath
   module Spec
-    # Static result shapes of the legacy grammar's captures, from
-    # data/unicodemath-grammar.json, under Parslet's flattening rules
-    # (Parsanol::Atoms::CanFlatten): for every capture name, whether its
-    # value can be nil, a string (slice), a hash (and with which keys) or an
-    # array of hashes (and with which keys).
+    # Static result shapes of the normalized grammar's captures, from
+    # grammars/unicodemath.normalized-rules.json, under Parslet's flattening
+    # rules (Parsanol::Atoms::CanFlatten): for every capture name, whether
+    # its value can be nil, a string (slice), a hash (and with which keys) or
+    # an array of hashes (and with which keys).
     #
-    # Used by the model specs to check that the typed model declares every
-    # capture with a matching field kind.
+    # Written independently of scripts/normalize_shapes.rb, so the model
+    # specs check the generated classes against a second reading of the
+    # grammar.
     class CaptureShapes
       Shape = Struct.new(:kinds, :hash_keys, :array_keys) do
         def self.empty = new(Set.new, Set.new, Set.new)
@@ -33,8 +34,8 @@ module Unicodemath
       # The shape of the root rule's result: the value of the tree capture.
       def root_shape = @rule_shapes[@root]
 
-      def initialize(export_path)
-        doc = JSON.parse(File.read(export_path, encoding: "UTF-8"))
+      def initialize(rules_path)
+        doc = JSON.parse(File.read(rules_path, encoding: "UTF-8"))
         @rules = doc.fetch("rules")
         @root = doc.fetch("root")
         @rule_shapes = Hash.new { |h, k| h[k] = Shape.empty }

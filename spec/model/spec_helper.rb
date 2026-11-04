@@ -5,29 +5,30 @@ require "tmpdir"
 require "yaml"
 require "unicodemath"
 require_relative "support/capture_shapes"
+require_relative "../../scripts/model_tree"
+require_relative "../../scripts/unwrap"
 
 module ModelSpecHelpers
   ROOT = File.expand_path("../..", __dir__)
-  EXPORT = File.join(ROOT, "data", "unicodemath-grammar.json")
+  NORMALIZED_RULES = File.join(ROOT, "grammars", "unicodemath.normalized-rules.json")
 
   def self.shapes
-    @shapes ||= Unicodemath::Spec::CaptureShapes.new(EXPORT)
+    @shapes ||= Unicodemath::Spec::CaptureShapes.new(NORMALIZED_RULES)
   end
 
   def model_classes
     Unicodemath::Model.constants.sort.map { |c| Unicodemath::Model.const_get(c) }
-                      .select { |k| k.is_a?(Class) && k < Unicodemath::Model::Node }
+                      .select { |k| k.is_a?(Class) && k < Lutaml::Model::Serializable }
   end
 
   def parse(input, **options)
     Unicodemath.parse(input, engine: :ruby, **options)
   end
 
-  def capture_tree_equal?(input, **options)
+  # True when the document of +input+ holds exactly the bound tree.
+  def lossless?(input, **options)
     raw = Unicodemath::RawParser.parse(input, engine: :ruby, **options)
-    document = parse(input, **options)
-    Unicodemath::Model::CaptureTree.dump(document.expression) ==
-      Unicodemath::Model::CaptureTree.normalize(raw.model_data)
+    UnicodemathModelTree.lossless?(parse(input, **options).expression, raw.model_data)
   end
 end
 

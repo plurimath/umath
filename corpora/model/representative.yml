@@ -35,10 +35,9 @@ rows:
         factor:
           intermediate_exp:
             close_paren:
-              literal:
-                spelling: ")"
-                value: ")"
-                kind: paren
+              spelling: ")"
+              value: ")"
+              kind: paren
             frac:
               atop: "&#xa6;"
               denominator:
@@ -55,10 +54,9 @@ rows:
                     value: "n"
                     kind: unlisted
             open_paren:
-              literal:
-                spelling: "("
-                value: "("
-                kind: paren
+              spelling: "("
+              value: "("
+              kind: paren
       decimal: "."
 - id: model-sup
   input: x^2
@@ -68,10 +66,9 @@ rows:
         sup_exp:
           base:
             symbol:
-              literal:
-                spelling: x
-                value: x
-                kind: unlisted
+              spelling: x
+              value: x
+              kind: unlisted
           sup:
             sup_script:
               operand:
@@ -87,10 +84,9 @@ rows:
         subsup_exp:
           base:
             symbol:
-              literal:
-                spelling: x
-                value: x
-                kind: unlisted
+              spelling: x
+              value: x
+              kind: unlisted
           sub:
             sub_script:
               operand:
@@ -217,10 +213,9 @@ rows:
                     factor:
                       intermediate_exp:
                         close_paren:
-                          literal:
-                            spelling: ")"
-                            value: ")"
-                            kind: paren
+                          spelling: ")"
+                          value: ")"
+                          kind: paren
                         exp:
                           exp:
                             factor:
@@ -237,10 +232,9 @@ rows:
                               value: i
                               kind: unlisted
                         open_paren:
-                          literal:
-                            spelling: "("
-                            value: "("
-                            kind: paren
+                          spelling: "("
+                          value: "("
+                          kind: paren
               sup:
                 sup_script:
                   operand:
@@ -252,10 +246,9 @@ rows:
                           kind: unlisted
           naryand:
             symbol:
-              literal:
-                spelling: i
-                value: i
-                kind: unlisted
+              spelling: i
+              value: i
+              kind: unlisted
       decimal: "."
 - id: model-integral
   input: "∫_0^1 f(x)dx"
@@ -284,10 +277,9 @@ rows:
           naryand:
             naryand_recursion:
               close_paren:
-                literal:
-                  spelling: ")"
-                  value: ")"
-                  kind: paren
+                spelling: ")"
+                value: ")"
+                kind: paren
               factor:
                 atom:
                   alphanumeric:
@@ -297,25 +289,21 @@ rows:
               naryand_recursion:
                 expr:
                   symbol:
-                    literal:
-                      spelling: x
-                      value: x
-                      kind: unlisted
-                symbol:
-                  literal:
-                    spelling: d
-                    value: d
+                    spelling: x
+                    value: x
                     kind: unlisted
+                symbol:
+                  spelling: d
+                  value: d
+                  kind: unlisted
               open_paren:
-                literal:
-                  spelling: "("
-                  value: "("
-                  kind: paren
+                spelling: "("
+                value: "("
+                kind: paren
             symbol:
-              literal:
-                spelling: f
-                value: f
-                kind: unlisted
+              spelling: f
+              value: f
+              kind: unlisted
       decimal: "."
 - id: model-sqrt
   input: "√(x+1)"
@@ -328,10 +316,9 @@ rows:
               factor:
                 intermediate_exp:
                   close_paren:
-                    literal:
-                      spelling: ")"
-                      value: ")"
-                      kind: paren
+                    spelling: ")"
+                    value: ")"
+                    kind: paren
                   exp:
                     exp:
                       factor:
@@ -348,10 +335,9 @@ rows:
                         value: x
                         kind: unlisted
                   open_paren:
-                    literal:
-                      spelling: "("
-                      value: "("
-                      kind: paren
+                    spelling: "("
+                    value: "("
+                    kind: paren
             root_symbol:
               spelling: "&#x221a;"
               value: "√"
@@ -386,28 +372,26 @@ rows:
         factor:
           intermediate_exp:
             close_paren:
-              literal:
-                spelling: ")"
-                value: ")"
-                kind: paren
+              spelling: ")"
+              value: ")"
+              kind: paren
             comma:
               spelling: ","
               value: ","
               kind: symbol
             left_value:
-            - symbol:
-                literal:
+              list:
+              - symbol:
                   spelling: a
                   value: a
                   kind: unlisted
             open_paren:
-              literal:
-                spelling: "["
-                value: "["
-                kind: paren
+              spelling: "["
+              value: "["
+              kind: paren
             right_value:
-            - symbol:
-                literal:
+              list:
+              - symbol:
                   spelling: b
                   value: b
                   kind: unlisted
@@ -517,25 +501,26 @@ rows:
     model:
       expression:
         accents:
-        - first_value:
+          first_value:
             atom:
               alphanumeric:
                 spelling: f
                 value: f
                 kind: unlisted
           prime_accent_symbols:
-          - literal:
-              spelling: "&#x2032;&#x2032;"
-              value: "′′"
-              kind: unlisted
+          - spelling: "&#x2032;"
+            value: "′"
+            kind: symbol
+          - spelling: "&#x2032;"
+            value: "′"
+            kind: symbol
         expr:
           factor:
             intermediate_exp:
               close_paren:
-                literal:
-                  spelling: ")"
-                  value: ")"
-                  kind: paren
+                spelling: ")"
+                value: ")"
+                kind: paren
               factor:
                 atom:
                   alphanumeric:
@@ -543,10 +528,9 @@ rows:
                     value: x
                     kind: unlisted
               open_paren:
-                literal:
-                  spelling: "("
-                  value: "("
-                  kind: paren
+                spelling: "("
+                value: "("
+                kind: paren
       decimal: "."
 - id: model-accent
   input: â
@@ -554,16 +538,17 @@ rows:
     model:
       expression:
         accents:
-        - first_value:
+          first_value:
             atom:
               alphanumeric:
                 spelling: a
                 value: a
                 kind: unlisted
-        - accent_symbols:
-            spelling: "&#x302;"
-            value: "^"
-            kind: symbol
+          list:
+          - accent_symbols:
+              spelling: "&#x302;"
+              value: "^"
+              kind: symbol
       decimal: "."
 - id: model-font
   input: "\U0001D400+ℂ"
@@ -602,15 +587,13 @@ rows:
               base:
                 expr:
                   symbol:
-                    literal:
-                      spelling: c
-                      value: c
-                      kind: unlisted
-                symbol:
-                  literal:
-                    spelling: m
-                    value: m
+                    spelling: c
+                    value: c
                     kind: unlisted
+                symbol:
+                  spelling: m
+                  value: m
+                  kind: unlisted
               sup:
                 sup_script:
                   operand:
@@ -686,10 +669,9 @@ rows:
         factor:
           first_value:
             close_paren:
-              literal:
-                spelling: ")"
-                value: ")"
-                kind: paren
+              spelling: ")"
+              value: ")"
+              kind: paren
             exp:
               exp:
                 factor:
@@ -709,10 +691,9 @@ rows:
                   value: a
                   kind: unlisted
             open_paren:
-              literal:
-                spelling: "("
-                value: "("
-                kind: paren
+              spelling: "("
+              value: "("
+              kind: paren
           hbracket_class: "&#x23de;"
       decimal: "."
 - id: model-color
@@ -742,10 +723,9 @@ rows:
             mini_sub:
               base:
                 symbol:
-                  literal:
-                    spelling: "y"
-                    value: "y"
-                    kind: unlisted
+                  spelling: "y"
+                  value: "y"
+                  kind: unlisted
               sub:
                 sub_digits: "&#x2081;"
           operator:
@@ -755,10 +735,9 @@ rows:
         mini_sup:
           base:
             symbol:
-              literal:
-                spelling: x
-                value: x
-                kind: unlisted
+              spelling: x
+              value: x
+              kind: unlisted
           sup:
             sup_digits: "&#xb2;"
       decimal: "."
@@ -800,17 +779,13 @@ rows:
       error: ParseError
       char_offset: 1
       byte_offset: 2
-- id: refusal-empty
+- id: empty-input
   input: ''
   expected:
-    refusal:
-      error: ParseError
-      char_offset: 0
-      byte_offset: 0
-- id: refusal-label-only
+    model:
+      decimal: "."
+- id: empty-label-only
   input: "#"
   expected:
-    refusal:
-      error: ParseError
-      char_offset: 0
-      byte_offset: 0
+    model:
+      decimal: "."

@@ -1,17 +1,21 @@
 name: replay
 
-# Full raw-tree replay: captures the legacy oracle for every case of the
-# pinned testsuite's UnicodeMath fixtures (seconds to minutes per case, so in
-# shards) and for the authored rows in spec/parser/fixtures/oracle/, and
-# replays them through spec/parser/oracle_parity_spec.rb.
+# Full replay: captures the legacy oracle for every case of the pinned
+# testsuite's UnicodeMath fixtures (seconds to minutes per case, so in
+# shards) and for the authored rows in spec/parser/fixtures/oracle/. Each
+# row is replayed through spec/parser/oracle_parity_spec.rb (the raw tree,
+# after removing the shape normalization's wrappers with scripts/unwrap.rb,
+# must equal the legacy tree) on the Ruby and native engines, and through
+# scripts/replay_corpus.rb (raw parity again, and a lossless typed model) on
+# both engines.
 
 on:
   workflow_dispatch:
     inputs:
       native_ids:
-        description: Ids also replayed on the native engine ("all" for every row; empty for none)
+        description: Ids also replayed on the native engine ("all" for every row, "none" for none)
         required: false
-        default: ""
+        default: "all"
   schedule:
     - cron: "17 3 * * 1"
   pull_request:
@@ -24,6 +28,10 @@ on:
       - "scripts/generate_grammar.rb"
       - "scripts/oracle/**"
       - "scripts/replay_corpus.rb"
+      - "scripts/unwrap.rb"
+      - "scripts/model_tree.rb"
+      - "scripts/normalize_shapes.rb"
+      - "scripts/generate_model.rb"
       - "spec/parser/**"
       - ".github/workflows/replay.yml"
 
@@ -97,15 +105,24 @@ jobs:
         env:
           UNICODEMATH_ORACLE_INVENTORY: ${{ runner.temp }}/inventory.yml
           UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
-          UNICODEMATH_NATIVE_IDS: ${{ inputs.native_ids || '' }}
+          UNICODEMATH_NATIVE_IDS: ${{ inputs.native_ids || 'all' }}
           UNICODEMATH_REQUIRE_NATIVE: "1"
-      - name: Replay through the typed model
+      - name: Replay through the typed model (Ruby engine)
         if: ${{ !cancelled() }}
         run: >-
           bundle exec ruby scripts/replay_corpus.rb
           --inventory "$RUNNER_TEMP/inventory.yml"
           --rows "$RUNNER_TEMP/capture/rows"
           --report "$RUNNER_TEMP/capture/model-report.json"
+      - name: Replay through the typed model (native engine)
+        if: ${{ !cancelled() }}
+        run: >-
+          bundle exec ruby scripts/replay_corpus.rb
+          --inventory "$RUNNER_TEMP/inventory.yml"
+          --rows "$RUNNER_TEMP/capture/rows"
+          --report "$RUNNER_TEMP/capture/model-report-native.json"
+        env:
+          UNICODEMATH_ENGINE: native
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -113,6 +130,7 @@ jobs:
           path: |
             ${{ runner.temp }}/capture/report.json
             ${{ runner.temp }}/capture/model-report.json
+            ${{ runner.temp }}/capture/model-report-native.json
             ${{ runner.temp }}/capture/rows
             ${{ runner.temp }}/capture/logs
 
@@ -153,13 +171,22 @@ jobs:
           UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
           UNICODEMATH_NATIVE_IDS: all
           UNICODEMATH_REQUIRE_NATIVE: "1"
-      - name: Replay through the typed model
+      - name: Replay through the typed model (Ruby engine)
         if: ${{ !cancelled() }}
         run: >-
           bundle exec ruby scripts/replay_corpus.rb
           --inventory spec/parser/fixtures/oracle/inventory/authored.yml
           --rows "$RUNNER_TEMP/capture/rows"
           --report "$RUNNER_TEMP/capture/model-report.json"
+      - name: Replay through the typed model (native engine)
+        if: ${{ !cancelled() }}
+        run: >-
+          bundle exec ruby scripts/replay_corpus.rb
+          --inventory spec/parser/fixtures/oracle/inventory/authored.yml
+          --rows "$RUNNER_TEMP/capture/rows"
+          --report "$RUNNER_TEMP/capture/model-report-native.json"
+        env:
+          UNICODEMATH_ENGINE: native
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -167,5 +194,6 @@ jobs:
           path: |
             ${{ runner.temp }}/capture/report.json
             ${{ runner.temp }}/capture/model-report.json
+            ${{ runner.temp }}/capture/model-report-native.json
             ${{ runner.temp }}/capture/rows
             ${{ runner.temp }}/capture/logs

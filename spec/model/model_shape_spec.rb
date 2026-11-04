@@ -2,76 +2,92 @@
 
 require_relative "spec_helper"
 
-# The node classes against the grammar: every capture the grammar can
-# produce is declared, with a field kind that can hold every value the
-# grammar can give it (static shapes from data/unicodemath-grammar.json
-# under Parslet's flattening rules).
-RSpec.describe "the model declarations" do
+# The generated node classes against the normalized grammar: every capture
+# holds one kind and never nil, and each is declared with the type of that
+# kind (static shapes from grammars/unicodemath.normalized-rules.json under
+# Parslet's flattening rules, computed by spec/model/support).
+RSpec.describe "the generated model declarations" do
   let(:shapes) { ModelSpecHelpers.shapes }
-  let(:node) { Unicodemath::Model::Node }
-  let(:symbol) { Unicodemath::Model::MathSymbol }
+  let(:captures) { shapes.captures }
+  let(:symbol_class) { Unicodemath::Model::MathSymbol }
+  let(:tree) { Unicodemath::Configuration::TREE_CAPTURE.to_s }
+
+  # The generator's class rules (scripts/generate_model.rb): whole
+  # expressions (25 or more keys) share Expression, the SHARED groups share
+  # their class, any other capture has its own.
+  def shared_classes
+    { "MiniExpression" => %w[mini_expr mini_intermediate_exp sub_recursion_expr sub_recursions
+                             sup_recursion_expr sup_recursions],
+      "Paren" => %w[close_paren open_paren] }
+  end
+
+  def expression?(shape) = shape.kinds == Set[:hash] && shape.hash_keys.size >= 25
+
+  def class_name(capture)
+    shape = capture == tree ? shapes.root_shape : captures.fetch(capture)
+    return "Expression" if expression?(shape)
+
+    shared = shared_classes.find { |_, names| names.include?(capture) }&.first
+    shared || { "array" => "ArrayNode", "symbol" => "SymbolNode", "root" => "RootNode" }.fetch(capture) do
+      capture.split("_").map { |w| w[0].upcase + w[1..] }.join
+    end
+  end
+
+  def symbol?(shape) = shape.kinds == Set[:hash] && shape.hash_keys == Set["spelling"]
 
   # capture name => [[class, attribute], ...] for every declaration.
   let(:declarations) do
     model_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, acc|
-      klass.attributes.each { |name, attr| acc[name.to_s] << [klass, attr] unless name == :literal }
+      klass.attributes.each { |name, attr| acc[name.to_s] << [klass, attr] }
     end
   end
 
-  def model_type(attr)
-    type = attr.type
-    type.is_a?(Class) && type <= Lutaml::Model::Serializable ? type : nil
+  it "gives every capture exactly one kind, never nil" do
+    bad = captures.reject { |_, s| s.kinds.size == 1 && !s.kinds.include?(:nil) }
+    expect(bad.transform_values { |s| s.kinds.to_a }).to be_empty
   end
 
-  it "declares every capture that the grammar can place inside another" do
-    nested = shapes.captures.values.flat_map { |s| (s.hash_keys | s.array_keys).to_a } | shapes.root_shape.hash_keys.to_a
-    expect(nested - declarations.keys).to be_empty
-    expect(declarations.keys - shapes.captures.keys).to be_empty
-  end
-
-  it "gives a capture the same type and collection flag wherever it is declared" do
-    declarations.each do |capture, uses|
-      kinds = uses.map { |_, attr| [attr.type, attr.collection?] }.uniq
-      expect(kinds.size).to eq(1), "#{capture}: #{kinds.inspect}"
-    end
-  end
-
-  it "types node captures as node classes and text captures as text or symbols" do
-    declarations.each do |capture, uses|
-      shape = shapes.captures.fetch(capture)
-      attr = uses.first.last
-      structured = shape.kinds.intersect?(Set[:hash, :array])
-      type = model_type(attr)
-      if structured
-        expect(type).to be < node, capture
-      else
-        expect(type.nil? || type == symbol).to be(true), capture
-      end
-      expect(attr.collection?).to eq(shape.kinds.include?(:array)), capture
-    end
-  end
-
-  it "declares in each node class every capture its captures' values can contain" do
-    declarations.each do |capture, uses|
-      klass = model_type(uses.first.last)
-      next unless klass && klass < node
-
-      shape = shapes.captures.fetch(capture)
-      missing = (shape.hash_keys | shape.array_keys).to_a.map(&:to_sym) - klass.attributes.keys
-      expect(missing).to be_empty, "#{klass.name} (capture #{capture}) lacks #{missing.inspect}"
-      if shape.kinds.include?(:string)
-        expect(klass.attributes).to include(:literal), "#{klass.name} (capture #{capture}) can receive text"
+  it "declares every capture with the type of its kind" do
+    nested = captures.values.flat_map { |s| (s.hash_keys | s.array_keys).to_a }.uniq | shapes.root_shape.hash_keys.to_a
+    nested.each do |capture|
+      shape = captures.fetch(capture)
+      uses = declarations.fetch(capture)
+      types = uses.map { |_, attr| [attr.type, attr.collection?] }.uniq
+      expect(types.size).to eq(1), "#{capture}: #{types.inspect}"
+      type, collection = types.first
+      case shape.kinds.first
+      when :string then expect([type, collection]).to eq([Lutaml::Model::Type::String, false]), capture
+      when :array
+        expect([type.name, collection]).to eq(["Unicodemath::Model::#{class_name(capture)}Item", true]), capture
+      when :hash
+        expected = symbol?(shape) ? symbol_class.name : "Unicodemath::Model::#{class_name(capture)}"
+        expect([type.name, collection]).to eq([expected, false]), capture
       end
     end
   end
 
-  it "declares in Expression every capture of the tree's root" do
-    missing = shapes.root_shape.hash_keys.to_a.map(&:to_sym) - Unicodemath::Model::Expression.attributes.keys
-    expect(missing).to be_empty
+  it "declares in each class exactly the keys its captures can hold" do
+    expected = Hash.new { |h, k| h[k] = Set.new }
+    (captures.to_a + [[tree, shapes.root_shape]]).each do |capture, shape|
+      next if symbol?(shape) || shape.kinds.first == :string
+
+      list = shape.kinds.first == :array
+      keys = (list ? shape.array_keys : shape.hash_keys).to_a
+      keys |= %w[value kind] if keys.include?("spelling")
+      expected["#{class_name(capture)}#{'Item' if list}"].merge(keys)
+    end
+    expected.each do |name, keys|
+      klass = Unicodemath::Model.const_get(name)
+      expect(klass.attributes.keys.map(&:to_s).sort).to eq(keys.to_a.sort), name
+    end
   end
 
-  it "declares no node class that no capture uses" do
-    used = declarations.values.flatten(1).filter_map { |_, attr| model_type(attr) }.uniq
-    expect(model_classes - used - [Unicodemath::Model::Expression]).to be_empty
+  it "declares no class that no capture uses" do
+    used = declarations.values.flatten(1).map { |_, attr| attr.type }.uniq
+    expect(model_classes - used - [Unicodemath::Model::Document]).to be_empty
+  end
+
+  it "roots the document at the tree capture" do
+    expect(Unicodemath::Model::Document.attributes[:expression].type).to eq(Unicodemath::Model::Expression)
   end
 end

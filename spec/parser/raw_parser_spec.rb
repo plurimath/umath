@@ -7,11 +7,13 @@ RSpec.describe Unicodemath::RawParser do
     described_class.parse(input, engine: :ruby, **opts)
   end
 
-  it "returns the legacy tree for a + b" do
+  it "returns the normalized tree for a + b, and the legacy tree after unwrap" do
     tree = parse("a+b").tree
     expect(tree.keys).to eq(%i[factor expr])
-    expect(tree.dig(:expr, :operator).to_s).to eq("+")
-    expect(tree.dig(:expr, :operator)).to be_a(Parsanol::Slice)
+    expect(tree.dig(:expr, :operator, :spelling).to_s).to eq("+")
+    expect(tree.dig(:expr, :operator, :spelling)).to be_a(Parsanol::Slice)
+    expect(legacy(tree).dig(:expr, :operator)).to be_a(Parsanol::Slice)
+    expect(legacy(tree).dig(:expr, :operator).to_s).to eq("+")
   end
 
   it "keeps slice offsets in the grammar input" do
@@ -120,8 +122,10 @@ RSpec.describe Unicodemath::RawParser do
 
     it "carry the same tree as plain data for the model" do
       result = parse("a/b")
-      expect(result.model_data).to eq("frac" => { "numerator" => { "atom" => { "alphanumeric" => "a" } },
-                                                  "denominator" => { "factor" => { "atom" => { "alphanumeric" => "b" } } } })
+      expect(result.model_data).to eq(
+        "frac" => { "numerator" => { "atom" => { "alphanumeric" => { "spelling" => "a" } } },
+                    "denominator" => { "factor" => { "atom" => { "alphanumeric" => { "spelling" => "b" } } } } },
+      )
     end
   end
 end

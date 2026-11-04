@@ -7,16 +7,23 @@
       "model": "Unicodemath::Model::Accents",
       "attributes": [
         {
-          "name": "accent_symbols",
-          "type": "Unicodemath::Model::MathSymbol"
+          "name": "empty",
+          "type": "string"
         },
         {
           "name": "first_value",
           "type": "Unicodemath::Model::Expression"
         },
         {
+          "name": "list",
+          "type": "Unicodemath::Model::ListItem",
+          "collection": {
+            "min": 0
+          }
+        },
+        {
           "name": "prime_accent_symbols",
-          "type": "Unicodemath::Model::PrimeAccentSymbols",
+          "type": "Unicodemath::Model::PrimeAccentSymbolsItem",
           "collection": {
             "min": 0
           }
@@ -86,11 +93,11 @@
           "type": "Unicodemath::Model::Diacritics"
         },
         {
-          "name": "number",
+          "name": "literal",
           "type": "string"
         },
         {
-          "name": "literal",
+          "name": "number",
           "type": "string"
         }
       ],
@@ -161,41 +168,6 @@
     },
     {
       "lml": 1,
-      "model": "Unicodemath::Model::CloseParen",
-      "attributes": [
-        {
-          "name": "close_paren",
-          "type": "Unicodemath::Model::CloseParen"
-        },
-        {
-          "name": "close_paren_mask",
-          "type": "Unicodemath::Model::CloseParenMask"
-        },
-        {
-          "name": "open_paren",
-          "type": "Unicodemath::Model::OpenParen"
-        },
-        {
-          "name": "open_paren_mask",
-          "type": "Unicodemath::Model::OpenParenMask"
-        },
-        {
-          "name": "paren_close_prefix",
-          "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "paren_open_prefix",
-          "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "literal",
-          "type": "Unicodemath::Model::MathSymbol"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
       "model": "Unicodemath::Model::CloseParenMask",
       "attributes": [
         {
@@ -211,7 +183,7 @@
       "attributes": [
         {
           "name": "close_paren",
-          "type": "Unicodemath::Model::CloseParen"
+          "type": "Unicodemath::Model::Paren"
         },
         {
           "name": "close_paren_mask",
@@ -367,10 +339,7 @@
       "attributes": [
         {
           "name": "accents",
-          "type": "Unicodemath::Model::Accents",
-          "collection": {
-            "min": 0
-          }
+          "type": "Unicodemath::Model::Accents"
         },
         {
           "name": "accents_subsup",
@@ -422,7 +391,7 @@
         },
         {
           "name": "close_paren",
-          "type": "Unicodemath::Model::CloseParen"
+          "type": "Unicodemath::Model::Paren"
         },
         {
           "name": "close_paren_mask",
@@ -455,6 +424,10 @@
         {
           "name": "digit",
           "type": "Unicodemath::Model::Digit"
+        },
+        {
+          "name": "empty",
+          "type": "string"
         },
         {
           "name": "exclamation_symbol",
@@ -534,10 +507,15 @@
         },
         {
           "name": "left_value",
-          "type": "Unicodemath::Model::LeftValue",
-          "collection": {
-            "min": 0
-          }
+          "type": "Unicodemath::Model::LeftValue"
+        },
+        {
+          "name": "literal",
+          "type": "string"
+        },
+        {
+          "name": "literal_2",
+          "type": "string"
         },
         {
           "name": "mask",
@@ -553,7 +531,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "mini_sub",
@@ -597,7 +575,7 @@
         },
         {
           "name": "open_paren",
-          "type": "Unicodemath::Model::OpenParen"
+          "type": "Unicodemath::Model::Paren"
         },
         {
           "name": "open_paren_mask",
@@ -677,14 +655,11 @@
         },
         {
           "name": "right_value",
-          "type": "Unicodemath::Model::RightValue",
-          "collection": {
-            "min": 0
-          }
+          "type": "Unicodemath::Model::RightValue"
         },
         {
           "name": "root",
-          "type": "Unicodemath::Model::Root"
+          "type": "Unicodemath::Model::RootNode"
         },
         {
           "name": "root_first_value",
@@ -700,10 +675,7 @@
         },
         {
           "name": "slashed_value",
-          "type": "Unicodemath::Model::SlashedValue",
-          "collection": {
-            "min": 0
-          }
+          "type": "Unicodemath::Model::SlashedValue"
         },
         {
           "name": "spaces",
@@ -739,11 +711,11 @@
         },
         {
           "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_script",
@@ -783,11 +755,11 @@
         },
         {
           "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_script",
@@ -828,10 +800,6 @@
         {
           "name": "unicode_symbols",
           "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "literal",
-          "type": "string"
         }
       ],
       "mappings": {}
@@ -842,6 +810,10 @@
       "attributes": [
         {
           "name": "font_class",
+          "type": "string"
+        },
+        {
+          "name": "literal",
           "type": "string"
         },
         {
@@ -859,10 +831,6 @@
         {
           "name": "unicoded_font_class",
           "type": "Unicodemath::Model::UnicodedFontClass"
-        },
-        {
-          "name": "literal",
-          "type": "string"
         }
       ],
       "mappings": {}
@@ -994,6 +962,13 @@
           "type": "Unicodemath::Model::MathSymbol"
         },
         {
+          "name": "list",
+          "type": "Unicodemath::Model::ListItem",
+          "collection": {
+            "min": 0
+          }
+        },
+        {
           "name": "negative",
           "type": "Unicodemath::Model::MathSymbol"
         },
@@ -1004,6 +979,21 @@
         {
           "name": "positive",
           "type": "Unicodemath::Model::MathSymbol"
+        }
+      ],
+      "mappings": {}
+    },
+    {
+      "lml": 1,
+      "model": "Unicodemath::Model::ListItem",
+      "attributes": [
+        {
+          "name": "accent_symbols",
+          "type": "Unicodemath::Model::MathSymbol"
+        },
+        {
+          "name": "number",
+          "type": "string"
         },
         {
           "name": "symbol",
@@ -1104,7 +1094,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_alpha",
@@ -1124,29 +1114,45 @@
         },
         {
           "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
     },
     {
       "lml": 1,
-      "model": "Unicodemath::Model::MiniExpr",
+      "model": "Unicodemath::Model::MiniExpression",
       "attributes": [
         {
           "name": "expr",
           "type": "Unicodemath::Model::Expression"
         },
         {
+          "name": "mini_expr",
+          "type": "Unicodemath::Model::MiniExpression"
+        },
+        {
+          "name": "mini_intermediate_exp",
+          "type": "Unicodemath::Model::MiniExpression"
+        },
+        {
           "name": "sub_alpha",
           "type": "string"
         },
         {
+          "name": "sub_close_paren",
+          "type": "string"
+        },
+        {
           "name": "sub_digits",
+          "type": "string"
+        },
+        {
+          "name": "sub_open_paren",
           "type": "string"
         },
         {
@@ -1159,18 +1165,26 @@
         },
         {
           "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_alpha",
           "type": "string"
         },
         {
+          "name": "sup_close_paren",
+          "type": "string"
+        },
+        {
           "name": "sup_digits",
+          "type": "string"
+        },
+        {
+          "name": "sup_open_paren",
           "type": "string"
         },
         {
@@ -1183,38 +1197,11 @@
         },
         {
           "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
-      "model": "Unicodemath::Model::MiniIntermediateExp",
-      "attributes": [
-        {
-          "name": "mini_expr",
-          "type": "Unicodemath::Model::MiniExpr"
-        },
-        {
-          "name": "sub_close_paren",
-          "type": "string"
-        },
-        {
-          "name": "sub_open_paren",
-          "type": "string"
-        },
-        {
-          "name": "sup_close_paren",
-          "type": "string"
-        },
-        {
-          "name": "sup_open_paren",
-          "type": "string"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
@@ -1229,7 +1216,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_alpha",
@@ -1249,11 +1236,11 @@
         },
         {
           "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
@@ -1272,7 +1259,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub",
@@ -1296,11 +1283,11 @@
         },
         {
           "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_alpha",
@@ -1350,7 +1337,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_alpha",
@@ -1386,11 +1373,22 @@
         },
         {
           "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
+        }
+      ],
+      "mappings": {}
+    },
+    {
+      "lml": 1,
+      "model": "Unicodemath::Model::MitBbb",
+      "attributes": [
+        {
+          "name": "present",
+          "type": "string"
         }
       ],
       "mappings": {}
@@ -1446,41 +1444,6 @@
     },
     {
       "lml": 1,
-      "model": "Unicodemath::Model::OpenParen",
-      "attributes": [
-        {
-          "name": "close_paren",
-          "type": "Unicodemath::Model::CloseParen"
-        },
-        {
-          "name": "close_paren_mask",
-          "type": "Unicodemath::Model::CloseParenMask"
-        },
-        {
-          "name": "open_paren",
-          "type": "Unicodemath::Model::OpenParen"
-        },
-        {
-          "name": "open_paren_mask",
-          "type": "Unicodemath::Model::OpenParenMask"
-        },
-        {
-          "name": "paren_close_prefix",
-          "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "paren_open_prefix",
-          "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "literal",
-          "type": "Unicodemath::Model::MathSymbol"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
       "model": "Unicodemath::Model::OpenParenMask",
       "attributes": [
         {
@@ -1496,7 +1459,7 @@
       "attributes": [
         {
           "name": "open_paren",
-          "type": "Unicodemath::Model::OpenParen"
+          "type": "Unicodemath::Model::Paren"
         },
         {
           "name": "open_paren_mask",
@@ -1515,10 +1478,7 @@
       "attributes": [
         {
           "name": "accents",
-          "type": "Unicodemath::Model::Accents",
-          "collection": {
-            "min": 0
-          }
+          "type": "Unicodemath::Model::Accents"
         },
         {
           "name": "binary_negated_operator",
@@ -1606,6 +1566,54 @@
     },
     {
       "lml": 1,
+      "model": "Unicodemath::Model::Paren",
+      "attributes": [
+        {
+          "name": "close_paren",
+          "type": "Unicodemath::Model::Paren"
+        },
+        {
+          "name": "close_paren_mask",
+          "type": "Unicodemath::Model::CloseParenMask"
+        },
+        {
+          "name": "open_paren",
+          "type": "Unicodemath::Model::Paren"
+        },
+        {
+          "name": "open_paren_mask",
+          "type": "Unicodemath::Model::OpenParenMask"
+        },
+        {
+          "name": "paren_close_prefix",
+          "type": "Unicodemath::Model::MathSymbol"
+        },
+        {
+          "name": "paren_open_prefix",
+          "type": "Unicodemath::Model::MathSymbol"
+        },
+        {
+          "name": "spelling",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "values": [
+            "symbol",
+            "paren",
+            "unlisted"
+          ]
+        }
+      ],
+      "mappings": {}
+    },
+    {
+      "lml": 1,
       "model": "Unicodemath::Model::Phantom",
       "attributes": [
         {
@@ -1648,15 +1656,28 @@
     },
     {
       "lml": 1,
-      "model": "Unicodemath::Model::PrimeAccentSymbols",
+      "model": "Unicodemath::Model::PrimeAccentSymbolsItem",
       "attributes": [
         {
           "name": "prefixed_prime",
           "type": "Unicodemath::Model::MathSymbol"
         },
         {
-          "name": "literal",
-          "type": "Unicodemath::Model::MathSymbol"
+          "name": "spelling",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "values": [
+            "symbol",
+            "paren",
+            "unlisted"
+          ]
         }
       ],
       "mappings": {}
@@ -1685,6 +1706,13 @@
           "type": "Unicodemath::Model::MathSymbol"
         },
         {
+          "name": "list",
+          "type": "Unicodemath::Model::ListItem",
+          "collection": {
+            "min": 0
+          }
+        },
+        {
           "name": "negative",
           "type": "Unicodemath::Model::MathSymbol"
         },
@@ -1695,29 +1723,6 @@
         {
           "name": "positive",
           "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "symbol",
-          "type": "Unicodemath::Model::SymbolNode"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
-      "model": "Unicodemath::Model::Root",
-      "attributes": [
-        {
-          "name": "first_value",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "root_symbol",
-          "type": "Unicodemath::Model::MathSymbol"
-        },
-        {
-          "name": "second_value",
-          "type": "Unicodemath::Model::SecondValue"
         }
       ],
       "mappings": {}
@@ -1733,6 +1738,25 @@
         {
           "name": "func_expr",
           "type": "Unicodemath::Model::FuncExpr"
+        }
+      ],
+      "mappings": {}
+    },
+    {
+      "lml": 1,
+      "model": "Unicodemath::Model::RootNode",
+      "attributes": [
+        {
+          "name": "first_value",
+          "type": "Unicodemath::Model::Expression"
+        },
+        {
+          "name": "root_symbol",
+          "type": "Unicodemath::Model::MathSymbol"
+        },
+        {
+          "name": "second_value",
+          "type": "Unicodemath::Model::SecondValue"
         }
       ],
       "mappings": {}
@@ -1772,12 +1796,11 @@
       "model": "Unicodemath::Model::SlashedValue",
       "attributes": [
         {
-          "name": "number",
-          "type": "string"
-        },
-        {
-          "name": "symbol",
-          "type": "Unicodemath::Model::SymbolNode"
+          "name": "list",
+          "type": "Unicodemath::Model::ListItem",
+          "collection": {
+            "min": 0
+          }
         },
         {
           "name": "literal",
@@ -1808,7 +1831,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "mini_sub",
@@ -1848,11 +1871,11 @@
         },
         {
           "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
@@ -1867,7 +1890,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_alpha",
@@ -1887,89 +1910,11 @@
         },
         {
           "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
-      "model": "Unicodemath::Model::SubRecursionExpr",
-      "attributes": [
-        {
-          "name": "expr",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
-        },
-        {
-          "name": "sub_alpha",
-          "type": "string"
-        },
-        {
-          "name": "sub_digits",
-          "type": "string"
-        },
-        {
-          "name": "sub_operators",
-          "type": "string"
-        },
-        {
-          "name": "sub_recursion",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
-        },
-        {
-          "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
-      "model": "Unicodemath::Model::SubRecursions",
-      "attributes": [
-        {
-          "name": "expr",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
-        },
-        {
-          "name": "sub_alpha",
-          "type": "string"
-        },
-        {
-          "name": "sub_digits",
-          "type": "string"
-        },
-        {
-          "name": "sub_operators",
-          "type": "string"
-        },
-        {
-          "name": "sub_recursion",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "sub_recursion_expr",
-          "type": "Unicodemath::Model::SubRecursionExpr"
-        },
-        {
-          "name": "sub_recursions",
-          "type": "Unicodemath::Model::SubRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
@@ -2023,7 +1968,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "mini_sub",
@@ -2063,11 +2008,11 @@
         },
         {
           "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
@@ -2082,7 +2027,7 @@
         },
         {
           "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_alpha",
@@ -2102,89 +2047,11 @@
         },
         {
           "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
+          "type": "Unicodemath::Model::MiniExpression"
         },
         {
           "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
-      "model": "Unicodemath::Model::SupRecursionExpr",
-      "attributes": [
-        {
-          "name": "expr",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
-        },
-        {
-          "name": "sup_alpha",
-          "type": "string"
-        },
-        {
-          "name": "sup_digits",
-          "type": "string"
-        },
-        {
-          "name": "sup_operators",
-          "type": "string"
-        },
-        {
-          "name": "sup_recursion",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
-        },
-        {
-          "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
-        }
-      ],
-      "mappings": {}
-    },
-    {
-      "lml": 1,
-      "model": "Unicodemath::Model::SupRecursions",
-      "attributes": [
-        {
-          "name": "expr",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "mini_intermediate_exp",
-          "type": "Unicodemath::Model::MiniIntermediateExp"
-        },
-        {
-          "name": "sup_alpha",
-          "type": "string"
-        },
-        {
-          "name": "sup_digits",
-          "type": "string"
-        },
-        {
-          "name": "sup_operators",
-          "type": "string"
-        },
-        {
-          "name": "sup_recursion",
-          "type": "Unicodemath::Model::Expression"
-        },
-        {
-          "name": "sup_recursion_expr",
-          "type": "Unicodemath::Model::SupRecursionExpr"
-        },
-        {
-          "name": "sup_recursions",
-          "type": "Unicodemath::Model::SupRecursions"
+          "type": "Unicodemath::Model::MiniExpression"
         }
       ],
       "mappings": {}
@@ -2198,8 +2065,21 @@
           "type": "Unicodemath::Model::MathSymbol"
         },
         {
-          "name": "literal",
-          "type": "Unicodemath::Model::MathSymbol"
+          "name": "spelling",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "kind",
+          "type": "string",
+          "values": [
+            "symbol",
+            "paren",
+            "unlisted"
+          ]
         }
       ],
       "mappings": {}
@@ -2262,16 +2142,16 @@
       "model": "Unicodemath::Model::Tr",
       "attributes": [
         {
+          "name": "literal",
+          "type": "string"
+        },
+        {
           "name": "td",
           "type": "Unicodemath::Model::Td"
         },
         {
           "name": "tds",
           "type": "Unicodemath::Model::Tds"
-        },
-        {
-          "name": "literal",
-          "type": "string"
         }
       ],
       "mappings": {}
@@ -2369,12 +2249,12 @@
       "model": "Unicodemath::Model::UnicodedFontClass",
       "attributes": [
         {
-          "name": "mitBbb",
+          "name": "literal",
           "type": "string"
         },
         {
-          "name": "literal",
-          "type": "string"
+          "name": "mitBbb",
+          "type": "Unicodemath::Model::MitBbb"
         }
       ],
       "mappings": {}

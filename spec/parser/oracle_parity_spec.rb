@@ -5,7 +5,9 @@ require_relative "spec_helper"
 # Replays legacy oracle rows (written by scripts/oracle/capture.rb against
 # Plurimath at the pinned commit) through the internal raw-tree boundary and
 # requires the same preprocessing, the same raw tree in canonical tagged form
-# (keys, order, slice text and offsets) and, for refusals, the same position.
+# (keys, order, slice text and offsets) after removing the wrappers the shape
+# normalization added (scripts/unwrap.rb) and, for refusals, the same
+# position.
 #
 # By default it replays the committed sample in fixtures/oracle/. To
 # regenerate those rows (heavy; up to minutes per row):
@@ -67,7 +69,7 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
     when "ok"
       result = Unicodemath::RawParser.parse(input, decimal: decimal, engine: engine)
       expect_preprocessing(pre, result)
-      expect(canonical(result.tree)).to eq(raw["tree"])
+      expect(canonical(legacy(result.tree))).to eq(raw["tree"])
       expect(result.engine).to eq(engine)
     when "refused"
       expected = raw.dig("error", "message")[/at line 1 char (\d+)\.\z/, 1]

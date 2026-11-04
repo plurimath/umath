@@ -16,7 +16,11 @@ module Unicodemath
       rescue ParseError => e
         raise relocate(e, text)
       end
-      raise empty_input(text) if raw.text.nil?
+      # Input without a formula part (empty, or only "#" label separators):
+      # an empty Document. The legacy facade fails there with NoMethodError,
+      # so there is no legacy result to keep; amath returns an empty result
+      # for empty input too.
+      return Model::Document.new(label: raw.label, decimal: decimal) if raw.text.nil?
 
       build(raw, decimal, text)
     end
@@ -41,13 +45,6 @@ module Unicodemath
       ParseError.new("UnicodeMath input rejected#{where}: #{detail}", input: text, byte_offset: byte, char_offset: char)
     end
 
-    # Input without a formula part: empty, or only label separators ("#").
-    # The legacy facade fails with NoMethodError there; this gem refuses it.
-    def empty_input(text)
-      ParseError.new("UnicodeMath input has no formula (empty, or only \"#\" label separators)",
-                     input: text, byte_offset: 0, char_offset: 0)
-    end
-
-    private_class_method :build, :relocate, :empty_input
+    private_class_method :build, :relocate
   end
 end

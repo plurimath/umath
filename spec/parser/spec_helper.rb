@@ -4,6 +4,7 @@ require "json"
 require "yaml"
 require "unicodemath"
 require_relative "../../scripts/oracle/canonical"
+require_relative "../../scripts/unwrap"
 
 module ParserSpecHelpers
   ROOT = File.expand_path("../..", __dir__)
@@ -19,6 +20,11 @@ module ParserSpecHelpers
 
   def canonical(value)
     UnicodemathOracle::Canonical.dump(value)
+  end
+
+  # The legacy tree for a raw tree of the normalized grammar.
+  def legacy(tree)
+    UnicodemathUnwrap.call(tree)
   end
 
   def canonical_string(value)

@@ -6,8 +6,8 @@
 #   bundle exec ruby scripts/verify_lml.rb           verify (CI)
 #   bundle exec ruby scripts/verify_lml.rb --write   rewrite model/
 #
-# Every class of Unicodemath::Model (except the abstract Node base) is
-# exported with Lutaml::Model::Lml.export. model/unicodemath.lml.json holds
+# Every class of Unicodemath::Model (the generated node classes and
+# Document) is exported with Lutaml::Model::Lml.export. model/unicodemath.lml.json holds
 # the documents, ordered by model name; model/unicodemath.lml.checksums.txt
 # holds each document's LML checksum and the file's sha256.
 #
@@ -32,7 +32,7 @@ abort "usage: ruby scripts/verify_lml.rb [--write]" unless ARGV.empty?
 
 def model_classes
   Unicodemath::Model.constants.sort.map { |c| Unicodemath::Model.const_get(c) }
-                    .select { |k| k.is_a?(Class) && k < Lutaml::Model::Serializable && k != Unicodemath::Model::Node }
+                    .select { |k| k.is_a?(Class) && k < Lutaml::Model::Serializable }
 end
 
 def export
