@@ -133,6 +133,76 @@ RSpec.describe StageCases do
     end
   end
 
+  describe StageCases::ModelForm do
+    def tree_of(input)
+      StageCases::Outcome.model_of(input, :ruby)["tree"]
+    end
+
+    it "writes the Document from its bound data in declaration order" do
+      tree = tree_of("a+b#1")
+      expect(tree["node"]).to eq("Unicodemath::Model::Document")
+      expect(tree["fields"].map(&:first)).to eq(%w[expression label decimal])
+      expect(tree["fields"].last).to eq(["decimal", { "str" => "." }])
+      expect(tree["fields"][1]).to eq(["label", { "str" => "1" }])
+    end
+
+    it "gives a node with a spelling the catalog value and kind" do
+      symbols = []
+      walk = lambda do |node|
+        case node
+        when Hash
+          fields = node["fields"]&.to_h
+          symbols << fields if fields&.key?("spelling")
+          node.each_value { |v| walk.(v) }
+        when Array then node.each { |v| walk.(v) }
+        end
+      end
+      walk.(tree_of("α+b"))
+      expect(symbols).not_to be_empty
+      symbols.each do |fields|
+        value, kind = Unicodemath::Symbols.lookup(fields["spelling"]["str"])
+        expect(fields.slice("value", "kind")).to eq("value" => { "str" => value }, "kind" => { "str" => kind })
+      end
+    end
+
+    it "writes an input without a formula as a Document with only its decimal" do
+      expect(tree_of("")).to eq("node" => "Unicodemath::Model::Document", "fields" => [["decimal", { "str" => "." }]])
+    end
+
+    it "refuses data the declared attributes do not hold" do
+      expect { described_class.node(Unicodemath::Model::Document, { "nope" => "x" }) }
+        .to raise_error(StageCases::Failure, /no attribute nope/)
+      expect { described_class.node(Unicodemath::Model::Document, { "label" => 1 }) }
+        .to raise_error(StageCases::Failure, /Integer/)
+    end
+
+    it "stops when the built model differs from its bound data" do
+      allow(described_class).to receive(:walk).and_return({})
+      expect { StageCases::Outcome.model_of("a", :ruby) }.to raise_error(StageCases::Failure, /differs/)
+    end
+  end
+
+  describe "typed-model outcomes" do
+    it "agree on both engines and refuse with the caller's byte offset" do
+      expect(StageCases::Outcome.agreed("t", "(a", "typed-model"))
+        .to eq("refusal" => { "category" => "parse_error", "byte_offset" => 2 })
+      expect(StageCases::Outcome.agreed("t", "a/b", "typed-model").keys).to eq(%w[preprocessed tree])
+    end
+
+    it "writes the Ruby outcome of a listed native divergence and requires the native one to differ" do
+      allow(StageCases::Outcome).to receive(:model_of).and_call_original
+      allow(StageCases::Outcome).to receive(:model_of).with("a/b", :native).and_return("tree" => {})
+      ruby = StageCases::Outcome.model_of("a/b", :ruby)
+      expect(StageCases::Outcome.agreed("d", "a/b", "typed-model", divergent: ["d"])).to eq(ruby)
+      expect { StageCases::Outcome.agreed("d", "a", "typed-model", divergent: ["d"]) }
+        .to raise_error(StageCases::Failure, /engines agree/)
+    end
+
+    it "reads the native divergence list" do
+      expect(StageCases.divergent_ids).to include("unicode-external-005")
+    end
+  end
+
   describe StageCases::Source do
     it "fails when a file no longer matches the ledger digest" do
       Dir.mktmpdir do |dir|
@@ -193,6 +263,48 @@ RSpec.describe StageCases do
         expect(entry).to include("generation" => 2, "path" => gen, "payloads" => 2, "rows" => 4,
                                  "producer_kinds" => %w[legacy-oracle stage-gem], "change" => "extend",
                                  "snapshot_digest" => StageCases.snapshot_digest(generation))
+      end
+    end
+
+    it "writes typed-model payloads from the legacy payloads only" do
+      Dir.mktmpdir do |dir|
+        fences = legacy_payload("fences", [["f-1", "(a)"], ["f-2", "a)"]])
+        testsuite(dir, "payloads/fences.yaml" => fences)
+        # Commit generation 2 (raw-tree) so that it becomes the source.
+        StageCases::Generator.new(StageCases::Source.new(dir), producer).write(dir)
+        git(dir, "add", ".")
+        git(dir, "-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "gen 2")
+        source = StageCases::Source.new(dir)
+        expect(source.input_entries.map { |e| e["path"] }).to eq(["payloads/fences.yaml"])
+
+        files = described_class.new(source, producer, boundary: "typed-model").files
+        gen = "stages/unicode/generations/000003"
+        expect(files.keys.sort).to eq(%W[#{gen}/payloads/fences.yaml #{gen}/payloads/model-fences.yaml
+                                         #{gen}/payloads/raw-fences.yaml #{gen}/provenance.yaml
+                                         generations/unicode.yaml].sort)
+        raw = "stages/unicode/generations/000002/payloads/raw-fences.yaml"
+        expect(files["#{gen}/payloads/raw-fences.yaml"]).to eq(File.binread(File.join(dir, raw)))
+
+        model = YAML.safe_load(files["#{gen}/payloads/model-fences.yaml"])
+        expect(model.slice("group", "boundary")).to eq("group" => "model-fences", "boundary" => "typed-model")
+        expect(model["cases"].map { |c| c["id"] }).to eq(%w[f-1.model f-2.model])
+        expect(model["cases"][0]["expected"]["tree"]["node"]).to eq("Unicodemath::Model::Document")
+        expect(model["cases"][1]["expected"]).to eq("refusal" => { "category" => "parse_error", "byte_offset" => 1 })
+
+        provenance = YAML.safe_load(files["#{gen}/provenance.yaml"])
+        expect(provenance["producers"].keys).to eq(%w[legacy-oracle unicodemath-raw unicodemath-model])
+        expect(provenance["payloads"].find { |p| p["path"] == "payloads/raw-fences.yaml" }["source"])
+          .to include("relation" => "copy")
+        expect(YAML.safe_load(files["generations/unicode.yaml"])["entries"].last)
+          .to include("generation" => 3, "payloads" => 3, "rows" => 6)
+      end
+    end
+
+    it "refuses an unknown boundary" do
+      Dir.mktmpdir do |dir|
+        testsuite(dir, "payloads/fences.yaml" => legacy_payload("fences", [["f-1", "(a)"]]))
+        expect { described_class.new(StageCases::Source.new(dir), producer, boundary: "x") }
+          .to raise_error(StageCases::Failure, /unknown boundary/)
       end
     end
 
