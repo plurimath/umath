@@ -21,7 +21,7 @@
 #   id is listed in spec/parser/fixtures/oracle/native-divergences.yml must
 #   instead still differ on the native engine. Any pin failure, any
 #   difference or a generation with no raw-tree rows exits 1. Runs both
-#   engines whatever UNICODEMATH_ENGINE says.
+#   engines whatever UMATH_ENGINE says.
 #
 # --staging DIR: every DIR/**/*.yml payload (schema umath-model-corpus/1,
 #   rows of id, input, optional decimal, and expected outcome). Per row and
@@ -43,7 +43,7 @@
 #   --report FILE also writes the counts and, per capture, the kinds of
 #   value (hash, array, string, nil) the accepted rows' bound trees held.
 #
-# Runs on the Ruby engine (UNICODEMATH_ENGINE=native to change). Prints one
+# Runs on the Ruby engine (UMATH_ENGINE=native to change). Prints one
 # line per failure and a count summary; exits 1 on any failure, missing or
 # duplicate row id.
 
@@ -61,7 +61,7 @@ require_relative "model_tree"
 require_relative "stage_cases"
 
 SCHEMA = "umath-model-corpus/1"
-ENGINE = (ENV["UNICODEMATH_ENGINE"] || "ruby").to_sym
+ENGINE = (ENV["UMATH_ENGINE"] || "ruby").to_sym
 # Rows where the Parsanol native engine gives another tree than legacy, on
 # this grammar and on the grammar before the shape normalization; they must
 # still differ (see the file).

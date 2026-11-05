@@ -30,7 +30,7 @@ env:
   PIN: spec/fixtures/testsuite-pin.yml
   # Parsanol ships a precompiled native extension for x86_64 Linux; fail
   # instead of skipping the native-engine examples if it is missing.
-  UNICODEMATH_REQUIRE_NATIVE: "1"
+  UMATH_REQUIRE_NATIVE: "1"
 
 jobs:
   replay:

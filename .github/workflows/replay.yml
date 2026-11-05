@@ -111,10 +111,10 @@ jobs:
       - name: Replay through the raw-tree boundary
         run: bundle exec rspec spec/parser/oracle_parity_spec.rb
         env:
-          UNICODEMATH_ORACLE_INVENTORY: ${{ runner.temp }}/inventory.yml
-          UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
-          UNICODEMATH_NATIVE_IDS: ${{ inputs.native_ids || 'all' }}
-          UNICODEMATH_REQUIRE_NATIVE: "1"
+          UMATH_ORACLE_INVENTORY: ${{ runner.temp }}/inventory.yml
+          UMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
+          UMATH_NATIVE_IDS: ${{ inputs.native_ids || 'all' }}
+          UMATH_REQUIRE_NATIVE: "1"
       - name: Replay through the typed model (Ruby engine)
         if: ${{ !cancelled() }}
         run: >-
@@ -130,7 +130,7 @@ jobs:
           --rows "$RUNNER_TEMP/capture/rows"
           --report "$RUNNER_TEMP/capture/model-report-native.json"
         env:
-          UNICODEMATH_ENGINE: native
+          UMATH_ENGINE: native
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -175,10 +175,10 @@ jobs:
       - name: Replay through the raw-tree boundary on both engines
         run: bundle exec rspec spec/parser/oracle_parity_spec.rb
         env:
-          UNICODEMATH_ORACLE_INVENTORY: ${{ github.workspace }}/spec/parser/fixtures/oracle/inventory/authored.yml
-          UNICODEMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
-          UNICODEMATH_NATIVE_IDS: all
-          UNICODEMATH_REQUIRE_NATIVE: "1"
+          UMATH_ORACLE_INVENTORY: ${{ github.workspace }}/spec/parser/fixtures/oracle/inventory/authored.yml
+          UMATH_ORACLE_ROWS: ${{ runner.temp }}/capture/rows
+          UMATH_NATIVE_IDS: all
+          UMATH_REQUIRE_NATIVE: "1"
       - name: Replay through the typed model (Ruby engine)
         if: ${{ !cancelled() }}
         run: >-
@@ -194,7 +194,7 @@ jobs:
           --rows "$RUNNER_TEMP/capture/rows"
           --report "$RUNNER_TEMP/capture/model-report-native.json"
         env:
-          UNICODEMATH_ENGINE: native
+          UMATH_ENGINE: native
       - uses: actions/upload-artifact@v4
         if: always()
         with:
