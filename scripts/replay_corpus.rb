@@ -132,17 +132,16 @@ module UmathReplayCorpus
     ledger_path = File.join(testsuite, "generations", "#{pin.language}.yaml")
     raise Error, "#{ledger_path} does not exist" unless File.file?(ledger_path)
 
-    entry = YAML.safe_load_file(ledger_path, aliases: false).fetch("entries").find { |e| e["generation"] == pin.generation }
+    ledger = StageCases.committed_file(testsuite, "generations/#{pin.language}.yaml", error: Error)
+    entry = YAML.safe_load(ledger, aliases: false).fetch("entries").find { |e| e["generation"] == pin.generation }
     raise Error, "generations/#{pin.language}.yaml has no generation #{pin.generation}" unless entry
     if entry["snapshot_digest"] != pin.digest
       raise Error, "ledger digest #{entry['snapshot_digest']} of generation #{pin.generation} " \
                    "is not the expected #{pin.digest}"
     end
 
-    dir = File.join(testsuite, entry.fetch("path"))
-    paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: dir).reject { |p| File.directory?(File.join(dir, p)) }
-    paths.each { |p| raise Error, "#{entry['path']}/#{p} is a symlink" if File.symlink?(File.join(dir, p)) }
-    files = paths.to_h { |p| [p, File.binread(File.join(dir, p))] }
+    # The committed bytes: a core.autocrlf checkout has CRLF working files.
+    files = StageCases.committed_files(testsuite, entry.fetch("path"), error: Error)
     digest = StageCases.snapshot_digest(files)
     raise Error, "#{entry['path']}: digest #{digest} does not match the ledger's #{pin.digest}" unless digest == pin.digest
 
@@ -244,7 +243,7 @@ module UmathReplayCorpus
                 "mismatched_rows" => failures.size, "failures" => failures }
     if report
       FileUtils.mkdir_p(File.dirname(report))
-      File.write(report, "#{JSON.pretty_generate(summary, max_nesting: false)}\n")
+      File.binwrite(report, "#{JSON.pretty_generate(summary, max_nesting: false)}\n")
     end
     log.puts "#{rows.size} raw-tree rows from #{summary['raw_tree_payloads']} payloads on " \
              "#{ENGINES.join(' and ')} (#{diverged} listed native divergences): #{failures.size} differ"
@@ -372,7 +371,7 @@ def replay_staging(dir, boundaries, write)
     next unless write
 
     header = File.readlines(file).take_while { |l| l.start_with?("#") }.join
-    File.write(file, header + YAML.dump(doc).delete_prefix("---\n"))
+    File.binwrite(file, header + YAML.dump(doc).delete_prefix("---\n"))
   end
 end
 
@@ -469,7 +468,7 @@ def legacy_main(argv)
     replay_oracle(options[:inventory], options[:rows])
   end
   if options[:report]
-    File.write(options[:report], JSON.pretty_generate("counts" => COUNTS, "failures" => FAILURES,
+    File.binwrite(options[:report], JSON.pretty_generate("counts" => COUNTS, "failures" => FAILURES,
                                                       "capture_kinds" => KINDS.sort.to_h))
   end
   puts "#{COUNTS.map { |k, v| "#{k}=#{v}" }.join(' ')} failures=#{FAILURES.size} engine=#{ENGINE}"

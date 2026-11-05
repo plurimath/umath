@@ -286,7 +286,7 @@ module StageCases
       dirty = git(@root, "status", "--porcelain", "--", "stages", "generations")
       raise Failure, "testsuite checkout has uncommitted stage files:\n#{dirty}" unless dirty.empty?
 
-      @ledger_bytes = File.binread(File.join(@root, "generations", "#{LANGUAGE}.yaml"))
+      @ledger_bytes = StageCases.committed_file(@root, "generations/#{LANGUAGE}.yaml")
       entries = YAML.safe_load(@ledger_bytes).fetch("entries")
       @entry = generation ? entries.find { |e| e["generation"] == generation } : entries.last
       raise Failure, "ledger has no generation #{generation}" unless @entry
@@ -306,15 +306,9 @@ module StageCases
       @entry["path"]
     end
 
-    # [relative path inside the generation, bytes] for every file.
+    # [relative path inside the generation, committed bytes] for every file.
     def load_files
-      base = File.join(@root, dir)
-      paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: base)
-                 .reject { |p| File.directory?(File.join(base, p)) }
-      paths.each do |p|
-        raise Failure, "#{dir}/#{p} is a symlink" if File.symlink?(File.join(base, p))
-      end
-      @files = paths.sort_by(&:b).to_h { |p| [p, File.binread(File.join(base, p))] }
+      @files = StageCases.committed_files(@root, dir).sort_by { |p, _| p.b }.to_h
       @provenance_bytes = @files.fetch("provenance.yaml") { raise Failure, "#{dir} has no provenance.yaml" }
       @provenance = YAML.safe_load(@provenance_bytes)
     end
@@ -364,6 +358,51 @@ module StageCases
 
       out
     end
+  end
+
+  # { path relative to +dir+ => bytes } for every file under +dir+ in the
+  # HEAD commit of the git checkout +root+. The bytes are the committed
+  # blobs, not the working tree: a checkout made with core.autocrlf (the
+  # Git for Windows default) has CRLF files whose bytes are not the ones the
+  # digests and checksums were taken over. The caller checks that the
+  # checkout is clean first. Symlinks and submodules raise +error+.
+  def self.committed_files(root, dir, error: Failure)
+    prefix = "#{dir.chomp('/')}/"
+    listing = git_bytes(root, ["ls-tree", "-r", "-z", "--full-tree", "HEAD", "--", prefix], error)
+    entries = listing.split("\0").map do |line|
+      meta, path = line.split("\t", 2)
+      mode, type, oid = meta.split(" ")
+      path = path.dup.force_encoding(Encoding::UTF_8)
+      raise error, "#{path} is a symlink" if mode == "120000"
+      raise error, "#{path} is not a file (#{type})" unless type == "blob"
+
+      [path.delete_prefix(prefix), oid]
+    end
+    return {} if entries.empty?
+
+    out = git_bytes(root, ["cat-file", "--batch"], error, stdin: entries.map { |_, oid| "#{oid}\n" }.join)
+    pos = 0
+    entries.to_h do |path, oid|
+      header_end = out.index("\n", pos)
+      got, _type, size = out.byteslice(pos...header_end).split(" ")
+      raise error, "git cat-file: unexpected object #{got} for #{oid}" unless got == oid
+
+      bytes = out.byteslice(header_end + 1, size.to_i)
+      pos = header_end + 1 + size.to_i + 1
+      [path, bytes]
+    end
+  end
+
+  # The committed bytes of +path+ at HEAD of the git checkout +root+.
+  def self.committed_file(root, path, error: Failure)
+    git_bytes(root, ["cat-file", "blob", "HEAD:#{path}"], error)
+  end
+
+  def self.git_bytes(root, args, error, stdin: "")
+    out, err, status = Open3.capture3("git", "-C", root, *args, stdin_data: stdin, binmode: true)
+    raise error, "git #{args.join(' ')} in #{root}: #{err.strip}" unless status.success?
+
+    out
   end
 
   def self.snapshot_digest(files)

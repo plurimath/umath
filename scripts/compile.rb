@@ -51,10 +51,21 @@ def binding_files(artifact)
   Dir[artifact.sub(/\.json\z/, ".bindings.*.json")].sort
 end
 
+# `parsanol parg compile` writes its files in text mode, so on Windows the
+# sealed text's trailing newline lands on disk as CRLF. The artifacts are
+# compact JSON, which has no raw carriage return, so every CRLF is a line
+# ending; this restores the exact sealed bytes, as on every other platform.
+def lf!(file)
+  bytes = File.binread(file)
+  fixed = bytes.gsub("\r\n", "\n")
+  File.binwrite(file, fixed) unless fixed == bytes
+end
+
 # Compiles the parse artifact and, with --bindings all, one bindings
 # artifact per Parsanol binding target.
 def compile!(output)
   run!("bundle", "exec", "parsanol", "parg", "compile", GRAMMAR, "-o", output, "--bindings", "all")
+  [output, *binding_files(output)].each { |file| lf!(file) }
   expected = Parsanol::PARG::Bindings::Artifact::TARGETS.map { |t| output.sub(/\.json\z/, ".bindings.#{t}.json") }.sort
   return if binding_files(output) == expected
 
@@ -105,5 +116,5 @@ lines.push(
   "entries #{envelope.fetch('entries').keys.join(' ')}",
   "order_warnings #{envelope.dig('lint', 'order_warnings').size}",
 )
-File.write(CHECKSUMS, "#{lines.join("\n")}\n")
-puts File.read(CHECKSUMS)
+File.binwrite(CHECKSUMS, "#{lines.join("\n")}\n")
+puts File.binread(CHECKSUMS)

@@ -65,6 +65,6 @@ doc = {
               "class's to_umath, kind is paren for Math::Symbols::Paren classes",
   "symbols" => entries,
 }
-File.write(OUT, "#{JSON.pretty_generate(doc)}\n")
+File.binwrite(OUT, "#{JSON.pretty_generate(doc)}\n")
 puts "symbols #{entries.size} (#{entries.count { |_, v| v['kind'] == 'paren' }} parens)"
 puts "wrote #{OUT} sha256:#{Digest::SHA256.file(OUT).hexdigest}"

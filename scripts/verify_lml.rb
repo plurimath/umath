@@ -58,8 +58,8 @@ sums = checksums(json, documents)
 
 if write
   Dir.mkdir(File.dirname(DOCUMENTS)) unless Dir.exist?(File.dirname(DOCUMENTS))
-  File.write(DOCUMENTS, json)
-  File.write(CHECKSUMS, sums)
+  File.binwrite(DOCUMENTS, json)
+  File.binwrite(CHECKSUMS, sums)
   puts "wrote #{documents.size} model documents, sha256:#{Digest::SHA256.hexdigest(json)}"
   exit
 end
