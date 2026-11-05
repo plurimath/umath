@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Unicodemath
+module Umath
   # The legacy UnicodeMath preprocessing (Plurimath::UnicodeMath::Parser at
   # the pinned oracle commit), step for step. The grammar runs on its
   # result, never on the caller's text. See docs/parser-contract.adoc,

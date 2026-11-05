@@ -2,16 +2,16 @@
 
 require "json"
 
-module Unicodemath
+module Umath
   # Symbol resolution: the separate pass after model construction that
   # gives every Model::MathSymbol its Unicode value and kind from the
-  # exported symbol catalog (data/unicodemath-symbols.json, written by
+  # exported symbol catalog (data/umath-symbols.json, written by
   # scripts/export_symbols.rb from the pinned Plurimath commit).
   #
   # Lookup is the legacy one: the spelling with surrounding whitespace
   # removed, exactly as the grammar matched it.
   module Symbols
-    FORMAT = "unicodemath-symbol-catalog/1"
+    FORMAT = "umath-symbol-catalog/1"
     CHARACTER_REFERENCE = /&#(?:x(\h{1,6})|(\d{1,7}));/
 
     @catalog = nil

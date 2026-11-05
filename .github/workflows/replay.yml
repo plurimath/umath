@@ -31,7 +31,7 @@ on:
       - "scripts/unwrap.rb"
       - "scripts/model_tree.rb"
       - "scripts/normalize_shapes.rb"
-      - "scripts/unicodemath_shapes.rb"
+      - "scripts/umath_shapes.rb"
       - "scripts/generate_model.rb"
       - "spec/parser/**"
       - "spec/fixtures/testsuite-pin.yml"
@@ -95,7 +95,7 @@ jobs:
             # own harness removes before parsing (remove_prefix).
             rows.each { |r| r["input"] = r["input"].start_with?("1") ? r["input"].delete_prefix("1") : r["input"].delete_prefix("0") }
             abort "empty shard" if rows.empty?
-            inventory = { "schema" => "unicodemath-oracle-inventory/1",
+            inventory = { "schema" => "umath-oracle-inventory/1",
                           "source" => { "kind" => "fixture",
                                         "note" => "plurimath-testsuite fixtures/unicode-expectations.yaml, index mod 16 = #{shard}" },
                           "rows" => rows }

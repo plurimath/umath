@@ -6,7 +6,7 @@
 
 require "json"
 
-PROTOCOL = "unicodemath-oracle/1"
+PROTOCOL = "umath-oracle/1"
 
 request = JSON.parse($stdin.read)
 command = request.dig("input", "v").to_s

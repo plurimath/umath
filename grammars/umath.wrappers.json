@@ -1,5 +1,5 @@
 {
-  "format": "unicodemath-wrappers/1",
+  "format": "umath-wrappers/1",
   "wrappers": {
     "empty": "empty",
     "list": "list",

@@ -33,8 +33,8 @@ jobs:
       # it was built with; rebuilding with either changed changes its bytes.
       - name: Use the compiler and Ruby the committed artifact records
         run: |
-          echo "PARSANOL_VERSION=$(awk '$1 == "compiler_version" { print $2 }' artifacts/unicodemath.checksums.txt)" >> "$GITHUB_ENV"
-          echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/unicodemath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
+          echo "PARSANOL_VERSION=$(awk '$1 == "compiler_version" { print $2 }' artifacts/umath.checksums.txt)" >> "$GITHUB_ENV"
+          echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/umath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ env.ARTIFACT_RUBY }}
@@ -46,9 +46,9 @@ jobs:
       - name: Regenerate the grammar, compile twice, rewrite the manifest
         run: bundle exec ruby scripts/compile.rb --determinism
       - name: Check the artifact against its source
-        run: bundle exec parsanol parg check --source grammars/unicodemath.parg --artifact artifacts/unicodemath.json
+        run: bundle exec parsanol parg check --source grammars/umath.parg --artifact artifacts/umath.json
       - name: Require the committed files to equal the regenerated ones
-        run: git diff --exit-code -- grammars artifacts lib/unicodemath/model/nodes.rb
+        run: git diff --exit-code -- grammars artifacts lib/umath/model/nodes.rb
 
   parser:
     name: artifact and parser specs (Ruby ${{ matrix.ruby }})
@@ -102,32 +102,32 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-      - run: gem build unicodemath.gemspec
+      - run: gem build umath.gemspec
       - name: The gem holds only what it needs at run time
         run: |
-          gem spec ./unicodemath-*.gem files | sed -n 's/^- //p' | sort > "$RUNNER_TEMP/files.txt"
+          gem spec ./umath-*.gem files | sed -n 's/^- //p' | sort > "$RUNNER_TEMP/files.txt"
           cat "$RUNNER_TEMP/files.txt"
-          unexpected=$(grep -Ev '^(lib/.*\.rb|artifacts/unicodemath\.json|artifacts/unicodemath\.bindings\.ruby\.json|data/unicodemath-symbols\.json|docs/[^/]+\.adoc|README\.adoc|CHANGELOG\.md|LICENSE\.md)$' "$RUNNER_TEMP/files.txt" || true)
+          unexpected=$(grep -Ev '^(lib/.*\.rb|artifacts/umath\.json|artifacts/umath\.bindings\.ruby\.json|data/umath-symbols\.json|docs/[^/]+\.adoc|README\.adoc|CHANGELOG\.md|LICENSE\.md)$' "$RUNNER_TEMP/files.txt" || true)
           test -z "$unexpected" || { echo "unexpected files: $unexpected"; exit 1; }
-          for f in lib/unicodemath.rb lib/unicodemath/model/nodes.rb artifacts/unicodemath.json artifacts/unicodemath.bindings.ruby.json data/unicodemath-symbols.json LICENSE.md; do
+          for f in lib/umath.rb lib/umath/model/nodes.rb artifacts/umath.json artifacts/umath.bindings.ruby.json data/umath-symbols.json LICENSE.md; do
             grep -qx "$f" "$RUNNER_TEMP/files.txt" || { echo "missing $f"; exit 1; }
           done
       - name: Install the built gem alone and parse with it
         run: |
           export GEM_HOME="$RUNNER_TEMP/gems" GEM_PATH="$RUNNER_TEMP/gems"
-          gem install --no-document ./unicodemath-*.gem
+          gem install --no-document ./umath-*.gem
           cd "$RUNNER_TEMP"
-          ruby -runicodemath -e '
+          ruby -rumath -e '
             abort "plurimath loaded" if defined?(Plurimath) || !$LOADED_FEATURES.grep(%r{/plurimath[/.]}).empty?
-            abort "loaded from the checkout" unless $LOADED_FEATURES.grep(%r{/unicodemath\.rb\z}).first.start_with?(ENV["GEM_HOME"])
-            d = Unicodemath.parse("a/b", engine: :ruby)
-            abort "unexpected model #{d.inspect}" unless d.expression.frac.is_a?(Unicodemath::Model::Frac)
+            abort "loaded from the checkout" unless $LOADED_FEATURES.grep(%r{/umath\.rb\z}).first.start_with?(ENV["GEM_HOME"])
+            d = Umath.parse("a/b", engine: :ruby)
+            abort "unexpected model #{d.inspect}" unless d.expression.frac.is_a?(Umath::Model::Frac)
             abort "symbols unresolved" unless d.expression.frac.numerator.atom.alphanumeric.kind
-            empty = Unicodemath.parse("", engine: :ruby)
-            abort "empty input #{empty.inspect}" unless empty.is_a?(Unicodemath::Model::Document) && empty.expression.nil?
-            p Unicodemath.parse("a/b")
+            empty = Umath.parse("", engine: :ruby)
+            abort "empty input #{empty.inspect}" unless empty.is_a?(Umath::Model::Document) && empty.expression.nil?
+            p Umath.parse("a/b")
             abort "plurimath loaded" if defined?(Plurimath)
-            puts "ok #{Unicodemath::VERSION} #{Unicodemath.last_engine} #{d.to_json} #{Unicodemath.artifact_paths.first}"
+            puts "ok #{Umath::VERSION} #{Umath.last_engine} #{d.to_json} #{Umath.artifact_paths.first}"
           '
 
   oracle-smoke:

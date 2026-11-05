@@ -2,7 +2,7 @@
 
 require_relative "spec_helper"
 
-RSpec.describe Unicodemath::RawParser do
+RSpec.describe Umath::RawParser do
   def parse(input, **opts)
     described_class.parse(input, engine: :ruby, **opts)
   end
@@ -68,7 +68,7 @@ RSpec.describe Unicodemath::RawParser do
 
   describe "refusals" do
     it "raises ParseError with offsets into the grammar input" do
-      expect { parse("α)") }.to raise_error(Unicodemath::ParseError) { |e|
+      expect { parse("α)") }.to raise_error(Umath::ParseError) { |e|
         expect(e.input).to eq("&#x3b1;)")
         expect([e.char_offset, e.byte_offset]).to eq([7, 7])
       }
@@ -78,48 +78,48 @@ RSpec.describe Unicodemath::RawParser do
   describe "engines" do
     it "records the engine that ran" do
       parse("a")
-      expect(Unicodemath::Engine.last_engine).to eq(:ruby)
+      expect(Umath::Engine.last_engine).to eq(:ruby)
     end
 
     it "uses Ruby by default, also where the native extension is available" do
-      allow(Unicodemath::Engine).to receive(:native_available?).and_return(true)
+      allow(Umath::Engine).to receive(:native_available?).and_return(true)
       expect(described_class.parse("a").engine).to eq(:ruby)
-      Unicodemath.parse("a")
-      expect(Unicodemath.last_engine).to eq(:ruby)
+      Umath.parse("a")
+      expect(Umath.last_engine).to eq(:ruby)
     end
 
     it "runs native when asked explicitly" do
-      skip "native engine not available" unless Unicodemath::Engine.native_available? || native_required?
+      skip "native engine not available" unless Umath::Engine.native_available? || native_required?
 
       expect(described_class.parse("a", engine: :native).engine).to eq(:native)
-      Unicodemath.parse("a", engine: :native)
-      expect(Unicodemath.last_engine).to eq(:native)
+      Umath.parse("a", engine: :native)
+      expect(Umath.last_engine).to eq(:native)
     end
 
     it "raises EngineUnavailable for :native without the extension" do
-      allow(Unicodemath::Engine).to receive(:native_available?).and_return(false)
-      expect { described_class.parse("a", engine: :native) }.to raise_error(Unicodemath::EngineUnavailable)
+      allow(Umath::Engine).to receive(:native_available?).and_return(false)
+      expect { described_class.parse("a", engine: :native) }.to raise_error(Umath::EngineUnavailable)
     end
 
     it "uses Ruby under :auto without the extension" do
-      allow(Unicodemath::Engine).to receive(:native_available?).and_return(false)
+      allow(Umath::Engine).to receive(:native_available?).and_return(false)
       expect(described_class.parse("a", engine: :auto).engine).to eq(:ruby)
     end
 
     it "refuses deep input on native off the main thread, and reruns it on Ruby under :auto" do
-      skip "native engine not available" unless Unicodemath::Engine.native_available? || native_required?
+      skip "native engine not available" unless Umath::Engine.native_available? || native_required?
 
       deep = "#{'(' * 30}a#{')' * 30}"
       Thread.new do
-        expect { described_class.parse(deep, engine: :native) }.to raise_error(Unicodemath::NestingTooDeep)
-        expect(Unicodemath::Engine.last_engine).to eq(:native)
+        expect { described_class.parse(deep, engine: :native) }.to raise_error(Umath::NestingTooDeep)
+        expect(Umath::Engine.last_engine).to eq(:native)
         expect(described_class.parse(deep, engine: :auto).engine).to eq(:ruby)
       end.join
     end
 
     it "turns an exhausted Ruby stack into NestingTooDeep" do
       deep = "#{'(' * 400}a#{')' * 400}"
-      expect { parse(deep) }.to raise_error(Unicodemath::NestingTooDeep) { |e|
+      expect { parse(deep) }.to raise_error(Umath::NestingTooDeep) { |e|
         expect([e.byte_offset, e.char_offset]).to eq([nil, nil])
       }
     end
@@ -127,12 +127,12 @@ RSpec.describe Unicodemath::RawParser do
 
   describe "the declared bindings" do
     it "carry the parse shape's tree unchanged" do
-      loaded = Unicodemath.artifacts
+      loaded = Umath.artifacts
       shape = loaded.parse.root_atom("dot").parse("a/b", compatibility: :parslet)
       bound = loaded.bindings.apply("dot", shape)
-      expect(bound.keys).to eq(%i[unicodemath_tree model])
-      expect(bound[:unicodemath_tree]).to equal(shape[:unicodemath_tree])
-      expect(canonical(parse("a/b").tree)).to eq(canonical(shape[:unicodemath_tree]))
+      expect(bound.keys).to eq(%i[umath_tree model])
+      expect(bound[:umath_tree]).to equal(shape[:umath_tree])
+      expect(canonical(parse("a/b").tree)).to eq(canonical(shape[:umath_tree]))
     end
 
     it "carry the same tree as plain data for the model" do

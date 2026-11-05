@@ -6,9 +6,9 @@
 #   bundle exec ruby scripts/verify_lml.rb           verify (CI)
 #   bundle exec ruby scripts/verify_lml.rb --write   rewrite model/
 #
-# Every class of Unicodemath::Model (the generated node classes and
-# Document) is exported with Lutaml::Model::Lml.export. model/unicodemath.lml.json holds
-# the documents, ordered by model name; model/unicodemath.lml.checksums.txt
+# Every class of Umath::Model (the generated node classes and
+# Document) is exported with Lutaml::Model::Lml.export. model/umath.lml.json holds
+# the documents, ordered by model name; model/umath.lml.checksums.txt
 # holds each document's LML checksum and the file's sha256.
 #
 # Verification: the committed files equal a fresh export byte for byte,
@@ -20,18 +20,18 @@
 require "digest"
 require "json"
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
-require "unicodemath"
+require "umath"
 
 ROOT = File.expand_path("..", __dir__)
-DOCUMENTS = File.join(ROOT, "model/unicodemath.lml.json")
-CHECKSUMS = File.join(ROOT, "model/unicodemath.lml.checksums.txt")
-FORMAT = "unicodemath-lml/1"
+DOCUMENTS = File.join(ROOT, "model/umath.lml.json")
+CHECKSUMS = File.join(ROOT, "model/umath.lml.checksums.txt")
+FORMAT = "umath-lml/1"
 
 write = ARGV.delete("--write")
 abort "usage: ruby scripts/verify_lml.rb [--write]" unless ARGV.empty?
 
 def model_classes
-  Unicodemath::Model.constants.sort.map { |c| Unicodemath::Model.const_get(c) }
+  Umath::Model.constants.sort.map { |c| Umath::Model.const_get(c) }
                     .select { |k| k.is_a?(Class) && k < Lutaml::Model::Serializable }
 end
 
@@ -39,7 +39,7 @@ def export
   documents = model_classes.map { |k| Lutaml::Model::Lml.export(k) }.sort_by(&:model_name)
   json = JSON.pretty_generate(
     "format" => FORMAT,
-    "root" => Unicodemath::Model::Document.name,
+    "root" => Umath::Model::Document.name,
     "models" => documents.map(&:to_h),
   )
   ["#{json}\n", documents]
@@ -49,7 +49,7 @@ def checksums(json, documents)
   lines = ["# Written by scripts/verify_lml.rb: the LML checksum of every model",
            "# document, then the sha256 of the documents file.",
            *documents.map { |d| "#{d.model_name} #{d.checksum}" },
-           "model/unicodemath.lml.json sha256:#{Digest::SHA256.hexdigest(json)}"]
+           "model/umath.lml.json sha256:#{Digest::SHA256.hexdigest(json)}"]
   "#{lines.join("\n")}\n"
 end
 

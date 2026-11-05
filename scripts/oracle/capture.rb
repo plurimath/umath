@@ -22,7 +22,7 @@ require "optparse"
 require "rbconfig"
 require_relative "harness"
 
-module UnicodemathOracle
+module UmathOracle
   ORACLE_REPOSITORY = "https://github.com/plurimath/plurimath"
   ORACLE_COMMIT = "e7ab4a5186c9be96f62d670574bc2c72f9365ad4"
   ROOT = File.expand_path("../..", __dir__)
@@ -56,7 +56,7 @@ module UnicodemathOracle
       report["out_dir"] = relative(out)
       report["deadline"] = @options[:deadline]
       report_path = @options[:report] || File.join(out, "report.json")
-      UnicodemathOracle.atomic_write(report_path, "#{JSON.pretty_generate(report)}\n")
+      UmathOracle.atomic_write(report_path, "#{JSON.pretty_generate(report)}\n")
       warn summary_line(report, report_path)
       report["complete"] ? 0 : 2
     rescue Error => e
@@ -122,13 +122,13 @@ module UnicodemathOracle
 
     def identity
       files = HARNESS_FILES.to_h do |name|
-        [name, UnicodemathOracle.sha256_file(File.join(ORACLE_DIR, name))]
+        [name, UmathOracle.sha256_file(File.join(ORACLE_DIR, name))]
       end
       worker = @options[:worker]
       {
         "oracle" => worker ? nil : { "repository" => ORACLE_REPOSITORY, "commit" => ORACLE_COMMIT },
         "worker" => worker ? { "path" => relative(worker),
-                               "sha256" => UnicodemathOracle.sha256_file(worker) } : "legacy",
+                               "sha256" => UmathOracle.sha256_file(worker) } : "legacy",
         "harness_sha256" => files,
         "ruby" => RUBY_VERSION,
       }
@@ -146,4 +146,4 @@ module UnicodemathOracle
   end
 end
 
-exit UnicodemathOracle::CLI.new(ARGV).run if $PROGRAM_NAME == __FILE__
+exit UmathOracle::CLI.new(ARGV).run if $PROGRAM_NAME == __FILE__

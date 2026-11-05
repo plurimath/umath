@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "unicode-external-121",
   "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
   "request_digest": "9e0153500bad6773237b2e8136f20dd2387f8efd6f43e74ab6f98cbdde8fc8ee",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "unicode-external-121",
     "outcome": "succeeded",
     "environment": {
@@ -4411,7 +4411,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mo>&#x2212;</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>x</mi>\n        <mi>y</mi>\n        <mi>z</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mrow>\n        <mi>y</mi>\n        <mi>z</mi>\n      </mrow>\n    </msub>\n    <mi>x</mi>\n    <msup>\n      <mi>y</mi>\n      <msup>\n        <mrow>\n          <mn>2</mn>\n          <mi>z</mi>\n        </mrow>\n        <mn>2</mn>\n      </msup>\n    </msup>\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>x</mi>\n        <mi>y</mi>\n        <mi>z</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <mi>x</mi>\n    <mi>y</mi>\n    <mn>1</mn>\n    <mi>x</mi>\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>x</mi>\n        <mi>y</mi>\n        <mi>z</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mrow>\n        <mi>x</mi>\n        <mi>y</mi>\n      </mrow>\n    </msub>\n    <mi>x</mi>\n    <mi>x</mi>\n    <mi>y</mi>\n    <mi>z</mi>\n    <mi>y</mi>\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>x</mi>\n        <mi>y</mi>\n        <mi>z</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mrow>\n        <mi>x</mi>\n        <mi>y</mi>\n        <mi>z</mi>\n      </mrow>\n    </msub>\n    <mi>y</mi>\n    <mi>z</mi>\n    <mi>x</mi>\n    <mi>x</mi>\n    <mi>y</mi>\n    <mi>z</mi>\n  </mstyle>\n</math>\n"
           }
         },
-        "unicodemath": {
+        "umath": {
           "status": "ok",
           "output": {
             "t": "str",

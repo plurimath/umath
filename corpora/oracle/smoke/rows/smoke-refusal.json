@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "smoke-refusal",
   "source": "corpora/oracle/inventory/smoke.yml",
   "request_digest": "725882496ee90eabe013072728f95501a5d6ae5ecad986321cccc5fd57cedc93",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "smoke-refusal",
     "outcome": "refused",
     "environment": {

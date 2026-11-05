@@ -11,11 +11,11 @@ require_relative "../../scripts/replay_corpus"
 # scripts/replay_corpus.rb --testsuite: the pin checks and the raw-tree
 # replay, against a small testsuite checkout built in a temporary git
 # repository.
-RSpec.describe UnicodemathReplayCorpus do
+RSpec.describe UmathReplayCorpus do
   PIN_FILE = File.expand_path("../fixtures/testsuite-pin.yml", __dir__)
 
   before do
-    next if Unicodemath::Engine.native_available?
+    next if Umath::Engine.native_available?
     raise "the native engine is required" if ENV["UNICODEMATH_REQUIRE_NATIVE"] == "1"
 
     skip "the native engine is not available"

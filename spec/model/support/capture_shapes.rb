@@ -3,10 +3,10 @@
 require "json"
 require "set"
 
-module Unicodemath
+module Umath
   module Spec
     # Static result shapes of the normalized grammar's captures, from
-    # grammars/unicodemath.normalized-rules.json, under Parslet's flattening
+    # grammars/umath.normalized-rules.json, under Parslet's flattening
     # rules (Parsanol::Atoms::CanFlatten): for every capture name, whether
     # its value can be nil, a string (slice), a hash (and with which keys) or
     # an array of hashes (and with which keys).

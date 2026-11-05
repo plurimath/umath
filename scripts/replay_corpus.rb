@@ -15,7 +15,7 @@
 #   snapshot digest, that the digest recomputed from the generation's files
 #   is the same and that every payload has its recorded checksum.
 #   --language and --generation, when given, must equal the pin's. Then every
-#   row of every raw-tree payload is parsed with Unicodemath::RawParser.parse
+#   row of every raw-tree payload is parsed with Umath::RawParser.parse
 #   on the Ruby and the native engine, as scripts/stage_cases.rb writes it,
 #   and each outcome must equal the row's expected value. Rows whose source
 #   id is listed in spec/parser/fixtures/oracle/native-divergences.yml must
@@ -23,7 +23,7 @@
 #   difference or a generation with no raw-tree rows exits 1. Runs both
 #   engines whatever UNICODEMATH_ENGINE says.
 #
-# --staging DIR: every DIR/**/*.yml payload (schema unicodemath-model-corpus/1,
+# --staging DIR: every DIR/**/*.yml payload (schema umath-model-corpus/1,
 #   rows of id, input, optional decimal, and expected outcome). Per row and
 #   boundary:
 #     raw    the typed model holds exactly the grammar's bound tree
@@ -54,13 +54,13 @@ require "open3"
 require "optparse"
 require "yaml"
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
-require "unicodemath"
+require "umath"
 require_relative "oracle/canonical"
 require_relative "unwrap"
 require_relative "model_tree"
 require_relative "stage_cases"
 
-SCHEMA = "unicodemath-model-corpus/1"
+SCHEMA = "umath-model-corpus/1"
 ENGINE = (ENV["UNICODEMATH_ENGINE"] || "ruby").to_sym
 # Rows where the Parsanol native engine gives another tree than legacy, on
 # this grammar and on the grammar before the shape normalization; they must
@@ -71,7 +71,7 @@ LOCALE_DECIMALS = { nil => ".", "en" => ".", "fr" => ",", "de" => ",", "ar" => "
 
 # The --testsuite mode: replays the plurimath-testsuite stage generation
 # pinned in spec/fixtures/testsuite-pin.yml.
-module UnicodemathReplayCorpus
+module UmathReplayCorpus
   class Error < StandardError; end
 
   ROOT = File.expand_path("..", __dir__)
@@ -229,7 +229,7 @@ module UnicodemathReplayCorpus
     if generation && generation != pinned.generation
       raise Error, "--generation #{generation} is not the pinned #{pinned.generation}"
     end
-    raise Error, "the native engine is not available" unless Unicodemath::Engine.native_available?
+    raise Error, "the native engine is not available" unless Umath::Engine.native_available?
 
     _dir, payloads = verify(File.expand_path(testsuite), pinned)
     rows = raw_rows(payloads)
@@ -310,16 +310,16 @@ def fail_row(id, message)
 end
 
 def outcome(input, decimal)
-  { "model" => Unicodemath.parse(input, decimal: decimal, engine: ENGINE).to_hash }
-rescue Unicodemath::ParseError => e
+  { "model" => Umath.parse(input, decimal: decimal, engine: ENGINE).to_hash }
+rescue Umath::ParseError => e
   { "refusal" => { "error" => e.class.name.split("::").last, "char_offset" => e.char_offset, "byte_offset" => e.byte_offset } }
 end
 
 # One parse: the raw result and the document built from it, as
-# Unicodemath.parse builds it.
+# Umath.parse builds it.
 def parse_both(input, decimal)
-  raw = Unicodemath::RawParser.parse(input, decimal: decimal, engine: ENGINE)
-  document = Unicodemath.parse(input, decimal: decimal, engine: ENGINE)
+  raw = Umath::RawParser.parse(input, decimal: decimal, engine: ENGINE)
+  document = Umath.parse(input, decimal: decimal, engine: ENGINE)
   [raw, document]
 end
 
@@ -328,7 +328,7 @@ def model_problem(raw, document)
   return document.expression.nil? ? nil : "formula-less input built an expression" if raw.text.nil?
 
   survey({ "(root)" => raw.model_data })
-  UnicodemathModelTree.lossless?(document.expression, raw.model_data) ? nil : "model does not hold the bound tree"
+  UmathModelTree.lossless?(document.expression, raw.model_data) ? nil : "model does not hold the bound tree"
 rescue TypeError => e
   e.message
 end
@@ -355,7 +355,7 @@ def replay_staging(dir, boundaries, write)
       if boundaries.include?("raw")
         problem = begin
           model_problem(*parse_both(row.fetch("input"), decimal))
-        rescue Unicodemath::ParseError
+        rescue Umath::ParseError
           nil
         end
         problem ? fail_row(id, "raw: #{problem}") : COUNTS["raw ok"] += 1
@@ -394,7 +394,7 @@ def replay_oracle(inventory, rows_dir)
       # The stage profile: invalid UTF-8 is an ArgumentError, whatever the
       # legacy facade did with it.
       begin
-        Unicodemath.parse(input, decimal: decimal, engine: ENGINE)
+        Umath.parse(input, decimal: decimal, engine: ENGINE)
         fail_row(id, "invalid UTF-8 accepted")
       rescue ArgumentError
         COUNTS["invalid input rejected"] += 1
@@ -409,7 +409,7 @@ def replay_oracle(inventory, rows_dir)
         if legacy.nil?
           fail_row(id, "oracle row has no raw tree")
         else
-          same = UnicodemathOracle::Canonical.dump(UnicodemathUnwrap.call(raw.tree)) == legacy
+          same = UmathOracle::Canonical.dump(UmathUnwrap.call(raw.tree)) == legacy
           if ENGINE == :native && NATIVE_DIVERGENCES.include?(id)
             same ? fail_row(id, "listed native divergence now matches; remove it from the list") : COUNTS["known native divergence"] += 1
           elsif same
@@ -420,14 +420,14 @@ def replay_oracle(inventory, rows_dir)
         end
         problem = model_problem(raw, document)
         problem ? fail_row(id, "model: #{problem}") : COUNTS["model ok"] += 1
-      rescue Unicodemath::Error, ArgumentError => e
+      rescue Umath::Error, ArgumentError => e
         fail_row(id, "legacy accepted, gem raised #{e.class}: #{e.message[0, 200]}")
       end
     when "refused"
       begin
-        Unicodemath.parse(input, decimal: decimal, engine: ENGINE)
+        Umath.parse(input, decimal: decimal, engine: ENGINE)
         fail_row(id, "legacy refused, gem accepted")
-      rescue Unicodemath::ParseError
+      rescue Umath::ParseError
         COUNTS["refused ok"] += 1
       end
     else
@@ -436,13 +436,13 @@ def replay_oracle(inventory, rows_dir)
       # (a stack overflow) must be refused, never returned as a model.
       error = captured.dig("result", "boundaries", "preprocess", "error", "class")
       begin
-        document = Unicodemath.parse(input, decimal: decimal, engine: ENGINE)
+        document = Umath.parse(input, decimal: decimal, engine: ENGINE)
         if error == "NoMethodError" && document.expression.nil?
           COUNTS["empty document ok"] += 1
         else
           fail_row(id, "legacy #{captured['outcome']} (#{error}), gem returned #{document.to_hash.inspect[0, 120]}")
         end
-      rescue Unicodemath::ParseError, ArgumentError
+      rescue Umath::ParseError, ArgumentError
         error == "NoMethodError" ? fail_row(id, "formula-less input refused") : COUNTS["errored refused"] += 1
       end
     end
@@ -478,7 +478,7 @@ end
 
 if $PROGRAM_NAME == __FILE__
   if ARGV.include?("--testsuite") || ARGV.any? { |a| a.start_with?("--testsuite=") }
-    exit UnicodemathReplayCorpus.main(ARGV)
+    exit UmathReplayCorpus.main(ARGV)
   else
     exit(legacy_main(ARGV) ? 0 : 1)
   end

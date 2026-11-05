@@ -83,7 +83,7 @@ RSpec.describe StageCases do
     end
 
     it "keeps slice text with byte and character offsets" do
-      tree = Unicodemath::RawParser.parse("a/b", engine: :ruby).tree
+      tree = Umath::RawParser.parse("a/b", engine: :ruby).tree
       slices = []
       walk = lambda do |node|
         case node
@@ -111,7 +111,7 @@ RSpec.describe StageCases do
       outcome = described_class.agreed("t", "a/b")
       expect(outcome.keys).to eq(%w[preprocessed tree])
       expect(outcome["preprocessed"]).to eq("str" => "a/b")
-      legacy = UnicodemathUnwrap.call(Unicodemath::RawParser.parse("a/b", engine: :ruby).tree)
+      legacy = UmathUnwrap.call(Umath::RawParser.parse("a/b", engine: :ruby).tree)
       expect(outcome["tree"]).to eq(StageCases::Canonical.dump(legacy))
     end
 
@@ -127,8 +127,8 @@ RSpec.describe StageCases do
     end
 
     it "does not record a nesting limit as a refusal" do
-      allow(Unicodemath::RawParser).to receive(:parse)
-        .and_raise(Unicodemath::NestingTooDeep.new("deep", input: "x", byte_offset: nil, char_offset: nil))
+      allow(Umath::RawParser).to receive(:parse)
+        .and_raise(Umath::NestingTooDeep.new("deep", input: "x", byte_offset: nil, char_offset: nil))
       expect { described_class.of("x", :ruby) }.to raise_error(StageCases::Failure, /nesting/)
     end
   end
@@ -140,7 +140,7 @@ RSpec.describe StageCases do
 
     it "writes the Document from its bound data in declaration order" do
       tree = tree_of("a+b#1")
-      expect(tree["node"]).to eq("Unicodemath::Model::Document")
+      expect(tree["node"]).to eq("Umath::Model::Document")
       expect(tree["fields"].map(&:first)).to eq(%w[expression label decimal])
       expect(tree["fields"].last).to eq(["decimal", { "str" => "." }])
       expect(tree["fields"][1]).to eq(["label", { "str" => "1" }])
@@ -160,19 +160,19 @@ RSpec.describe StageCases do
       walk.(tree_of("α+b"))
       expect(symbols).not_to be_empty
       symbols.each do |fields|
-        value, kind = Unicodemath::Symbols.lookup(fields["spelling"]["str"])
+        value, kind = Umath::Symbols.lookup(fields["spelling"]["str"])
         expect(fields.slice("value", "kind")).to eq("value" => { "str" => value }, "kind" => { "str" => kind })
       end
     end
 
     it "writes an input without a formula as a Document with only its decimal" do
-      expect(tree_of("")).to eq("node" => "Unicodemath::Model::Document", "fields" => [["decimal", { "str" => "." }]])
+      expect(tree_of("")).to eq("node" => "Umath::Model::Document", "fields" => [["decimal", { "str" => "." }]])
     end
 
     it "refuses data the declared attributes do not hold" do
-      expect { described_class.node(Unicodemath::Model::Document, { "nope" => "x" }) }
+      expect { described_class.node(Umath::Model::Document, { "nope" => "x" }) }
         .to raise_error(StageCases::Failure, /no attribute nope/)
-      expect { described_class.node(Unicodemath::Model::Document, { "label" => 1 }) }
+      expect { described_class.node(Umath::Model::Document, { "label" => 1 }) }
         .to raise_error(StageCases::Failure, /Integer/)
     end
 
@@ -247,7 +247,7 @@ RSpec.describe StageCases do
 
         provenance = YAML.safe_load(files["#{gen}/provenance.yaml"])
         expect(provenance["generation"]).to eq(2)
-        expect(provenance["producers"].keys).to eq(%w[legacy-oracle unicodemath-raw])
+        expect(provenance["producers"].keys).to eq(%w[legacy-oracle umath-raw])
         expect(provenance["payloads"].map { |p| p["path"] }).to eq(%w[payloads/fences.yaml payloads/raw-fences.yaml])
         copy = provenance["payloads"][0]["source"]
         expect(copy["relation"]).to eq("copy")
@@ -288,11 +288,11 @@ RSpec.describe StageCases do
         model = YAML.safe_load(files["#{gen}/payloads/model-fences.yaml"])
         expect(model.slice("group", "boundary")).to eq("group" => "model-fences", "boundary" => "typed-model")
         expect(model["cases"].map { |c| c["id"] }).to eq(%w[f-1.model f-2.model])
-        expect(model["cases"][0]["expected"]["tree"]["node"]).to eq("Unicodemath::Model::Document")
+        expect(model["cases"][0]["expected"]["tree"]["node"]).to eq("Umath::Model::Document")
         expect(model["cases"][1]["expected"]).to eq("refusal" => { "category" => "parse_error", "byte_offset" => 1 })
 
         provenance = YAML.safe_load(files["#{gen}/provenance.yaml"])
-        expect(provenance["producers"].keys).to eq(%w[legacy-oracle unicodemath-raw unicodemath-model])
+        expect(provenance["producers"].keys).to eq(%w[legacy-oracle umath-raw umath-model])
         expect(provenance["payloads"].find { |p| p["path"] == "payloads/raw-fences.yaml" }["source"])
           .to include("relation" => "copy")
         expect(YAML.safe_load(files["generations/unicode.yaml"])["entries"].last)

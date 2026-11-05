@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Unicodemath
+module Umath
   # Maps positions in the grammar input back to the caller's text.
   #
   # The grammar runs on the preprocessed text (Preprocessor), which differs

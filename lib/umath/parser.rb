@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Unicodemath
-  # The public parser behind Unicodemath.parse: preprocessing, grammar and
+module Umath
+  # The public parser behind Umath.parse: preprocessing, grammar and
   # bindings (RawParser), typed model construction by lutaml-model from the
   # declared attribute types, then symbol resolution (Symbols.resolve).
   module Parser

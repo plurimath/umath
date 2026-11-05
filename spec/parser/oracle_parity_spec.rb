@@ -51,7 +51,7 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
     engines = native_ids.include?(id) ? %i[ruby native] : %i[ruby]
     engines.each do |engine|
       it "reproduces #{id} on the #{engine} engine" do
-        skip "native engine not available" if engine == :native && !Unicodemath::Engine.native_available? && !native_required?
+        skip "native engine not available" if engine == :native && !Umath::Engine.native_available? && !native_required?
         pending "known Parsanol native-engine divergence (fixtures/oracle/native-divergences.yml)" if engine == :native && divergent.include?(id)
 
         row = JSON.parse(File.read(File.join(rows_dir, "#{id}.json")), max_nesting: false)
@@ -73,23 +73,23 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
 
     case raw["status"]
     when "ok"
-      result = Unicodemath::RawParser.parse(input, decimal: decimal, engine: engine)
+      result = Umath::RawParser.parse(input, decimal: decimal, engine: engine)
       expect_preprocessing(pre, result)
       expect(canonical(legacy(result.tree))).to eq(raw["tree"])
       expect(result.engine).to eq(engine)
     when "refused"
       expected = raw.dig("error", "message")[/at line 1 char (\d+)\.\z/, 1]
       expect(expected).not_to be_nil, "oracle refusal without a line-1 position"
-      expect { Unicodemath::RawParser.parse(input, decimal: decimal, engine: engine) }
-        .to raise_error(Unicodemath::ParseError) { |e|
-          expect(e).not_to be_a(Unicodemath::NestingTooDeep)
+      expect { Umath::RawParser.parse(input, decimal: decimal, engine: engine) }
+        .to raise_error(Umath::ParseError) { |e|
+          expect(e).not_to be_a(Umath::NestingTooDeep)
           expect(canonical_string(e.input)).to eq(pre["text"])
           expect(e.char_offset).to eq(expected.to_i - 1)
         }
     when "error"
       expect(raw.dig("error", "class")).to eq("SystemStackError")
-      expect { Unicodemath::RawParser.parse(input, decimal: decimal, engine: engine) }
-        .to raise_error(Unicodemath::NestingTooDeep)
+      expect { Umath::RawParser.parse(input, decimal: decimal, engine: engine) }
+        .to raise_error(Umath::NestingTooDeep)
     else
       raise "unexpected raw status #{raw['status'].inspect}"
     end
@@ -106,10 +106,10 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
   def expect_preprocess_error(error, input, decimal, engine)
     case error["class"]
     when "ArgumentError"
-      expect { Unicodemath::RawParser.parse(input, decimal: decimal, engine: engine) }
+      expect { Umath::RawParser.parse(input, decimal: decimal, engine: engine) }
         .to raise_error(ArgumentError, /UTF-8/)
     when "NoMethodError"
-      result = Unicodemath::RawParser.parse(input, decimal: decimal, engine: engine)
+      result = Umath::RawParser.parse(input, decimal: decimal, engine: engine)
       expect(result.text).to be_nil
       expect(result.tree).to be_nil
     else

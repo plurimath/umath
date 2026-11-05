@@ -10,7 +10,7 @@ require "parsanol"
 # scripts/stage_cases.rb. Not part of the gem.
 #
 # The normalization only ADDS captures, listed in
-# grammars/unicodemath.wrappers.json as {name => kind}. The unwrap replaces
+# grammars/umath.wrappers.json as {name => kind}. The unwrap replaces
 # each wrapper by the value legacy produced there and re-runs Parslet's own
 # flattening (Parsanol::Atoms::CanFlatten#merge_fold and
 # #flatten_repetition) over the parts, bottom-up:
@@ -28,10 +28,10 @@ require "parsanol"
 # One run stands for one legacy hash part. That is exact because the
 # generator refuses a grammar where a sequence can have more than one hash
 # part after a list wrapper (ShapeNormalizer#list_tails).
-module UnicodemathUnwrap
+module UmathUnwrap
   extend Parsanol::Atoms::CanFlatten
 
-  WRAPPERS_PATH = File.expand_path("../grammars/unicodemath.wrappers.json", __dir__)
+  WRAPPERS_PATH = File.expand_path("../grammars/umath.wrappers.json", __dir__)
 
   module_function
 
@@ -44,7 +44,7 @@ module UnicodemathUnwrap
   def call(value, table = wrappers)
     case value
     when Hash then unwrap_hash(value, table)
-    when Array then UnicodemathUnwrap.send(:flatten_repetition, value.map { |v| call(v, table) }, true)
+    when Array then UmathUnwrap.send(:flatten_repetition, value.map { |v| call(v, table) }, true)
     else value
     end
   end
@@ -70,7 +70,7 @@ module UnicodemathUnwrap
     parts << run if run
     return nil if only_nil
 
-    UnicodemathUnwrap.send(:foldl, parts) { |l, r| UnicodemathUnwrap.send(:merge_fold, l, r) }
+    UmathUnwrap.send(:foldl, parts) { |l, r| UmathUnwrap.send(:merge_fold, l, r) }
   end
 
   def part(kind, value)

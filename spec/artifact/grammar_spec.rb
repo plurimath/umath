@@ -18,7 +18,7 @@ RSpec.describe "the grammar build inputs" do
   end
 
   it "records the pinned oracle and its source files" do
-    expect(export["format"]).to eq("unicodemath-grammar-export/1")
+    expect(export["format"]).to eq("umath-grammar-export/1")
     expect(export["oracle"]).to include("repository" => "https://github.com/plurimath/plurimath",
                                         "commit" => "e7ab4a5186c9be96f62d670574bc2c72f9365ad4")
     expect(export.dig("oracle", "files").keys).to include("lib/plurimath/unicode_math/parse.rb",
@@ -37,7 +37,7 @@ RSpec.describe "the grammar build inputs" do
 
   it "names the export checksum in the generated grammar's header" do
     header = File.foreach(ArtifactSpecHelpers::GRAMMAR).first(5).join
-    expect(header).to include("data/unicodemath-grammar.json sha256:#{Digest::SHA256.file(ArtifactSpecHelpers::EXPORT).hexdigest}")
+    expect(header).to include("data/umath-grammar.json sha256:#{Digest::SHA256.file(ArtifactSpecHelpers::EXPORT).hexdigest}")
   end
 
   it "is pure ASCII" do

@@ -6,11 +6,11 @@ require "json"
 require "yaml"
 require_relative "canonical"
 
-module UnicodemathOracle
-  PROTOCOL = "unicodemath-oracle/1"
-  ROW_SCHEMA = "unicodemath-oracle-row/1"
-  REPORT_SCHEMA = "unicodemath-oracle-report/1"
-  INVENTORY_SCHEMA = "unicodemath-oracle-inventory/1"
+module UmathOracle
+  PROTOCOL = "umath-oracle/1"
+  ROW_SCHEMA = "umath-oracle-row/1"
+  REPORT_SCHEMA = "umath-oracle-report/1"
+  INVENTORY_SCHEMA = "umath-oracle-inventory/1"
 
   # Outcomes a worker can report. They are all data about the oracle.
   DATA_OUTCOMES = %w[succeeded refused errored].freeze
@@ -61,7 +61,7 @@ module UnicodemathOracle
           raise Error, "#{path}: schema must be #{INVENTORY_SCHEMA}"
         end
 
-        @files << { "path" => path, "sha256" => UnicodemathOracle.sha256_file(path),
+        @files << { "path" => path, "sha256" => UmathOracle.sha256_file(path),
                     "rows" => Array(doc["rows"]).size }
         Array(doc["rows"]).each do |row|
           row = normalize(row, path)
@@ -338,7 +338,7 @@ module UnicodemathOracle
         "detail" => result.detail,
         "result" => result.payload,
       }
-      UnicodemathOracle.atomic_write(row_path(row["id"]), "#{JSON.pretty_generate(doc, max_nesting: false)}\n")
+      UmathOracle.atomic_write(row_path(row["id"]), "#{JSON.pretty_generate(doc, max_nesting: false)}\n")
     end
 
     def summary(attempted, reused, stopped_early, timings)
@@ -368,7 +368,7 @@ module UnicodemathOracle
         "complete" => complete,
         "rows" => found.map do |id, doc|
           { "id" => id, "outcome" => doc["outcome"],
-            "sha256" => UnicodemathOracle.sha256_file(row_path(id)) }
+            "sha256" => UmathOracle.sha256_file(row_path(id)) }
         end,
         "timings" => timings,
       }

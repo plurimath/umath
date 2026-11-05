@@ -1,12 +1,12 @@
 name: stage-cases
 
 # Writes the next unicode stage generation of plurimath-testsuite with
-# scripts/stage_cases.rb (raw-tree rows from Unicodemath::RawParser on the
+# scripts/stage_cases.rb (raw-tree rows from Umath::RawParser on the
 # Ruby and native engines) in two independent runs, requires both to write the
 # same bytes, checks the result with the testsuite's own validators and
 # uploads it as the stage-generation artifact. The testsuite PR copies that
 # artifact unchanged. The typed-model generation (--boundary typed-model,
-# typed models from Unicodemath.parse) is written the same way from
+# typed models from Umath.parse) is written the same way from
 # MODEL_TESTSUITE_COMMIT and uploaded as stage-generation-model.
 
 on:
@@ -65,7 +65,7 @@ jobs:
       # The Ruby the committed artifact records, so the producer block names
       # the Ruby whose Unicode tables built the grammar.
       - name: Use the Ruby the committed artifact records
-        run: echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/unicodemath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
+        run: echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/umath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ env.ARTIFACT_RUBY }}
@@ -104,11 +104,11 @@ jobs:
         run: diff -r run-1 run-2
       - uses: actions/checkout@v4
         with:
-          path: unicodemath
+          path: umath
           persist-credentials: false
       - name: Check PINNED_COMMIT matches spec/fixtures/testsuite-pin.yml
         run: |
-          pinned=$(awk '$1 == "commit:" { print $2 }' unicodemath/spec/fixtures/testsuite-pin.yml)
+          pinned=$(awk '$1 == "commit:" { print $2 }' umath/spec/fixtures/testsuite-pin.yml)
           test "$pinned" = "$PINNED_COMMIT" || { echo "PINNED_COMMIT=$PINNED_COMMIT but the pin has $pinned"; exit 1; }
       - uses: actions/checkout@v4
         with:
@@ -157,7 +157,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Use the Ruby the committed artifact records
-        run: echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/unicodemath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
+        run: echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/umath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ env.ARTIFACT_RUBY }}

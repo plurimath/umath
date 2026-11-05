@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "smoke-success",
   "source": "corpora/oracle/inventory/smoke.yml",
   "request_digest": "ee334c60f08ee531829178708a7b4bffed518f1379fb4cb79caa105839c11dc2",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "smoke-success",
     "outcome": "succeeded",
     "environment": {
@@ -236,7 +236,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mfrac>\n      <mi>a</mi>\n      <mi>b</mi>\n    </mfrac>\n  </mstyle>\n</math>\n"
           }
         },
-        "unicodemath": {
+        "umath": {
           "status": "ok",
           "output": {
             "t": "str",
