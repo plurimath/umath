@@ -118,13 +118,16 @@ module Umath
       raise ArtifactError, "the grammar artifact cannot be used: #{e.class}: #{e.message}"
     end
 
-    # The legacy grammar runs on the native engine wherever it is available
-    # (Parsanol::Parser picks it for Parslet-compatible parses), so the
-    # position it reports is the native engine's deepest failure. The Ruby
-    # engine reports the same position through a Deepest reporter.
+    # Both engines report the refusal position from the Ruby engine's
+    # Deepest reporter pass. The native engine's own position can stop
+    # earlier, at the start of a multi-character terminal or of an
+    # unclosed string or fence, so a native refusal reruns that pass and
+    # the position does not depend on the engine. Only refusals pay for
+    # the pass. When it gives no position (the Ruby stack is exhausted),
+    # the native position stands.
     def parse_error(error, root, text, mode)
-      cause = mode == :ruby ? ruby_cause(root, text) : error.parse_failure_cause
-      byte = deepest_position(cause)
+      byte = deepest_position(ruby_cause(root, text))
+      byte = deepest_position(error.parse_failure_cause) if byte.nil? && mode == :native
       char = byte && text.byteslice(0, byte).force_encoding(Encoding::UTF_8).scrub.length
       where = byte ? " at character #{char} (byte #{byte})" : ""
       ParseError.new("UnicodeMath input rejected#{where}: #{error.message.lines.first.to_s.strip[0, 200]}",
