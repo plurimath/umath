@@ -221,7 +221,7 @@ module UmathReplayCorpus
                 "mismatched_rows" => failures.size, "failures" => failures }
     if report
       FileUtils.mkdir_p(File.dirname(report))
-      File.write(report, "#{JSON.pretty_generate(summary, max_nesting: false)}\n")
+      File.binwrite(report, "#{JSON.pretty_generate(summary, max_nesting: false)}\n")
     end
     log.puts "#{rows.size} raw-tree rows from #{summary['raw_tree_payloads']} payloads on " \
              "#{ENGINES.join(' and ')}: #{failures.size} differ"
@@ -349,7 +349,7 @@ def replay_staging(dir, boundaries, write)
     next unless write
 
     header = File.readlines(file).take_while { |l| l.start_with?("#") }.join
-    File.write(file, header + YAML.dump(doc).delete_prefix("---\n"))
+    File.binwrite(file, header + YAML.dump(doc).delete_prefix("---\n"))
   end
 end
 
@@ -444,7 +444,7 @@ def legacy_main(argv)
     replay_oracle(options[:inventory], options[:rows])
   end
   if options[:report]
-    File.write(options[:report], JSON.pretty_generate("counts" => COUNTS, "failures" => FAILURES,
+    File.binwrite(options[:report], JSON.pretty_generate("counts" => COUNTS, "failures" => FAILURES,
                                                       "capture_kinds" => KINDS.sort.to_h))
   end
   puts "#{COUNTS.map { |k, v| "#{k}=#{v}" }.join(' ')} failures=#{FAILURES.size} engine=#{ENGINE}"
