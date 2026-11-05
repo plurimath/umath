@@ -11,7 +11,7 @@
       "lib/plurimath/math/symbols/paren.rb": "sha256:316dc4d8b5accb78ac8ca9ff5035a3eb42365492abb666c4589b12b0e677c837"
     }
   },
-  "source": "Plurimath::Utility.all_symbols_classes(:umath); value is the class's to_umath, kind is paren for Math::Symbols::Paren classes",
+  "source": "Plurimath::Utility.all_symbols_classes(:unicodemath); value is the class's to_unicodemath, kind is paren for Math::Symbols::Paren classes",
   "symbols": {
     "\"P{!=}\"": {
       "value": "≠",

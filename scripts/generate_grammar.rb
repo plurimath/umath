@@ -109,7 +109,7 @@ class Exporter
       "inputs" => {
         "wrapper_symbols" => {
           "source" => "Plurimath::UnicodeMath::Constants.wrapper_symbols " \
-                      "(Utility.symbols_hash(:umath) keys matching /\"P\\{[^\\}]+\\}/)",
+                      "(Utility.symbols_hash(:unicodemath) keys matching /\"P\\{[^\\}]+\\}/)",
           "values" => Plurimath::UnicodeMath::Constants.wrapper_symbols.map(&:to_s),
         },
         "decimal_markers" => {
