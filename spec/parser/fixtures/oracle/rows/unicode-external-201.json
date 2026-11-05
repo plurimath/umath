@@ -385,7 +385,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mmultiscripts>\n      <mi>&#x1d434;</mi>\n      <mprescripts/>\n      <mi>&#x22ba;</mi>\n    </mmultiscripts>\n    <mo>=</mo>\n    <mn>0</mn>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

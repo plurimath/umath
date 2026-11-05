@@ -109,7 +109,7 @@ class Exporter
       "inputs" => {
         "wrapper_symbols" => {
           "source" => "Plurimath::UnicodeMath::Constants.wrapper_symbols " \
-                      "(Utility.symbols_hash(:umath) keys matching /\"P\\{[^\\}]+\\}/)",
+                      "(Utility.symbols_hash(:unicodemath) keys matching /\"P\\{[^\\}]+\\}/)",
           "values" => Plurimath::UnicodeMath::Constants.wrapper_symbols.map(&:to_s),
         },
         "decimal_markers" => {
@@ -121,7 +121,7 @@ class Exporter
       },
     }
     doc.merge!(walk)
-    File.write(EXPORT, "#{JSON.pretty_generate(doc)}\n")
+    File.binwrite(EXPORT, "#{JSON.pretty_generate(doc)}\n")
     puts "rules #{doc['rules'].size} classes #{doc['classes'].size}"
     puts "wrote #{EXPORT} sha256:#{Digest::SHA256.file(EXPORT).hexdigest}"
   end
@@ -504,7 +504,7 @@ wrappers = "#{JSON.pretty_generate(
 normalized = "#{JSON.generate('format' => FORMAT, 'root' => generator.root, 'rules' => norm.rules)}\n"
 outputs = { OUT => grammar, WRAPPERS_OUT => wrappers, NORMALIZED_OUT => normalized }
 if check
-  stale = outputs.reject { |path, text| File.exist?(path) && File.read(path, encoding: "UTF-8") == text }.keys
+  stale = outputs.reject { |path, text| File.exist?(path) && File.binread(path) == text.b }.keys
   if stale.empty?
     puts "#{outputs.keys.map { |p| p.delete_prefix("#{ROOT}/") }.join(', ')} up to date"
   else
@@ -513,7 +513,7 @@ if check
   end
 else
   outputs.each do |path, text|
-    File.write(path, text)
+    File.binwrite(path, text)
     puts "wrote #{path.delete_prefix("#{ROOT}/")} bytes=#{text.bytesize} sha256:#{Digest::SHA256.hexdigest(text)}"
   end
 end

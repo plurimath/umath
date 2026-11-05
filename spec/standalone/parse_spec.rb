@@ -38,7 +38,7 @@ RSpec.describe "Umath.parse" do
   end
 
   it "parses on the native engine where it is available" do
-    skip "native engine not available" unless Umath::Engine.native_available? || ENV["UNICODEMATH_REQUIRE_NATIVE"] == "1"
+    skip "native engine not available" unless Umath::Engine.native_available? || ENV["UMATH_REQUIRE_NATIVE"] == "1"
 
     native = Umath.parse("a/b", engine: :native)
     expect(Umath.last_engine).to eq(:native)

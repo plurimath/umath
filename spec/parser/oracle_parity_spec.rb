@@ -16,23 +16,22 @@ require_relative "spec_helper"
 #     --inventory spec/parser/fixtures/oracle/inventory/sample.yml --out OUT
 #   cp OUT/rows/*.json spec/parser/fixtures/oracle/rows/
 #
-# UNICODEMATH_ORACLE_INVENTORY and UNICODEMATH_ORACLE_ROWS point it at another
+# UMATH_ORACLE_INVENTORY and UMATH_ORACLE_ROWS point it at another
 # capture (CI's full replay). Every Ruby-engine row runs; the native engine,
-# which takes seconds per row, runs on the ids in UNICODEMATH_NATIVE_IDS
+# which takes seconds per row, runs on the ids in UMATH_NATIVE_IDS
 # ("all" for every row; by default a fixed few).
 RSpec.describe "raw-tree parity with the legacy oracle" do
-  inventory_path = ENV.fetch("UNICODEMATH_ORACLE_INVENTORY",
+  inventory_path = ENV.fetch("UMATH_ORACLE_INVENTORY",
                              File.join(ParserSpecHelpers::FIXTURES, "inventory", "sample.yml"))
-  rows_dir = ENV.fetch("UNICODEMATH_ORACLE_ROWS", File.join(ParserSpecHelpers::FIXTURES, "rows"))
+  rows_dir = ENV.fetch("UMATH_ORACLE_ROWS", File.join(ParserSpecHelpers::FIXTURES, "rows"))
   inventory = YAML.safe_load_file(inventory_path).fetch("rows")
-  native_ids = ENV.fetch("UNICODEMATH_NATIVE_IDS",
+  native_ids = ENV.fetch("UMATH_NATIVE_IDS",
                          "unicode-external-001,unicode-external-033,unicode-external-041")
   native_ids = case native_ids
                when "all" then inventory.map { |r| r["id"] }
                when "none" then []
                else native_ids.split(",")
                end
-  divergent = YAML.safe_load_file(File.join(ParserSpecHelpers::FIXTURES, "native-divergences.yml")).fetch("ids")
 
   it "has one complete oracle row per inventory id" do
     ids = inventory.map { |r| r["id"] }
@@ -52,7 +51,6 @@ RSpec.describe "raw-tree parity with the legacy oracle" do
     engines.each do |engine|
       it "reproduces #{id} on the #{engine} engine" do
         skip "native engine not available" if engine == :native && !Umath::Engine.native_available? && !native_required?
-        pending "known Parsanol native-engine divergence (fixtures/oracle/native-divergences.yml)" if engine == :native && divergent.include?(id)
 
         row = JSON.parse(File.read(File.join(rows_dir, "#{id}.json")), max_nesting: false)
         boundaries = row.dig("result", "boundaries")

@@ -1358,7 +1358,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mtable>\n      <mlabeledtr>\n        <mtd>\n          <mtext>[1]</mtext>\n        </mtd>\n        <mtd>\n          <mrow>\n            <mi>f</mi>\n            <mrow>\n              <mo>(</mo>\n              <mi>&#x3be;</mi>\n              <mo>)</mo>\n            </mrow>\n            <mo>=</mo>\n            <mrow>\n              <msubsup>\n                <mo>&#x222b;</mo>\n                <mi>a</mi>\n                <mrow/>\n              </msubsup>\n              <mrow>\n                <mi>f</mi>\n                <mrow>\n                  <mo>(</mo>\n                  <mi>x</mi>\n                  <mo>)</mo>\n                </mrow>\n                <msup>\n                  <mi intent=\"ⅇ\">&#x2147;</mi>\n                  <mrow>\n                    <mn>2</mn>\n                    <mi>&#x3c0;</mi>\n                    <mi>&#x2148;</mi>\n                    <mi>x</mi>\n                    <mi>&#x3be;</mi>\n                  </mrow>\n                </msup>\n                <mi>&#x2146;</mi>\n                <mi>x</mi>\n              </mrow>\n            </mrow>\n          </mrow>\n        </mtd>\n      </mlabeledtr>\n    </mtable>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

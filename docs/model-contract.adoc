@@ -167,14 +167,7 @@ parentheses, 100 nested fractions) was built and serialized without error.
   `scripts/replay_corpus.rb --inventory ... --rows ...`, which checks raw
   parity again and that the model holds the bound tree. A row the legacy
   grammar refused must raise `ParseError`, and a row without a formula
-  must give an empty document.
-  On the native engine, the rows in
-  `spec/parser/fixtures/oracle/native-divergences.yml` give another tree
-  than legacy, because Parsanol's native engine takes another alternative
-  of the same grammar. The grammar before the shape normalization gives the
-  same native trees, so the normalization does not cause them. Both checks
-  require those rows to still differ, so a fixed engine shows up as a
-  failure that asks to shorten the list.
+  must give an empty document. Both checks hold on the native engine too.
 * `scripts/verify_lml.rb` exports every model class with
   `Lutaml::Model::Lml.export`, requires the committed
   `model/umath.lml.json` and `model/umath.lml.checksums.txt` to

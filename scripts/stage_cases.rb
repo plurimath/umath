@@ -32,10 +32,7 @@
 # generation (default: the latest in generations/unicode.yaml) has its
 # snapshot digest and every file checksum verified before anything is read.
 # Every input is parsed on the Ruby and the native engine; the run fails
-# unless both engines give the same outcome. In typed-model mode the ids in
-# spec/parser/fixtures/oracle/native-divergences.yml are treated as the
-# parity spec treats them: the Ruby outcome is written and the native one
-# must still differ. Refusals are recorded with their category and byte
+# unless both engines give the same outcome. Refusals are recorded with their category and byte
 # offset; nothing else (nesting limits, invalid input, unexpected values) is
 # turned into data.
 #
@@ -78,7 +75,6 @@ module StageCases
   ENTRY_POINTS = { "raw-tree" => "Umath::RawParser.parse", "typed-model" => "Umath.parse" }.freeze
   LML = "model/umath.lml.json"
   LML_CHECKSUMS = "model/umath.lml.checksums.txt"
-  DIVERGENCES = "spec/parser/fixtures/oracle/native-divergences.yml"
   # The source payloads whose inputs are read: the rows the legacy facade
   # produced, not earlier stage-case payloads.
   SOURCE_PRODUCER_KIND = "legacy-oracle"
@@ -91,7 +87,6 @@ module StageCases
     "grammars",
     "data",
     "model",
-    DIVERGENCES,
     "umath.gemspec",
     "Gemfile",
   ].freeze
@@ -176,18 +171,9 @@ module StageCases
     end
 
     # The same outcome on every engine, or a Failure naming the difference.
-    # For an id in +divergent+ the Ruby outcome is written, and the native
-    # one must still differ (a known Parsanol native-engine divergence).
-    def agreed(id, input, boundary = "raw-tree", divergent: [])
+    def agreed(id, input, boundary = "raw-tree")
       outcomes = ENGINES.to_h do |engine|
         [engine, boundary == "typed-model" ? model_of(input, engine) : of(input, engine)]
-      end
-      if divergent.include?(id)
-        if outcomes.values.uniq.size == 1
-          raise Failure, "#{id}: listed in #{DIVERGENCES} but the engines agree; remove it from the list"
-        end
-
-        return outcomes.fetch(:ruby)
       end
       return outcomes.values.first if outcomes.values.uniq.size == 1
 
@@ -268,14 +254,6 @@ module StageCases
     end
   end
 
-  # The ids spec/parser/fixtures/oracle/native-divergences.yml lists.
-  def self.divergent_ids
-    doc = YAML.safe_load_file(File.join(ROOT, DIVERGENCES))
-    raise Failure, "#{DIVERGENCES}: unexpected schema #{doc['schema'].inspect}" unless doc["schema"] == "umath-native-divergences/1"
-
-    doc.fetch("ids")
-  end
-
   # A verified generation of the testsuite checkout.
   class Source
     attr_reader :root, :commit, :ledger_bytes, :entry, :provenance, :provenance_bytes, :files
@@ -286,7 +264,7 @@ module StageCases
       dirty = git(@root, "status", "--porcelain", "--", "stages", "generations")
       raise Failure, "testsuite checkout has uncommitted stage files:\n#{dirty}" unless dirty.empty?
 
-      @ledger_bytes = File.binread(File.join(@root, "generations", "#{LANGUAGE}.yaml"))
+      @ledger_bytes = StageCases.committed_file(@root, "generations/#{LANGUAGE}.yaml")
       entries = YAML.safe_load(@ledger_bytes).fetch("entries")
       @entry = generation ? entries.find { |e| e["generation"] == generation } : entries.last
       raise Failure, "ledger has no generation #{generation}" unless @entry
@@ -306,15 +284,9 @@ module StageCases
       @entry["path"]
     end
 
-    # [relative path inside the generation, bytes] for every file.
+    # [relative path inside the generation, committed bytes] for every file.
     def load_files
-      base = File.join(@root, dir)
-      paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: base)
-                 .reject { |p| File.directory?(File.join(base, p)) }
-      paths.each do |p|
-        raise Failure, "#{dir}/#{p} is a symlink" if File.symlink?(File.join(base, p))
-      end
-      @files = paths.sort_by(&:b).to_h { |p| [p, File.binread(File.join(base, p))] }
+      @files = StageCases.committed_files(@root, dir).sort_by { |p, _| p.b }.to_h
       @provenance_bytes = @files.fetch("provenance.yaml") { raise Failure, "#{dir} has no provenance.yaml" }
       @provenance = YAML.safe_load(@provenance_bytes)
     end
@@ -366,6 +338,51 @@ module StageCases
     end
   end
 
+  # { path relative to +dir+ => bytes } for every file under +dir+ in the
+  # HEAD commit of the git checkout +root+. The bytes are the committed
+  # blobs, not the working tree: a checkout made with core.autocrlf (the
+  # Git for Windows default) has CRLF files whose bytes are not the ones the
+  # digests and checksums were taken over. The caller checks that the
+  # checkout is clean first. Symlinks and submodules raise +error+.
+  def self.committed_files(root, dir, error: Failure)
+    prefix = "#{dir.chomp('/')}/"
+    listing = git_bytes(root, ["ls-tree", "-r", "-z", "--full-tree", "HEAD", "--", prefix], error)
+    entries = listing.split("\0").map do |line|
+      meta, path = line.split("\t", 2)
+      mode, type, oid = meta.split(" ")
+      path = path.dup.force_encoding(Encoding::UTF_8)
+      raise error, "#{path} is a symlink" if mode == "120000"
+      raise error, "#{path} is not a file (#{type})" unless type == "blob"
+
+      [path.delete_prefix(prefix), oid]
+    end
+    return {} if entries.empty?
+
+    out = git_bytes(root, ["cat-file", "--batch"], error, stdin: entries.map { |_, oid| "#{oid}\n" }.join)
+    pos = 0
+    entries.to_h do |path, oid|
+      header_end = out.index("\n", pos)
+      got, _type, size = out.byteslice(pos...header_end).split(" ")
+      raise error, "git cat-file: unexpected object #{got} for #{oid}" unless got == oid
+
+      bytes = out.byteslice(header_end + 1, size.to_i)
+      pos = header_end + 1 + size.to_i + 1
+      [path, bytes]
+    end
+  end
+
+  # The committed bytes of +path+ at HEAD of the git checkout +root+.
+  def self.committed_file(root, path, error: Failure)
+    git_bytes(root, ["cat-file", "blob", "HEAD:#{path}"], error)
+  end
+
+  def self.git_bytes(root, args, error, stdin: "")
+    out, err, status = Open3.capture3("git", "-C", root, *args, stdin_data: stdin, binmode: true)
+    raise error, "git #{args.join(' ')} in #{root}: #{err.strip}" unless status.success?
+
+    out
+  end
+
   def self.snapshot_digest(files)
     lines = files.sort_by { |path, _| path.b }.map do |path, bytes|
       "#{Digest::SHA256.hexdigest(bytes)}  #{path}\n"
@@ -379,16 +396,14 @@ module StageCases
 
   # Builds the next generation from a verified Source. +producer+ is the
   # stage-gem producer block (see Identity); +boundary+ is raw-tree or
-  # typed-model; +divergent+ the ids with a known native-engine divergence
-  # (typed-model only); +progress+ receives one line per row.
+  # typed-model; +progress+ receives one line per row.
   class Generator
-    def initialize(source, producer, boundary: "raw-tree", divergent: [], progress: nil)
+    def initialize(source, producer, boundary: "raw-tree", progress: nil)
       raise Failure, "unknown boundary #{boundary.inspect} (#{BOUNDARIES.join(', ')})" unless BOUNDARIES.include?(boundary)
 
       @source = source
       @producer = producer
       @boundary = boundary
-      @divergent = divergent
       @progress = progress
     end
 
@@ -526,7 +541,7 @@ module StageCases
         @progress&.call(id)
         { "id" => "#{id}#{ROW_SUFFIXES.fetch(@boundary)}", "input" => Canonical.dump(input),
           "options" => { "decimal" => DECIMAL },
-          "expected" => Outcome.agreed(id, input, @boundary, divergent: @divergent) }
+          "expected" => Outcome.agreed(id, input, @boundary) }
       end
       payload = { "schema" => CASES_SCHEMA, "group" => name, "description" => description(source_path),
                   "boundary" => @boundary, "cases" => cases }
@@ -562,7 +577,7 @@ module StageCases
   module Identity
     module_function
 
-    def producer(source, boundary = "raw-tree", divergent: [])
+    def producer(source, boundary = "raw-tree")
       commit = git("rev-parse", "HEAD").strip
       dirty = git("status", "--porcelain", "--", *PRODUCER_FILES)
       raise Failure, "umath checkout has uncommitted producer files:\n#{dirty}" unless dirty.empty?
@@ -594,7 +609,7 @@ module StageCases
           "lml" => (boundary == "typed-model" ? lml(commit) : nil)
         },
         "semantic_boundary" => boundary,
-        "configuration" => configuration(source, boundary, commit, divergent)
+        "configuration" => configuration(source, boundary)
       }
     end
 
@@ -603,7 +618,7 @@ module StageCases
       names.to_h { |name| [name, Gem.loaded_specs.fetch(name).version.to_s] }
     end
 
-    def configuration(source, boundary, commit, divergent)
+    def configuration(source, boundary)
       config = {
         "decimal" => DECIMAL, "engines" => ENGINES.map(&:to_s),
         "entry_point" => ENTRY_POINTS.fetch(boundary),
@@ -614,17 +629,7 @@ module StageCases
       }
       return config unless boundary == "typed-model"
 
-      ids = source.payloads.select { |entry, _| source.input_entries.include?(entry) }
-                  .flat_map { |_, doc| doc.fetch("cases").map { |c| c["id"] } }
-      config.merge(
-        "engine_agreement" => "required",
-        "native_divergences" => {
-          "list" => file(commit, DIVERGENCES),
-          "rule" => "as spec/parser/oracle_parity_spec.rb: a listed id is a known Parsanol native-engine " \
-                    "divergence; its Ruby outcome is written and the native outcome must still differ",
-          "excluded" => ids & divergent
-        }
-      )
+      config.merge("engine_agreement" => "required")
     end
 
     # The committed LML export the typed-model rows' classes are declared in.
@@ -684,9 +689,8 @@ module StageCases
     def run
       source = Source.new(@options[:testsuite], @options[:generation])
       boundary = @options.fetch(:boundary, "raw-tree")
-      divergent = boundary == "typed-model" ? StageCases.divergent_ids : []
-      generator = Generator.new(source, Identity.producer(source, boundary, divergent: divergent),
-                                boundary: boundary, divergent: divergent, progress: ->(id) { warn "  #{id}" })
+      generator = Generator.new(source, Identity.producer(source, boundary),
+                                boundary: boundary, progress: ->(id) { warn "  #{id}" })
       generator.write(@options[:out])
       entry = generator.ledger_entry
       puts "#{generator.dir}: #{entry['payloads']} payloads, #{entry['rows']} rows, #{entry['snapshot_digest']}"

@@ -1,0 +1,266 @@
+= UnicodeMath notation accepted by Umath
+:toc:
+
+This page describes the UnicodeMath that Umath reads: how the input is
+prepared, which constructs the grammar accepts, and which part of the typed
+model each construct becomes. It is part of the specification set tracked in
+https://github.com/plurimath/plurimath/issues/525[plurimath#525].
+
+UnicodeMath is the linear format described in
+https://www.unicode.org/notes/tn28/[Unicode Technical Note 28]. Umath reads
+the subset and the variations of it that Plurimath reads at commit
+`e7ab4a5186c9be96f62d670574bc2c72f9365ad4` (Plurimath 0.11.17). It does not
+claim to read all of UTN 28, and this page does not list which parts of
+UTN 28 are missing.
+
+Everything here is taken from three sources in this repository:
+
+* the grammar, `grammars/umath.parg`, generated from the legacy grammar;
+* the model, `model/umath.lml.json`, generated from that grammar;
+* the specs under `spec/` and the stage corpus pinned in
+  `spec/fixtures/testsuite-pin.yml`.
+
+How the grammar and the model are produced and checked is in
+link:parser-contract.adoc[the parser contract] and
+link:model-contract.adoc[the model contract]. This page describes the
+notation.
+
+== Before the grammar runs
+
+The grammar reads a rewritten copy of the input. The steps are listed in the
+parser contract. In short:
+
+* A `#` starts an equation label. The text after the last `#` becomes the
+  document's `label`; a `#` inside `✎(...)` does not count.
+* Every non-ASCII character becomes a hexadecimal character reference, so
+  `α` reaches the grammar as `&#x3b1;`. `&` and `"` stay as they are.
+* Everything from the first `⫷` to the last `⫸` is a comment and is removed.
+* `\\` becomes `\`, and `\uXXXX` escapes become the character they name.
+* Leading and trailing whitespace is removed.
+
+== Structure of a formula
+
+The root rule is `expression`. An expression is a sequence of elements.
+Elements may be separated by spaces, by relational symbols such as `=` or
+`≤`, and by operators. An element is one of the constructs below, or a plain
+operand: a letter, a number, a symbol or a bracketed group.
+
+=== Fractions
+
+[cols="2,3"]
+|===
+|Form |Meaning
+
+|`a/b`, `a\over b` |fraction (`Frac`, with `numerator` and `denominator`)
+|`a⁄b`, `a\sdiv b`, `a\sfrac b` |bevelled fraction
+|`a⊘b`, `a\ndiv b` |fraction not in display style
+|`a∕b`, `a\ldiv b` |linear fraction
+|`a¦b`, `a\atop b` |stack without a bar
+|`a⒞b`, `a\choose b` |binomial
+|`½`, `⅓` and the other vulgar fraction characters |a fraction symbol
+|===
+
+A superscript character, a fraction bar and a subscript character, such as
+`ᵃ/ₙ`, make a small fraction (`mini_numerator`, `mini_denominator`).
+
+=== Scripts
+
+`_` gives a subscript and `^` a superscript, in either order. A script is
+one operand or a bracketed group; the brackets of `x_(i+1)` are not part of
+the script. Unicode subscript and superscript characters, such as `x²` or
+`xᵢ`, are read as scripts too. The grammar also has rules for scripts written before a base
+(`pre_subsup`).
+
+=== Large operators
+
+Characters such as `∑`, `∏`, `∫`, `∮`, `⋃` and `⋂`, and command names such
+as `\sum`, `\bigcup` and `\amalg`, are n-ary operators (capture
+`nary_class`). They take limits as scripts and an operand after them.
+
+=== Functions
+
+The function names
+
+`arccos arcsin arctan arg cos cosh cot csc csch def deg det dim erf exp gcd
+hom Im inf ker lim ln log max min mod Pr Re sec sech sin sinh sup tan tanh tg`
+
+are read as functions (capture `unary_functions`) and take the operand that
+follows (class `UnarySubsup` for `sin x`).
+
+=== Roots
+
+* `√x`, `\sqrt x` is a square root, `∛x` a cube root and `∜x` a fourth
+  root.
+* `√(n&x)` is the `n`-th root of `x`.
+* `⒭`, `\root` take the index and then the radicand.
+
+=== Matrices and arrays
+
+`■(a&b@c&d)` is a matrix: `@` separates rows and `&` separates cells. The
+grammar also reads the bracketed matrix characters `⒨`, `⒱`, `⒩`, `ⓢ`,
+`Ⓢ`, `█` and `Ⓒ`, and `\array`. A matrix character followed by one digit,
+such as `■3`, is an identity matrix of that size
+(`identity_matrix_number`).
+
+=== Brackets
+
+`(`, `[`, `{` and their closers make a bracketed group; so do commands such
+as `\langle`, `\lceil`, `\lfloor`, `\lbrack` and `\begin`, with their
+closers. A group may mix a bracket with `|`. In the model the brackets are
+`open_paren` and `close_paren`, both of class `Paren`.
+
+=== Accents, enclosures and styling
+
+* Combining accents after an operand, such as `x̂` or `x⃗`, are accents
+  (capture `accents`). Overlays and marks below are `diacritics_accents`.
+* Horizontal brackets `⏞`, `⏟`, `⎴`, `⎵`, `⏜`, `⏝`, `⏠`, `⏡` take the
+  operand that follows (`hbrack`).
+* `▭(...)`, `\rect(...)` is an enclosure, `⟡(...)`, `\phantom(...)` a
+  phantom. The grammar has a box rule for `□`, but it matches the raw
+  character, which preprocessing has already encoded, so `□a` is read as
+  the symbol `□` followed by `a` (see <<examples>>).
+* `✎(colour&x)`, `\color(...)` sets a colour and `☁(...)`, `\backcolor(...)`
+  a background colour.
+* `ⓘ(...)` carries an intent, and `ⓐ(...)` an argument function.
+* Font commands such as `\mbf`, `\mit`, `\Bbb`, `\mscr`, `\mfrak`,
+  `\msans` and `\mtt` followed by a letter set a font. A mathematical
+  alphanumeric character such as `𝐱` is read as a Unicode symbol, not as a
+  font. `ￗ(...)` is monospace text.
+
+=== Symbols and numbers
+
+Each symbol in the model is a `MathSymbol` (or a `SymbolNode` or `Paren`)
+with `spelling` (the text matched, such as `&#x3b1;` for `α` or `alpha` for
+`\alpha`), `value` (its Unicode text from `data/umath-symbols.json`) and
+`kind`. A spelling the catalog lacks has kind `unlisted`.
+
+Numbers are kept as written. `1.5` is a `DecimalNumber` with `whole`,
+`decimal` and `fractional`. The decimal marker is `.` unless the caller
+passes `decimal: ","` or `decimal: "٫"`. Hexadecimal, binary and octal
+numbers are separate forms.
+
+== The typed model
+
+`Umath.parse` returns a `Umath::Model::Document` with `expression`,
+`label` and `decimal`. Input with no formula gives a document whose
+`expression` is nil. The model has 74 generated classes plus `Document`;
+captures that can hold a whole expression share the class
+`Model::Expression`. Every field with its type is listed in
+`model/umath.lml.json`.
+
+[[examples]]
+== Examples
+
+These results were produced by parsing each input with `Umath.parse` at this
+revision and printing the non-empty fields of the model. A symbol is shown as
+`MathSymbol(spelling)`; the spelling is the encoded text the grammar matched.
+
+[source]
+----
+a/b
+  Expression(frac: Frac(denominator: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("b")))),
+    numerator: Expression(atom: Atom(alphanumeric: MathSymbol("a")))))
+
+x^2
+  Expression(sup_exp: SupExp(base: Expression(symbol: SymbolNode(spelling: "x")),
+    sup: Expression(sup_script: Expression(operand: Operand(factor: Expression(digit: Digit(number: "2")))))))
+
+√x
+  Expression(factor: Expression(root: RootNode(first_value: Expression(factor: Expression(atom:
+    Atom(alphanumeric: MathSymbol("x")))), root_symbol: MathSymbol("&#x221a;"))))
+
+√(3&x)
+  Expression(factor: Expression(root: RootNode(
+    first_value: Expression(expr: Expression(empty: "", factor: Expression(digit: Digit(number: "3")))),
+    second_value: SecondValue(expr: Expression(empty: "", factor: Expression(atom: Atom(alphanumeric: MathSymbol("x"))))))))
+
+sin x
+  Expression(unary_subsup: UnarySubsup(first_value: Expression(factor: Expression(atom:
+    Atom(alphanumeric: MathSymbol("x")))), unary_functions: "sin"))
+
+(a+b)
+  Expression(factor: Expression(intermediate_exp: Expression(close_paren: Paren(spelling: ")"),
+    exp: Expression(exp: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("b")))),
+    operator: MathSymbol("+")), factor: Expression(atom: Atom(alphanumeric: MathSymbol("a"))),
+    open_paren: Paren(spelling: "("))))
+
+■(a&b@c&d)
+  Expression(table: Table(array: ArrayNode(
+    tr: Tr(td: Td(exp: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("a"))))),
+      tds: Tds(td: Td(exp: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("b"))))))),
+    trs: Trs(tr: Tr(td: Td(exp: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("c"))))),
+      tds: Tds(td: Td(exp: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("d"))))))))),
+    matrixs: "&#x25a0;"))
+
+■3
+  Expression(table: Table(identity_matrix_number: "3", matrixs: "&#x25a0;"))
+
+ᵃ/ₙ
+  Expression(frac: Frac(mini_denominator: MiniDenominator(sub_alpha: "&#x2099;"),
+    mini_numerator: MiniNumerator(sup_alpha: "&#x1d43;")))
+
+(a¦b)
+  Expression(factor: Expression(intermediate_exp: Expression(close_paren: Paren(spelling: ")"),
+    frac: Frac(atop: "&#xa6;", denominator: Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("b")))),
+    numerator: Expression(atom: Atom(alphanumeric: MathSymbol("a")))), open_paren: Paren(spelling: "("))))
+
+x̂
+  Expression(accents: Accents(empty: "", first_value: Expression(atom: Atom(alphanumeric: MathSymbol("x"))),
+    list: [ListItem(accent_symbols: MathSymbol("&#x302;"))]))
+
+□a
+  Expression(factor: Expression(ordinary_symbols: MathSymbol("&#x25a1;")),
+    operand: Operand(factor: Expression(atom: Atom(alphanumeric: MathSymbol("a")))))
+
+α
+  Expression(factor: Expression(ordinary_symbols: MathSymbol("&#x3b1;")))
+
+\alpha
+  Expression(factor: Expression(ordinary_symbols: MathSymbol("alpha")))
+
+𝐱
+  Expression(factor: Expression(atom: Atom(char: Char(unicode_symbols: MathSymbol("&#x1d431;")))))
+
+1.5
+  Expression(factor: Expression(decimal_number: DecimalNumber(decimal: ".",
+    fractional: Fractional(number: "5"), whole: Whole(number: "1"))))
+
+a#(1)
+  Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("a")))), label "(1)"
+
+⫷c⫸x
+  Expression(factor: Expression(atom: Atom(alphanumeric: MathSymbol("x"))))
+----
+
+Fields inside each class are printed in the order the class declares them,
+not in input order.
+
+== Errors
+
+Input the grammar does not match raises `Umath::ParseError`, with
+`char_offset` and `byte_offset` in the caller's text. The wording of the
+message is not part of the contract. Input nested too deeply for the engine
+raises `Umath::NestingTooDeep`.
+
+== Conformance
+
+* `spec/model/` checks construction of the model and its shape.
+* `spec/corpus/replay_corpus_spec.rb` and `spec/stage_cases/` replay the
+  stage corpus generation pinned in `spec/fixtures/testsuite-pin.yml`
+  (plurimath-testsuite `stages/unicode/`, generation 2, 72 cases).
+* The oracle specs compare the raw tree with captures of the Plurimath
+  parser.
+
+== Open questions
+
+* Which parts of UTN 28 the gem is meant to cover beyond what Plurimath
+  reads: not specified.
+* The grammar spells `\cbrt` for both the cube root and the fourth root
+  (rules `cbrt_symbols` and `qdrt_symbols`), so the fourth root has no
+  command name of its own. Whether that is intended: not specified.
+* When these examples were generated, parsing `(`, `a/` and `\cbrt x` did
+  not finish within several minutes, so this page shows no refusal example
+  and no result for `\cbrt`. Whether these inputs are expected to be slow:
+  not specified.
+* Labels: parts between the first and the last `#` are dropped. Whether that
+  is intended: not specified.
