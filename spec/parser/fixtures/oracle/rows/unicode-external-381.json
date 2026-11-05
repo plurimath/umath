@@ -559,7 +559,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mrow>\n      <mo>{</mo>\n      <mtable columnalign=\"left\">\n        <mtr>\n          <mtd>\n            <mi>a</mi>\n          </mtd>\n        </mtr>\n        <mtr>\n          <mtd>\n            <mi>b</mi>\n          </mtd>\n        </mtr>\n      </mtable>\n      <mo></mo>\n    </mrow>\n    <mi>&#xa7;</mi>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

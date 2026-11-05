@@ -788,7 +788,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mtext>test</mtext>\n    <mo>+</mo>\n    <mmultiscripts>\n      <mrow>\n        <mo>(</mo>\n        <mn>1,2</mn>\n        <mo>)</mo>\n      </mrow>\n      <mi>n</mi>\n      <mi>m</mi>\n      <mprescripts/>\n      <mi>n</mi>\n      <mi>m</mi>\n    </mmultiscripts>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",
