@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-module Unicodemath
-  # Base class for every error Unicodemath raises on purpose, except
+module Umath
+  # Base class for every error Umath raises on purpose, except
   # ArgumentError for invalid arguments.
   class Error < StandardError; end
 
@@ -29,7 +29,7 @@ module Unicodemath
 
   # A parse or bindings artifact is missing, malformed, fails its checksum,
   # declares the wrong target or kind, or does not pair with the other.
-  # Unicodemath never falls back to another artifact.
+  # Umath never falls back to another artifact.
   class ArtifactError < Error; end
 
   # engine: :native was requested but Parsanol's native extension is not

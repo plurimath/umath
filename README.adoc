@@ -1,11 +1,11 @@
-= Unicodemath: UnicodeMath parser for Ruby
+= Umath: UnicodeMath parser for Ruby
 
-image:https://img.shields.io/gem/v/unicodemath.svg["Gem Version", link="https://rubygems.org/gems/unicodemath"]
-image:https://github.com/plurimath/unicodemath/actions/workflows/test.yml/badge.svg["Build Status", link="https://github.com/plurimath/unicodemath/actions/workflows/test.yml"]
+image:https://img.shields.io/gem/v/umath.svg["Gem Version", link="https://rubygems.org/gems/umath"]
+image:https://github.com/plurimath/umath/actions/workflows/test.yml/badge.svg["Build Status", link="https://github.com/plurimath/umath/actions/workflows/test.yml"]
 
 == Purpose
 
-Unicodemath parses https://www.unicode.org/notes/tn28/[UnicodeMath], the
+Umath parses https://www.unicode.org/notes/tn28/[UnicodeMath], the
 linear format for mathematics described in Unicode Technical Note 28, into a
 typed model of the formula. It reads the UnicodeMath that
 https://github.com/plurimath/plurimath[Plurimath] reads, with the same
@@ -15,7 +15,7 @@ grammar, and is built for Plurimath to use for UnicodeMath input
 The model records the structure of the formula: which symbols, fractions,
 scripts, roots, matrices and brackets it contains, and how they nest. Your
 code decides what to do with it, such as rendering, converting or analysing
-it. Unicodemath does not write MathML or any other output format; Plurimath
+it. Umath does not write MathML or any other output format; Plurimath
 does that.
 
 == Installation
@@ -24,10 +24,10 @@ Add it to your `Gemfile`:
 
 [source,ruby]
 ----
-gem "unicodemath", "~> 0.1.0"
+gem "umath", "~> 0.1.0"
 ----
 
-Unicodemath needs Ruby 3.2 or later. Its runtime dependencies are
+Umath needs Ruby 3.2 or later. Its runtime dependencies are
 https://github.com/parsanol/parsanol-ruby[Parsanol] and
 https://github.com/lutaml/lutaml-model[LutaML Model]. It does not load
 Plurimath.
@@ -36,16 +36,16 @@ Plurimath.
 
 [source,ruby]
 ----
-require "unicodemath"
+require "umath"
 
-doc = Unicodemath.parse("a/b")
+doc = Umath.parse("a/b")
 frac = doc.expression.frac
 frac.numerator.atom.alphanumeric.spelling   # => "a"
 doc.to_hash
 # => {"expression" => {"frac" => {"denominator" => {...}, "numerator" => {...}}}, "decimal" => "."}
 ----
 
-`Unicodemath.parse` returns a `Unicodemath::Model::Document`. Its
+`Umath.parse` returns a `Umath::Model::Document`. Its
 `expression` holds the formula and `decimal` the decimal marker it was parsed
 with. Input with no formula, such as an empty string, gives a document whose
 `expression` is nil.
@@ -53,13 +53,13 @@ with. Input with no formula, such as an empty string, gives a document whose
 The model classes are plain LutaML Model classes, generated from the grammar:
 each named part of the grammar is a class with one attribute per part it can
 contain. Parts that can hold a whole expression, such as a numerator or a
-subscript, share the class `Unicodemath::Model::Expression`. Symbols are
-`Unicodemath::Model::MathSymbol` objects with the text the grammar matched
+subscript, share the class `Umath::Model::Expression`. Symbols are
+`Umath::Model::MathSymbol` objects with the text the grammar matched
 (`spelling`), its Unicode text (`value`) and its kind:
 
 [source,ruby]
 ----
-symbol = Unicodemath.parse("α").expression.factor.ordinary_symbols
+symbol = Umath.parse("α").expression.factor.ordinary_symbols
 symbol.spelling # => "&#x3b1;"
 symbol.value    # => "α"
 symbol.kind     # => "symbol"
@@ -75,8 +75,8 @@ separator are also supported:
 
 [source,ruby]
 ----
-Unicodemath.parse("1,5", decimal: ",")
-Unicodemath.parse("1٫5", decimal: "٫")
+Umath.parse("1,5", decimal: ",")
+Umath.parse("1٫5", decimal: "٫")
 ----
 
 The rules for each model class are in link:docs/model-contract.adoc[the
@@ -85,35 +85,35 @@ in link:docs/parser-contract.adoc[the parser contract].
 
 == Errors
 
-Input that is not valid UnicodeMath raises `Unicodemath::ParseError`, which
+Input that is not valid UnicodeMath raises `Umath::ParseError`, which
 tells you where the parser gave up, as a position in the text you passed:
 
 [source,ruby]
 ----
 begin
-  Unicodemath.parse("α)")
-rescue Unicodemath::ParseError => e
+  Umath.parse("α)")
+rescue Umath::ParseError => e
   e.char_offset # => 1, position in characters
   e.byte_offset # => 2, position in UTF-8 bytes
 end
 ----
 
-Every error Unicodemath raises on purpose is a `Unicodemath::Error`, except
+Every error Umath raises on purpose is a `Umath::Error`, except
 `ArgumentError` for an invalid argument, such as input that is not a valid
 UTF-8 string, an unknown engine or an unsupported decimal marker.
-`Unicodemath::NestingTooDeep`, a kind of `ParseError` with no offsets, means
+`Umath::NestingTooDeep`, a kind of `ParseError` with no offsets, means
 the engine could not handle how deeply the input nests, not that the input
 is invalid.
 
 == Engines
 
-Unicodemath runs its grammar on Parsanol's pure Ruby engine or on its native
+Umath runs its grammar on Parsanol's pure Ruby engine or on its native
 engine. The default is `engine: :ruby`. You can opt into the native engine
 with `engine: :native`, or with `engine: :auto`, which uses the native
 engine where its extension is available and the Ruby engine elsewhere.
 Asking for `engine: :native` where it cannot run raises
-`Unicodemath::EngineUnavailable` instead of quietly using Ruby.
-`Unicodemath.last_engine` tells you which engine handled the last call on
+`Umath::EngineUnavailable` instead of quietly using Ruby.
+`Umath.last_engine` tells you which engine handled the last call on
 the current thread.
 
 Ruby is the default because it is the engine that matches legacy Plurimath.
@@ -141,7 +141,7 @@ See link:docs/testsuite-pin.adoc[the testsuite pin].
 
 == Relation to Plurimath
 
-Unicodemath is one of the language gems split out of Plurimath, with
+Umath is one of the language gems split out of Plurimath, with
 https://github.com/plurimath/amath[amath] for AsciiMath and
 https://github.com/plurimath/latexmath[latexmath] for LaTeX. The plan and its
 progress are tracked in

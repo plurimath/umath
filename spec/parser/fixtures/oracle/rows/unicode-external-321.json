@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "unicode-external-321",
   "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
   "request_digest": "84ca0d92599291f4471aced9e9ca0476137f645329331374710c47e484ab27ba",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "unicode-external-321",
     "outcome": "succeeded",
     "environment": {
@@ -1358,7 +1358,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mtable>\n      <mlabeledtr>\n        <mtd>\n          <mtext>[1]</mtext>\n        </mtd>\n        <mtd>\n          <mrow>\n            <mi>f</mi>\n            <mrow>\n              <mo>(</mo>\n              <mi>&#x3be;</mi>\n              <mo>)</mo>\n            </mrow>\n            <mo>=</mo>\n            <mrow>\n              <msubsup>\n                <mo>&#x222b;</mo>\n                <mi>a</mi>\n                <mrow/>\n              </msubsup>\n              <mrow>\n                <mi>f</mi>\n                <mrow>\n                  <mo>(</mo>\n                  <mi>x</mi>\n                  <mo>)</mo>\n                </mrow>\n                <msup>\n                  <mi intent=\"ⅇ\">&#x2147;</mi>\n                  <mrow>\n                    <mn>2</mn>\n                    <mi>&#x3c0;</mi>\n                    <mi>&#x2148;</mi>\n                    <mi>x</mi>\n                    <mi>&#x3be;</mi>\n                  </mrow>\n                </msup>\n                <mi>&#x2146;</mi>\n                <mi>x</mi>\n              </mrow>\n            </mrow>\n          </mrow>\n        </mtd>\n      </mlabeledtr>\n    </mtable>\n  </mstyle>\n</math>\n"
           }
         },
-        "unicodemath": {
+        "umath": {
           "status": "ok",
           "output": {
             "t": "str",

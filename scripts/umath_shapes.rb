@@ -24,7 +24,7 @@ require_relative "normalize_shapes"
 # (#collisions); and that no sequence has more than one hash part after a
 # list wrapper (#list_tails): there legacy appends each hash to the list
 # separately, and the unwrap could not tell two parts from one.
-class UnicodemathShapes < ShapeNormalizer
+class UmathShapes < ShapeNormalizer
   SPELLING = "spelling"
 
   # +symbols+: the symbol captures that hold text; +symbol_nodes+: the

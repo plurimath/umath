@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-module Unicodemath
+module Umath
   # The internal raw-tree boundary: the legacy preprocessing, then the
   # grammar, then the declared syntax bindings, which carry the raw tree.
   #
   # Internal and for tests and parity replay only; not public API. The
-  # public Unicodemath.parse, which returns the typed language model, is
+  # public Umath.parse, which returns the typed language model, is
   # built on top of it.
   module RawParser
     # +text+: the grammar input (see Preprocessor::Result), nil when the
@@ -26,7 +26,7 @@ module Unicodemath
       result = Result.new(text: pre.text, label: pre.label, labeled: pre.labeled)
       return result if pre.text.nil?
 
-      loaded = Unicodemath.artifacts
+      loaded = Umath.artifacts
       shape = Engine.run(loaded.parse, entry, pre.text, mode, fallback: engine == :auto)
       bound = loaded.bindings.apply(entry, shape)
       result.tree, result.model_data = [Configuration::TREE_CAPTURE, Configuration::MODEL_BINDING].map do |key|

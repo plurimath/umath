@@ -10,7 +10,7 @@
 # parsing. ../rows/ was written by scripts/oracle/capture.rb (the command
 # is in spec/parser/oracle_parity_spec.rb). The full fixture set is
 # replayed by .github/workflows/replay.yml.
-schema: unicodemath-oracle-inventory/1
+schema: umath-oracle-inventory/1
 source:
   kind: sample
   note: Raw-tree parity sample for spec/parser.

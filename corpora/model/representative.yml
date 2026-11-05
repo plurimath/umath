@@ -2,10 +2,10 @@
 # UnicodeMath model. Expectations are the gem's own output (producer
 # stage-gem, written by scripts/replay_corpus.rb --write), reviewed by hand;
 # they are regression data, not legacy parity (that is the raw-tree replay).
-schema: unicodemath-model-corpus/1
+schema: umath-model-corpus/1
 producer:
   kind: stage-gem
-  repository: https://github.com/plurimath/unicodemath
+  repository: https://github.com/plurimath/umath
 rows:
 - id: model-fraction
   input: a/b

@@ -4,7 +4,7 @@
 # the bound tree it was built from? lutaml-model ignores keys a class does
 # not declare, so a missing declaration would otherwise lose data silently.
 # Used by spec/model and scripts/replay_corpus.rb. Not part of the gem.
-module UnicodemathModelTree
+module UmathModelTree
   # Filled by the symbol pass, not by construction.
   DERIVED = %i[value kind].freeze
 

@@ -3,7 +3,7 @@
 require_relative "spec_helper"
 
 RSpec.describe "typed model construction" do
-  M = Unicodemath::Model
+  M = Umath::Model
 
   it "builds typed nodes from the declared attribute types" do
     frac = parse("a/b").expression.frac
@@ -61,11 +61,11 @@ RSpec.describe "typed model construction" do
   it "reports an attribute holding a value of another type" do
     node = M::Frac.new
     node.instance_variable_set(:@numerator, "bare text")
-    expect { UnicodemathModelTree.dump(node) }.to raise_error(TypeError, /Frac#numerator/)
+    expect { UmathModelTree.dump(node) }.to raise_error(TypeError, /Frac#numerator/)
   end
 end
 
-RSpec.describe Unicodemath::Symbols do
+RSpec.describe Umath::Symbols do
   it "decodes character references of unlisted spellings" do
     expect(described_class.lookup("&#x1d400;")).to eq(["𝐀", "unlisted"])
     expect(described_class.lookup("&#65;b")).to eq(%w[Ab unlisted])
@@ -75,7 +75,7 @@ RSpec.describe Unicodemath::Symbols do
     Dir.mktmpdir do |dir|
       path = File.join(dir, "s.json")
       File.write(path, JSON.generate("format" => "other", "symbols" => {}))
-      expect { described_class.load(path) }.to raise_error(Unicodemath::ArtifactError, /format "other"/)
+      expect { described_class.load(path) }.to raise_error(Umath::ArtifactError, /format "other"/)
     end
   end
 end

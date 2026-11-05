@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# grammars/unicodemath.parg -> artifacts/unicodemath.json (Parsanol PARG artifact)
+# grammars/umath.parg -> artifacts/umath.json (Parsanol PARG artifact)
 #
 # Usage:
 #   bundle exec ruby scripts/compile.rb [--determinism]
@@ -8,15 +8,15 @@
 # The bundle must provide the `parsanol` executable (the version is
 # recorded in the checksum manifest). Steps, as in amath:
 #   1. scripts/generate_grammar.rb --check (the .parg matches its export)
-#   2. bundle exec parsanol parg compile  -> artifacts/unicodemath.json
+#   2. bundle exec parsanol parg compile  -> artifacts/umath.json
 #   3. bundle exec parsanol parg check    (artifact matches source + compiler)
 #   4. bundle exec parsanol parg compile ... --bindings all: one checksummed
 #      parg-bindings artifact per Parsanol binding target beside the
-#      artifact, artifacts/unicodemath.bindings.<target>.json (the flag
+#      artifact, artifacts/umath.bindings.<target>.json (the flag
 #      needs parsanol >= 1.3.131; the script refuses a run that emits none)
 #   5. --determinism: compile and emit again into a temporary directory and
 #      require identical bytes for every emitted file
-#   6. write artifacts/unicodemath.checksums.txt
+#   6. write artifacts/umath.checksums.txt
 # Exits nonzero on the first failing step.
 
 require "digest"
@@ -27,10 +27,10 @@ require "rbconfig"
 require "tmpdir"
 
 ROOT = File.expand_path("..", __dir__)
-GRAMMAR = File.join(ROOT, "grammars/unicodemath.parg")
-EXPORT = File.join(ROOT, "data/unicodemath-grammar.json")
-ARTIFACT = File.join(ROOT, "artifacts/unicodemath.json")
-CHECKSUMS = File.join(ROOT, "artifacts/unicodemath.checksums.txt")
+GRAMMAR = File.join(ROOT, "grammars/umath.parg")
+EXPORT = File.join(ROOT, "data/umath-grammar.json")
+ARTIFACT = File.join(ROOT, "artifacts/umath.json")
+CHECKSUMS = File.join(ROOT, "artifacts/umath.checksums.txt")
 
 determinism = ARGV.delete("--determinism")
 abort "usage: ruby scripts/compile.rb [--determinism]" unless ARGV.empty?

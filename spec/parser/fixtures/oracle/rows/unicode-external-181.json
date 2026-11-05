@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "unicode-external-181",
   "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
   "request_digest": "16c3fdd326d1aff82bc6531fdb8a629bc447d8751df3aa5b5f06138890b738e6",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "unicode-external-181",
     "outcome": "succeeded",
     "environment": {
@@ -788,7 +788,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mtext>test</mtext>\n    <mo>+</mo>\n    <mmultiscripts>\n      <mrow>\n        <mo>(</mo>\n        <mn>1,2</mn>\n        <mo>)</mo>\n      </mrow>\n      <mi>n</mi>\n      <mi>m</mi>\n      <mprescripts/>\n      <mi>n</mi>\n      <mi>m</mi>\n    </mmultiscripts>\n  </mstyle>\n</math>\n"
           }
         },
-        "unicodemath": {
+        "umath": {
           "status": "ok",
           "output": {
             "t": "str",

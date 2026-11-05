@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Unicodemath
+module Umath
   # Raised inside Parsanol's native error path when the native engine hit
   # its recursion limit, before Parsanol's interpreter reparse runs (that
   # reparse can take minutes or exhaust the Ruby stack on deep input).
@@ -8,13 +8,13 @@ module Unicodemath
   private_constant :NativeRecursionLimit
 
   # Parsanol::Native.raise_native_parse_error translates a native failure.
-  # While Unicodemath's own native call runs on this thread, this hook turns
+  # While Umath's own native call runs on this thread, this hook turns
   # a recursion-limit failure into NativeRecursionLimit; every other failure,
   # and every other caller of Parsanol, is unaffected. (The same guard as
   # amath's.)
   module NativeRecursionGuard
     MESSAGE = /\A(?:Maximum recursion depth \(\d+\) exceeded|Recursion limit exceeded\b)/
-    KEY = :unicodemath_native_recursion_guard
+    KEY = :umath_native_recursion_guard
 
     def self.watch
       outer = Thread.current[KEY]

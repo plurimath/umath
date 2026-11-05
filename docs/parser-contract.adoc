@@ -8,7 +8,7 @@ parser inside Plurimath does today, which parts of it this gem takes over,
 and how that legacy behaviour is captured so the gem can be compared against
 it.
 
-The gem has one public entry point, `Unicodemath.parse(input, ...)`, which
+The gem has one public entry point, `Umath.parse(input, ...)`, which
 returns a typed language model declared with LutaML Model (LML). That model
 is described in link:model-contract.adoc[the model contract].
 
@@ -17,7 +17,7 @@ internal boundary that the gem and its tests use, and it is the boundary
 the parity captures compare first.
 
 The repository holds the grammar, its compiled artifacts, the internal
-raw-tree parser (`Unicodemath::RawParser`), the typed model and the public
+raw-tree parser (`Umath::RawParser`), the typed model and the public
 parser, the exported symbol catalog and the capture harness in
 `scripts/oracle/`.
 
@@ -102,7 +102,7 @@ in the encoded text.
 
 The grammar is not self-contained: `ConstantsRules` builds alternations from
 `Constants` when the grammar loads, and `Constants.wrapper_symbols` reads
-Plurimath's symbol catalog (`Utility.symbols_hash(:unicodemath)`). The
+Plurimath's symbol catalog (`Utility.symbols_hash(:umath)`). The
 decimal-marker rule reads `Plurimath.configuration`. A gem grammar must take
 these inputs from committed data, not from a live Plurimath.
 
@@ -112,7 +112,7 @@ these inputs from committed data, not from a live Plurimath.
 `Plurimath::Math::Formula`. Grammar refusals and transform failures both
 surface as `Plurimath::Math::ParseError`. The capture records the formula
 object graph and the exact output of the `to_asciimath`, `to_latex`,
-`to_mathml`, `to_unicodemath`, `to_omml` and `to_html` writers.
+`to_mathml`, `to_umath`, `to_omml` and `to_html` writers.
 
 == What the gem must keep (syntax)
 
@@ -130,9 +130,9 @@ object graph and the exact output of the `to_asciimath`, `to_latex`,
 
 == Grammar and artifacts
 
-`data/unicodemath-grammar.json` is a one-time export of the legacy grammar
+`data/umath-grammar.json` is a one-time export of the legacy grammar
 at the pinned commit, written by `scripts/generate_grammar.rb --export`.
-`scripts/generate_grammar.rb` turns it into `grammars/unicodemath.parg`;
+`scripts/generate_grammar.rb` turns it into `grammars/umath.parg`;
 rules that read the decimal marker are emitted once per marker, giving the
 entries `dot`, `comma` and `arabic`.
 
@@ -140,11 +140,11 @@ entries `dot`, `comma` and `arabic`.
 
 Under Parslet's flattening rules the legacy grammar gives one capture name
 text, a hash or a list depending on which alternative matched. Before
-writing the grammar, `scripts/unicodemath_shapes.rb` rewrites the rules so
+writing the grammar, `scripts/umath_shapes.rb` rewrites the rules so
 that every capture always holds one kind. It only adds captures, which never
 changes what the grammar accepts. Rules N1 to N7 are the shared ones in
 `scripts/normalize_shapes.rb`, the same file in every stage gem; N8 and the
-checks below are UnicodeMath's, in `scripts/unicodemath_shapes.rb`:
+checks below are UnicodeMath's, in `scripts/umath_shapes.rb`:
 
 N1 text alternative:: a text-only alternative of a node slot becomes
 `(x) as literal`.
@@ -168,9 +168,9 @@ Generation fails when a capture still holds more than one kind, or nil, when
 one sequence can carry the same added capture twice, or when a sequence can
 have more than one hash part after a `list` capture (legacy appends each of
 them to the list separately, and the unwrap could not tell them apart). The
-generator writes, beside the grammar, `grammars/unicodemath.wrappers.json`
+generator writes, beside the grammar, `grammars/umath.wrappers.json`
 (the added capture names, how to remove each one, and how often each rule
-applied) and `grammars/unicodemath.normalized-rules.json` (the normalized
+applied) and `grammars/umath.normalized-rules.json` (the normalized
 rules, from which `scripts/generate_model.rb` writes the model classes).
 `ruby scripts/generate_grammar.rb --check` and
 `ruby scripts/generate_model.rb --check` fail when any of these files is
@@ -184,16 +184,16 @@ gem does not.
 
 `scripts/compile.rb` compiles the grammar with
 `parsanol parg compile ... --bindings all` (Parsanol 1.3.131 or later). That
-writes `artifacts/unicodemath.json` and one bindings artifact per Parsanol
-binding target, `artifacts/unicodemath.bindings.<target>.json`. With
+writes `artifacts/umath.json` and one bindings artifact per Parsanol
+binding target, `artifacts/umath.bindings.<target>.json`. With
 `--determinism` the script compiles a second time and requires identical
-bytes for every file. It then writes `artifacts/unicodemath.checksums.txt`,
+bytes for every file. It then writes `artifacts/umath.checksums.txt`,
 which records the compiler version, the envelope and per-target binding
 checksums and the sha256 of every file. CI compiles again with the compiler
 and Ruby version that the committed artifact records, and fails if any file
 differs.
 
-Each entry binds its root capture twice: `unicodemath_tree` as `raw`, the
+Each entry binds its root capture twice: `umath_tree` as `raw`, the
 normalized tree with slices and offsets, and as `any` under the path `model`,
 the plain tree that the typed model is built from. At load time the gem
 checks the bindings artifact's kind, checksum, target and version, pairs it
@@ -202,9 +202,9 @@ another artifact.
 
 == Symbol catalog
 
-`data/unicodemath-symbols.json` is the symbol catalog the legacy transform
+`data/umath-symbols.json` is the symbol catalog the legacy transform
 uses: every UnicodeMath spelling of Plurimath's `Math::Symbols::Symbol` and
-`Math::Symbols::Paren` classes, as `Plurimath::Utility.all_symbols_classes(:unicodemath)`
+`Math::Symbols::Paren` classes, as `Plurimath::Utility.all_symbols_classes(:umath)`
 returns them at the pinned commit. For each spelling it records the Unicode
 text the class writes as UnicodeMath (`value`) and whether the class is a
 symbol or a paren (`kind`). It has 3282 spellings, 64 of them parens.
@@ -229,7 +229,7 @@ inventory.
 === Inventory
 
 Inventory files live in `corpora/oracle/inventory/` and use schema
-`unicodemath-oracle-inventory/1`. Each row has an `id`, exactly one of
+`umath-oracle-inventory/1`. Each row has an `id`, exactly one of
 `input` (text) or `input_base64` (exact bytes) and optional `options`
 (currently `locale`). Ids must be unique across all files and safe as file
 names. The harness stops before running anything if an id is duplicated or
@@ -281,7 +281,7 @@ test resuming.
 
 === Report
 
-The report (schema `unicodemath-oracle-report/1`) lists the expected ids,
+The report (schema `umath-oracle-report/1`) lists the expected ids,
 counts per outcome, missing ids, the checksum of every row file, the
 inventory files with their checksums and the harness identity. It is
 `complete` only when every expected id has a row and no row timed out or

@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-# Builds grammars/unicodemath.parg from the committed grammar export in
-# data/unicodemath-grammar.json.
+# Builds grammars/umath.parg from the committed grammar export in
+# data/umath-grammar.json.
 #
 # Usage:
-#   ruby scripts/generate_grammar.rb            write grammars/unicodemath.parg
+#   ruby scripts/generate_grammar.rb            write grammars/umath.parg
 #   ruby scripts/generate_grammar.rb --check    exit 1 if it is stale
 #
 #   BUNDLE_GEMFILE=scripts/oracle/Gemfile BUNDLE_PATH=vendor/oracle-bundle \
 #     bundle exec ruby scripts/generate_grammar.rb --export ORACLE_CHECKOUT
-#                                               rewrite data/unicodemath-grammar.json
+#                                               rewrite data/umath-grammar.json
 #
 # Generation (the first two forms) is pure Ruby stdlib and a pure function of
 # the export: it needs neither Plurimath nor Parsanol and writes no
@@ -27,22 +27,22 @@
 require "digest"
 require "json"
 require "set"
-require_relative "unicodemath_shapes"
+require_relative "umath_shapes"
 
 ROOT = File.expand_path("..", __dir__)
-EXPORT = File.join(ROOT, "data/unicodemath-grammar.json")
-OUT = File.join(ROOT, "grammars/unicodemath.parg")
+EXPORT = File.join(ROOT, "data/umath-grammar.json")
+OUT = File.join(ROOT, "grammars/umath.parg")
 # The wrappers the shape normalization added (scripts/normalize_shapes.rb),
 # read by the test-only unwrap and by the model generator.
-WRAPPERS_OUT = File.join(ROOT, "grammars/unicodemath.wrappers.json")
-NORMALIZED_OUT = File.join(ROOT, "grammars/unicodemath.normalized-rules.json")
-FORMAT = "unicodemath-grammar-export/1"
+WRAPPERS_OUT = File.join(ROOT, "grammars/umath.wrappers.json")
+NORMALIZED_OUT = File.join(ROOT, "grammars/umath.normalized-rules.json")
+FORMAT = "umath-grammar-export/1"
 
-# The symbol captures (normalization rule N8, scripts/unicodemath_shapes.rb):
+# The symbol captures (normalization rule N8, scripts/umath_shapes.rb):
 # the captures whose legacy transform rules build a symbol through the
 # symbol catalog (Utility.symbols_class in Plurimath's unicode_math
 # transform). Their text is captured as +spelling+, and the model gives each
-# its catalog value and kind (Unicodemath::Symbols).
+# its catalog value and kind (Umath::Symbols).
 SYMBOL_CAPTURES = %w[
   accent_symbols alphanumeric binary_negated_operator binary_symbols combined_symbols comma
   diacritic_belows diacritic_overlays exclamation_symbol infty ldots mid_symbol nary_class
@@ -109,7 +109,7 @@ class Exporter
       "inputs" => {
         "wrapper_symbols" => {
           "source" => "Plurimath::UnicodeMath::Constants.wrapper_symbols " \
-                      "(Utility.symbols_hash(:unicodemath) keys matching /\"P\\{[^\\}]+\\}/)",
+                      "(Utility.symbols_hash(:umath) keys matching /\"P\\{[^\\}]+\\}/)",
           "values" => Plurimath::UnicodeMath::Constants.wrapper_symbols.map(&:to_s),
         },
         "decimal_markers" => {
@@ -235,7 +235,7 @@ end
 # Turns the export into PARG source.
 class Generator
   # The capture (and wrapper rule) that carries the whole tree.
-  TREE = "unicodemath_tree"
+  TREE = "umath_tree"
   MODEL = "model"
 
   attr_reader :normalizer
@@ -244,7 +244,7 @@ class Generator
     @bytes = bytes
     @doc = JSON.parse(bytes)
     abort "unsupported export format #{@doc['format'].inspect}" unless @doc["format"] == FORMAT
-    @normalizer = UnicodemathShapes.new(@doc.fetch("rules"), symbols: SYMBOL_CAPTURES,
+    @normalizer = UmathShapes.new(@doc.fetch("rules"), symbols: SYMBOL_CAPTURES,
                                                               symbol_nodes: SYMBOL_NODE_CAPTURES).run
     clash = @normalizer.collisions
     abort "normalization leaves wrapper collisions: #{clash.join('; ')}" unless clash.empty?
@@ -295,7 +295,7 @@ class Generator
       lines << "  #{TREE}__#{m['entry']} = (#{@names.fetch(root)}__#{m['entry']}) as #{TREE}"
     end
     entries = @markers.map { |m| "entry #{m['entry']}: #{TREE}__#{m['entry']}" }
-    text = "#{header.join("\n")}\n\ngrammar Unicodemath version \"0.1.0\" {\n" \
+    text = "#{header.join("\n")}\n\ngrammar Umath version \"0.1.0\" {\n" \
            "#{lines.join("\n")}\n}\n\n#{entries.join("\n")}\n\n#{bindings.join("\n")}"
     bad = text.each_line.with_index(1).reject { |l, _| l.ascii_only? }.map(&:last)
     abort "generated grammar is not pure ASCII (lines #{bad.first(5).join(', ')})" unless bad.empty?
@@ -307,7 +307,7 @@ class Generator
   # Two bindings of the one root capture: the legacy raw tree, unchanged
   # (slices with offsets, for parity and positions), and the same tree as
   # plain data under #{MODEL}, from which the typed model's declared
-  # attribute types construct it (Unicodemath::Model). They declare AST
+  # attribute types construct it (Umath::Model). They declare AST
   # construction only; the model fields are the model's declarations.
   def bindings
     @markers.map do |m|
@@ -320,12 +320,12 @@ class Generator
     lines = ["# GENERATED by scripts/generate_grammar.rb -- do not edit.",
              "# Plurimath UnicodeMath grammar (#{o['repository']} @ #{o['commit']}),",
              "# exported from Plurimath #{o['plurimath']} with Ruby #{o['ruby']} / Parsanol #{o['parsanol']}.",
-             "# data/unicodemath-grammar.json sha256:#{Digest::SHA256.hexdigest(@bytes)}",
+             "# data/umath-grammar.json sha256:#{Digest::SHA256.hexdigest(@bytes)}",
              "#",
              "# Every legacy rule is one rule here with the same alternatives, order and",
              "# capture names (`space?` becomes space_opt), plus the captures that the",
              "# shape normalization adds (scripts/normalize_shapes.rb, listed in",
-             "# grammars/unicodemath.wrappers.json), so that every capture holds one kind",
+             "# grammars/umath.wrappers.json), so that every capture holds one kind",
              "# of value. The accepted language is unchanged. The input is the",
              "# entity-encoded text that the legacy preprocessing produces. Rules that",
              "# reach the decimal marker are emitted once per marker with a",
@@ -497,7 +497,7 @@ generator = Generator.new(File.binread(EXPORT))
 grammar = generator.generate
 norm = generator.normalizer
 wrappers = "#{JSON.pretty_generate(
-  'format' => 'unicodemath-wrappers/1',
+  'format' => 'umath-wrappers/1',
   'wrappers' => norm.wrapper_list,
   'rules' => norm.counts.sort.to_h,
 )}\n"

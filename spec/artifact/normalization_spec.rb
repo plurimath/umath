@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require_relative "spec_helper"
-require_relative "../../scripts/unicodemath_shapes"
+require_relative "../../scripts/umath_shapes"
 require_relative "../../scripts/unwrap"
 
 # The capture-shape normalization (shared rules plus the UnicodeMath ones)
 # and the test-only unwrap, on small hand-written rule sets.
-RSpec.describe UnicodemathShapes do
+RSpec.describe UmathShapes do
   def str(s) = { "str" => s }
   def cap(name, node) = { "as" => name, "of" => node }
 
@@ -47,7 +47,7 @@ RSpec.describe UnicodemathShapes do
   end
 end
 
-RSpec.describe UnicodemathUnwrap do
+RSpec.describe UmathUnwrap do
   it "removes wrappers as legacy folded the parts" do
     table = { "literal" => "text", "spelling" => "text", "empty" => "empty", "list" => "list", "present" => "nil" }
     expect(described_class.call({ x: { literal: "b" } }, table)).to eq(x: "b")
