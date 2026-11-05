@@ -252,7 +252,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <msup>\n      <mi>a</mi>\n      <mrow>\n        <mo>&#x2032;</mo>\n        <mo>&#x2032;</mo>\n        <mo>&#x2032;</mo>\n      </mrow>\n    </msup>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

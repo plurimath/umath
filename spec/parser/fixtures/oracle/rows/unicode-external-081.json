@@ -2934,7 +2934,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mn>1</mn>\n    </msub>\n    <mi>z</mi>\n    <mi>x</mi>\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mi>x</mi>\n    </msub>\n    <mi>z</mi>\n    <msup>\n      <mi>x</mi>\n      <mn>2</mn>\n    </msup>\n    <mo>&#x2212;</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mi>y</mi>\n    </msub>\n    <mi>x</mi>\n    <mi>z</mi>\n    <mi>y</mi>\n    <mo>&#x2212;</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mi>z</mi>\n    </msub>\n    <mi>x</mi>\n    <mi>z</mi>\n    <mi>z</mi>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

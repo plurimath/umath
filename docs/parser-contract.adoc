@@ -102,7 +102,7 @@ in the encoded text.
 
 The grammar is not self-contained: `ConstantsRules` builds alternations from
 `Constants` when the grammar loads, and `Constants.wrapper_symbols` reads
-Plurimath's symbol catalog (`Utility.symbols_hash(:umath)`). The
+Plurimath's symbol catalog (`Utility.symbols_hash(:unicodemath)`). The
 decimal-marker rule reads `Plurimath.configuration`. A gem grammar must take
 these inputs from committed data, not from a live Plurimath.
 
@@ -112,7 +112,7 @@ these inputs from committed data, not from a live Plurimath.
 `Plurimath::Math::Formula`. Grammar refusals and transform failures both
 surface as `Plurimath::Math::ParseError`. The capture records the formula
 object graph and the exact output of the `to_asciimath`, `to_latex`,
-`to_mathml`, `to_umath`, `to_omml` and `to_html` writers.
+`to_mathml`, `to_unicodemath`, `to_omml` and `to_html` writers.
 
 == What the gem must keep (syntax)
 
@@ -204,7 +204,7 @@ another artifact.
 
 `data/umath-symbols.json` is the symbol catalog the legacy transform
 uses: every UnicodeMath spelling of Plurimath's `Math::Symbols::Symbol` and
-`Math::Symbols::Paren` classes, as `Plurimath::Utility.all_symbols_classes(:umath)`
+`Math::Symbols::Paren` classes, as `Plurimath::Utility.all_symbols_classes(:unicodemath)`
 returns them at the pinned commit. For each spelling it records the Unicode
 text the class writes as UnicodeMath (`value`) and whether the class is a
 symbol or a paren (`kind`). It has 3282 spellings, 64 of them parens.

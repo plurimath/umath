@@ -60,7 +60,7 @@ jobs:
     env:
       # Parsanol ships a precompiled native extension for x86_64 Linux;
       # fail instead of skipping the native-engine examples if it is missing.
-      UNICODEMATH_REQUIRE_NATIVE: "1"
+      UMATH_REQUIRE_NATIVE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
@@ -77,7 +77,7 @@ jobs:
       matrix:
         ruby: [ "3.2", "3.3", "3.4" ]
     env:
-      UNICODEMATH_REQUIRE_NATIVE: "1"
+      UMATH_REQUIRE_NATIVE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1

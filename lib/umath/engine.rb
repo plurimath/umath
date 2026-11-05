@@ -105,6 +105,9 @@ module Umath
       else
         root.parse(text, compatibility: :parslet)
       end
+    rescue Parsanol::RecursionLimitExceeded => e
+      # parsanol 1.3.134+ raises this for native deep nesting.
+      raise NativeRecursionLimit, e.message.lines.first.to_s.strip, cause: nil
     rescue Parsanol::ParseFailed => e
       record(mode)
       raise parse_error(e, root, text, mode)
@@ -144,12 +147,17 @@ module Umath
     end
 
     # Iterative: the cause tree of deeply nested input is as deep as the
-    # input.
+    # input. Causes are shared between parents, so each one is visited once;
+    # walking the shared graph as a tree took minutes on some refusals.
     def deepest_position(cause)
       deepest = nil
+      seen = {}.compare_by_identity
       stack = [cause].compact
       until stack.empty?
         node = stack.pop
+        next if seen.key?(node)
+
+        seen[node] = true
         deepest = node.position if node.position && (deepest.nil? || node.position > deepest)
         stack.concat(node.children.compact)
       end

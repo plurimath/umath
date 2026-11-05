@@ -198,7 +198,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mrow>\n      <mo rspace=\"thickmathspace\"/>\n      <mrow>\n        <mi>sin</mi>\n        <mi>x</mi>\n      </mrow>\n    </mrow>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

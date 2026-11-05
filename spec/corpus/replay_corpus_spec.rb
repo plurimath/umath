@@ -16,7 +16,7 @@ RSpec.describe UmathReplayCorpus do
 
   before do
     next if Umath::Engine.native_available?
-    raise "the native engine is required" if ENV["UNICODEMATH_REQUIRE_NATIVE"] == "1"
+    raise "the native engine is required" if ENV["UMATH_REQUIRE_NATIVE"] == "1"
 
     skip "the native engine is not available"
   end
@@ -54,18 +54,18 @@ RSpec.describe UmathReplayCorpus do
       "payloads/raw-sample.yaml" => YAML.dump("schema" => "plurimath-stage/unicode/cases/1", "group" => "raw-sample",
                                               "boundary" => "raw-tree", "cases" => rows),
     }
-    payloads.each { |path, bytes| File.write(File.join(gen, path), bytes) }
+    payloads.each { |path, bytes| File.binwrite(File.join(gen, path), bytes) }
     provenance = YAML.dump(
       "schema" => "plurimath-stage/provenance/1", "language" => "unicode", "generation" => 1,
       "payloads" => payloads.sort.map { |path, bytes| { "path" => path, "sha256" => Digest::SHA256.hexdigest(bytes) } },
     )
-    File.write(File.join(gen, "provenance.yaml"), provenance)
+    File.binwrite(File.join(gen, "provenance.yaml"), provenance)
     digest = StageCases.snapshot_digest(payloads.merge("provenance.yaml" => provenance))
     FileUtils.mkdir_p(File.join(dir, "generations"))
     ledger = { "schema" => "plurimath-stage/ledger/1", "language" => "unicode", "layout" => 1,
                "entries" => [{ "generation" => 1, "path" => "stages/unicode/generations/000001",
                                "snapshot_digest" => digest }] }
-    File.write(File.join(dir, "generations/unicode.yaml"), YAML.dump(ledger))
+    File.binwrite(File.join(dir, "generations/unicode.yaml"), YAML.dump(ledger))
     git = ["git", "-C", dir, "-c", "user.name=t", "-c", "user.email=t@example.com"]
     system("git", "init", "-q", dir, exception: true)
     system(*git, "add", ".", exception: true)
@@ -76,12 +76,12 @@ RSpec.describe UmathReplayCorpus do
   def write_pin(path, **fields)
     pin = { "schema" => "plurimath-stage/pin/1", "repository" => "https://github.com/plurimath/plurimath-testsuite",
             "commit" => nil, "language" => "unicode", "generation" => 1, "snapshot_digest" => nil }
-    File.write(path, YAML.dump(pin.merge(fields.transform_keys(&:to_s)).compact))
+    File.binwrite(path, YAML.dump(pin.merge(fields.transform_keys(&:to_s)).compact))
     path
   end
 
   def run_replay(testsuite, pin, **options)
-    described_class.run(testsuite: testsuite, pin: pin, log: StringIO.new, **{ divergences: [] }.merge(options))
+    described_class.run(testsuite: testsuite, pin: pin, log: StringIO.new, **options)
   end
 
   describe "the committed pin" do
@@ -111,7 +111,7 @@ RSpec.describe UmathReplayCorpus do
           path = write_pin(File.join(dir, "#{name}.yml"), **good, **change)
           expect { described_class.load_pin(path) }.to raise_error(described_class::Error), name
         end
-        File.write(File.join(dir, "extra.yml"), YAML.dump(YAML.load_file(File.join(dir, "ok.yml")).merge("x" => 1)))
+        File.binwrite(File.join(dir, "extra.yml"), YAML.dump(YAML.load_file(File.join(dir, "ok.yml")).merge("x" => 1)))
         expect { described_class.load_pin(File.join(dir, "extra.yml")) }
           .to raise_error(described_class::Error, /unknown keys x/)
       end
@@ -152,7 +152,7 @@ RSpec.describe UmathReplayCorpus do
       Dir.mktmpdir do |dir|
         testsuite = File.join(dir, "testsuite")
         commit, digest = build_testsuite(testsuite, raw_rows)
-        File.write(File.join(testsuite, "stages/unicode/generations/000001/payloads/sample.yaml"), "x\n", mode: "a")
+        File.open(File.join(testsuite, "stages/unicode/generations/000001/payloads/sample.yaml"), "ab") { |io| io.write("x\n") }
         system("git", "-C", testsuite, "-c", "user.name=t", "-c", "user.email=t@example.com",
                "commit", "-qam", "tamper", exception: true)
         pin = write_pin(File.join(dir, "pin.yml"), commit: described_class.git(testsuite, "rev-parse", "HEAD"),
@@ -166,7 +166,7 @@ RSpec.describe UmathReplayCorpus do
       Dir.mktmpdir do |dir|
         testsuite = File.join(dir, "testsuite")
         commit, digest = build_testsuite(testsuite, raw_rows)
-        File.write(File.join(testsuite, "stages/unicode/generations/000001/payloads/sample.yaml"), "x\n", mode: "a")
+        File.open(File.join(testsuite, "stages/unicode/generations/000001/payloads/sample.yaml"), "ab") { |io| io.write("x\n") }
         pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
         expect { run_replay(testsuite, pin) }.to raise_error(described_class::Error, /uncommitted stage files/)
       end
@@ -206,16 +206,6 @@ RSpec.describe UmathReplayCorpus do
         failures = JSON.parse(File.read(report)).fetch("failures")
         expect(failures.map { |f| [f["id"], f["mismatches"].map { |m| m["engine"] }] })
           .to eq([["refused.raw", %w[ruby native]]])
-      end
-    end
-
-    it "fails when a listed native divergence matches on the native engine" do
-      Dir.mktmpdir do |dir|
-        testsuite = File.join(dir, "testsuite")
-        commit, digest = build_testsuite(testsuite, raw_rows)
-        pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
-        expect { run_replay(testsuite, pin, divergences: ["letter"]) }
-          .to raise_error(described_class::Error, /1 rows differ: letter\.raw/)
       end
     end
 

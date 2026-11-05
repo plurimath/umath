@@ -25,7 +25,7 @@
   },
   "inputs": {
     "wrapper_symbols": {
-      "source": "Plurimath::UnicodeMath::Constants.wrapper_symbols (Utility.symbols_hash(:umath) keys matching /\"P\\{[^\\}]+\\}/)",
+      "source": "Plurimath::UnicodeMath::Constants.wrapper_symbols (Utility.symbols_hash(:unicodemath) keys matching /\"P\\{[^\\}]+\\}/)",
       "values": [
         "\"P{leftarrowshortrightarrow}\"",
         "\"P{leftrightharpoondowndown}\"",

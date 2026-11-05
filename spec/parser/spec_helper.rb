@@ -32,7 +32,7 @@ module ParserSpecHelpers
   end
 
   def native_required?
-    ENV["UNICODEMATH_REQUIRE_NATIVE"] == "1"
+    ENV["UMATH_REQUIRE_NATIVE"] == "1"
   end
 end
 
