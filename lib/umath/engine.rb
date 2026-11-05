@@ -141,12 +141,17 @@ module Umath
     end
 
     # Iterative: the cause tree of deeply nested input is as deep as the
-    # input.
+    # input. Causes are shared between parents, so each one is visited once;
+    # walking the shared graph as a tree took minutes on some refusals.
     def deepest_position(cause)
       deepest = nil
+      seen = {}.compare_by_identity
       stack = [cause].compact
       until stack.empty?
         node = stack.pop
+        next if seen.key?(node)
+
+        seen[node] = true
         deepest = node.position if node.position && (deepest.nil? || node.position > deepest)
         stack.concat(node.children.compact)
       end
