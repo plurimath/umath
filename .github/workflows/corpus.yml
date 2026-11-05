@@ -4,9 +4,7 @@ name: corpus
 # spec/fixtures/testsuite-pin.yml: the testsuite's own validator checks the
 # pin, tampered copies of the pin must fail that check, and every raw-tree
 # row of the pinned generation must parse to its expected value on the Ruby
-# and native engines (scripts/replay_corpus.rb), except that the rows listed
-# in spec/parser/fixtures/oracle/native-divergences.yml must still differ on
-# the native engine.
+# and native engines (scripts/replay_corpus.rb).
 
 on:
   push:
