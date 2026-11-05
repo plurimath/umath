@@ -28,9 +28,9 @@ env:
   # the commit before the pinned generation 2.
   TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || 'b4520d8041efe8546aa10d6ce4b59d56b8d9ffac' }}
   # The commit pinned in spec/fixtures/testsuite-pin.yml (a step checks it).
-  # The raw-tree payloads written from generation 1 must equal its
-  # generation 2's byte for byte.
-  PINNED_COMMIT: 2a18ff43a26716a60c1c4330d5107c26dc73963c
+  # The raw-tree payloads written from generation 1 must equal
+  # generation 2's there byte for byte.
+  PINNED_COMMIT: 337262eda0483ceaa43a02cc52362c5b721e5eb3
   # plurimath-testsuite main whose latest unicode generation (2) is the
   # source of the typed-model generation.
   MODEL_TESTSUITE_COMMIT: ${{ inputs.testsuite_commit || '5e328516995cbf2917b6968eae627d377fbfa373' }}
