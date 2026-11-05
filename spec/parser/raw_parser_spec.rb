@@ -73,6 +73,14 @@ RSpec.describe Umath::RawParser do
         expect([e.char_offset, e.byte_offset]).to eq([7, 7])
       }
     end
+
+    it "finds the deepest position once per shared cause" do
+      node = Struct.new(:position, :children)
+      shared = node.new(0, [])
+      60.times { |i| shared = node.new(i + 1, [shared, shared]) }
+
+      expect(Umath::Engine.send(:deepest_position, shared)).to eq(60)
+    end
   end
 
   describe "engines" do
