@@ -188,19 +188,6 @@ RSpec.describe StageCases do
         .to eq("refusal" => { "category" => "parse_error", "byte_offset" => 2 })
       expect(StageCases::Outcome.agreed("t", "a/b", "typed-model").keys).to eq(%w[preprocessed tree])
     end
-
-    it "writes the Ruby outcome of a listed native divergence and requires the native one to differ" do
-      allow(StageCases::Outcome).to receive(:model_of).and_call_original
-      allow(StageCases::Outcome).to receive(:model_of).with("a/b", :native).and_return("tree" => {})
-      ruby = StageCases::Outcome.model_of("a/b", :ruby)
-      expect(StageCases::Outcome.agreed("d", "a/b", "typed-model", divergent: ["d"])).to eq(ruby)
-      expect { StageCases::Outcome.agreed("d", "a", "typed-model", divergent: ["d"]) }
-        .to raise_error(StageCases::Failure, /engines agree/)
-    end
-
-    it "reads the native divergence list" do
-      expect(StageCases.divergent_ids).to include("unicode-external-005")
-    end
   end
 
   describe StageCases::Source do

@@ -17,9 +17,7 @@
 #   --language and --generation, when given, must equal the pin's. Then every
 #   row of every raw-tree payload is parsed with Umath::RawParser.parse
 #   on the Ruby and the native engine, as scripts/stage_cases.rb writes it,
-#   and each outcome must equal the row's expected value. Rows whose source
-#   id is listed in spec/parser/fixtures/oracle/native-divergences.yml must
-#   instead still differ on the native engine. Any pin failure, any
+#   and each outcome must equal the row's expected value. Any pin failure, any
 #   difference or a generation with no raw-tree rows exits 1. Runs both
 #   engines whatever UMATH_ENGINE says.
 #
@@ -62,11 +60,6 @@ require_relative "stage_cases"
 
 SCHEMA = "umath-model-corpus/1"
 ENGINE = (ENV["UMATH_ENGINE"] || "ruby").to_sym
-# Rows where the Parsanol native engine gives another tree than legacy, on
-# this grammar and on the grammar before the shape normalization; they must
-# still differ (see the file).
-NATIVE_DIVERGENCES = YAML.safe_load_file(File.expand_path("../spec/parser/fixtures/oracle/native-divergences.yml", __dir__))
-                         .fetch("ids").freeze
 LOCALE_DECIMALS = { nil => ".", "en" => ".", "fr" => ",", "de" => ",", "ar" => "٫", "fa" => "٫" }.freeze
 
 # The --testsuite mode: replays the plurimath-testsuite stage generation
@@ -192,37 +185,22 @@ module UmathReplayCorpus
     raise Error, e.message
   end
 
-  # The source id of a raw-tree row (the row id without its .raw suffix),
-  # which spec/parser/fixtures/oracle/native-divergences.yml names.
-  def source_id(id)
-    id.delete_suffix(StageCases::ROW_SUFFIXES.fetch("raw-tree"))
-  end
-
-  # [failures, rows replayed on native as listed divergences]
-  def replay(rows, divergences)
-    diverged = 0
-    failures = rows.filter_map do |rel, row|
+  # The rows whose outcome on some engine differs from the expected one.
+  def replay(rows)
+    rows.filter_map do |rel, row|
       where = "#{rel} #{row['id']}"
       input = decode(row.fetch("input"), where)
       check_options(row, where)
       expected = row.fetch("expected")
       wrong = ENGINES.filter_map do |engine|
         actual = outcome(input, engine)
-        if engine == :native && divergences.include?(source_id(row["id"]))
-          next { "engine" => "native", "actual" => actual, "note" => "listed native divergence now matches" } if actual == expected
-
-          diverged += 1
-          next
-        end
         { "engine" => engine.to_s, "actual" => actual } unless actual == expected
       end
       { "id" => row["id"], "payload" => rel, "expected" => expected, "mismatches" => wrong } unless wrong.empty?
     end
-    [failures, diverged]
   end
 
-  def run(testsuite:, pin: DEFAULT_PIN, language: nil, generation: nil, report: nil, divergences: NATIVE_DIVERGENCES,
-          log: $stderr)
+  def run(testsuite:, pin: DEFAULT_PIN, language: nil, generation: nil, report: nil, log: $stderr)
     pinned = load_pin(pin)
     raise Error, "--language #{language} is not the pinned #{pinned.language}" if language && language != pinned.language
     if generation && generation != pinned.generation
@@ -235,18 +213,17 @@ module UmathReplayCorpus
     raise Error, "#{pinned.language} generation #{pinned.generation} has no raw-tree rows" if rows.empty?
 
     log.puts "pin ok: #{pinned.language} generation #{pinned.generation} at #{pinned.commit}, #{pinned.digest}"
-    failures, diverged = replay(rows, divergences)
+    failures = replay(rows)
     summary = { "commit" => pinned.commit, "language" => pinned.language, "generation" => pinned.generation,
                 "snapshot_digest" => pinned.digest, "engines" => ENGINES.map(&:to_s),
                 "raw_tree_payloads" => rows.map(&:first).uniq.size, "raw_tree_rows" => rows.size,
-                "native_divergences_listed" => divergences.size, "native_divergences_replayed" => diverged,
                 "mismatched_rows" => failures.size, "failures" => failures }
     if report
       FileUtils.mkdir_p(File.dirname(report))
       File.binwrite(report, "#{JSON.pretty_generate(summary, max_nesting: false)}\n")
     end
     log.puts "#{rows.size} raw-tree rows from #{summary['raw_tree_payloads']} payloads on " \
-             "#{ENGINES.join(' and ')} (#{diverged} listed native divergences): #{failures.size} differ"
+             "#{ENGINES.join(' and ')}: #{failures.size} differ"
     raise Error, "#{failures.size} rows differ: #{failures.map { |f| f['id'] }.join(', ')}" unless failures.empty?
 
     summary
@@ -409,9 +386,7 @@ def replay_oracle(inventory, rows_dir)
           fail_row(id, "oracle row has no raw tree")
         else
           same = UmathOracle::Canonical.dump(UmathUnwrap.call(raw.tree)) == legacy
-          if ENGINE == :native && NATIVE_DIVERGENCES.include?(id)
-            same ? fail_row(id, "listed native divergence now matches; remove it from the list") : COUNTS["known native divergence"] += 1
-          elsif same
+          if same
             COUNTS["raw parity ok"] += 1
           else
             fail_row(id, "unwrapped raw tree differs from the legacy tree")
