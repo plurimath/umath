@@ -43,14 +43,6 @@ The `corpus` workflow checks out the testsuite at the pinned commit and then:
   value in the canonical form of the testsuite's
   `docs/tree-parity-contract.adoc`.
 
-The rows whose source id is listed in
-`spec/parser/fixtures/oracle/native-divergences.yml` are the exception on the
-native engine: Parsanol's native engine takes another alternative of the same
-grammar for those inputs, so their native result must still differ from the
-expected value, and the replay fails once one of them matches, so the list
-can be shortened. None of the listed inputs is in generation 2, whose rows
-were written only where both engines agreed.
-
 To run the replay locally:
 
 [source,sh]

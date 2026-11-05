@@ -81,7 +81,7 @@ RSpec.describe UmathReplayCorpus do
   end
 
   def run_replay(testsuite, pin, **options)
-    described_class.run(testsuite: testsuite, pin: pin, log: StringIO.new, **{ divergences: [] }.merge(options))
+    described_class.run(testsuite: testsuite, pin: pin, log: StringIO.new, **options)
   end
 
   describe "the committed pin" do
@@ -206,16 +206,6 @@ RSpec.describe UmathReplayCorpus do
         failures = JSON.parse(File.read(report)).fetch("failures")
         expect(failures.map { |f| [f["id"], f["mismatches"].map { |m| m["engine"] }] })
           .to eq([["refused.raw", %w[ruby native]]])
-      end
-    end
-
-    it "fails when a listed native divergence matches on the native engine" do
-      Dir.mktmpdir do |dir|
-        testsuite = File.join(dir, "testsuite")
-        commit, digest = build_testsuite(testsuite, raw_rows)
-        pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
-        expect { run_replay(testsuite, pin, divergences: ["letter"]) }
-          .to raise_error(described_class::Error, /1 rows differ: letter\.raw/)
       end
     end
 

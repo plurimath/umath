@@ -32,10 +32,7 @@
 # generation (default: the latest in generations/unicode.yaml) has its
 # snapshot digest and every file checksum verified before anything is read.
 # Every input is parsed on the Ruby and the native engine; the run fails
-# unless both engines give the same outcome. In typed-model mode the ids in
-# spec/parser/fixtures/oracle/native-divergences.yml are treated as the
-# parity spec treats them: the Ruby outcome is written and the native one
-# must still differ. Refusals are recorded with their category and byte
+# unless both engines give the same outcome. Refusals are recorded with their category and byte
 # offset; nothing else (nesting limits, invalid input, unexpected values) is
 # turned into data.
 #
@@ -78,7 +75,6 @@ module StageCases
   ENTRY_POINTS = { "raw-tree" => "Umath::RawParser.parse", "typed-model" => "Umath.parse" }.freeze
   LML = "model/umath.lml.json"
   LML_CHECKSUMS = "model/umath.lml.checksums.txt"
-  DIVERGENCES = "spec/parser/fixtures/oracle/native-divergences.yml"
   # The source payloads whose inputs are read: the rows the legacy facade
   # produced, not earlier stage-case payloads.
   SOURCE_PRODUCER_KIND = "legacy-oracle"
@@ -91,7 +87,6 @@ module StageCases
     "grammars",
     "data",
     "model",
-    DIVERGENCES,
     "umath.gemspec",
     "Gemfile",
   ].freeze
@@ -176,18 +171,9 @@ module StageCases
     end
 
     # The same outcome on every engine, or a Failure naming the difference.
-    # For an id in +divergent+ the Ruby outcome is written, and the native
-    # one must still differ (a known Parsanol native-engine divergence).
-    def agreed(id, input, boundary = "raw-tree", divergent: [])
+    def agreed(id, input, boundary = "raw-tree")
       outcomes = ENGINES.to_h do |engine|
         [engine, boundary == "typed-model" ? model_of(input, engine) : of(input, engine)]
-      end
-      if divergent.include?(id)
-        if outcomes.values.uniq.size == 1
-          raise Failure, "#{id}: listed in #{DIVERGENCES} but the engines agree; remove it from the list"
-        end
-
-        return outcomes.fetch(:ruby)
       end
       return outcomes.values.first if outcomes.values.uniq.size == 1
 
@@ -266,14 +252,6 @@ module StageCases
       else raise Failure, "no canonical form for #{value.class} in the model"
       end
     end
-  end
-
-  # The ids spec/parser/fixtures/oracle/native-divergences.yml lists.
-  def self.divergent_ids
-    doc = YAML.safe_load_file(File.join(ROOT, DIVERGENCES))
-    raise Failure, "#{DIVERGENCES}: unexpected schema #{doc['schema'].inspect}" unless doc["schema"] == "umath-native-divergences/1"
-
-    doc.fetch("ids")
   end
 
   # A verified generation of the testsuite checkout.
@@ -379,16 +357,14 @@ module StageCases
 
   # Builds the next generation from a verified Source. +producer+ is the
   # stage-gem producer block (see Identity); +boundary+ is raw-tree or
-  # typed-model; +divergent+ the ids with a known native-engine divergence
-  # (typed-model only); +progress+ receives one line per row.
+  # typed-model; +progress+ receives one line per row.
   class Generator
-    def initialize(source, producer, boundary: "raw-tree", divergent: [], progress: nil)
+    def initialize(source, producer, boundary: "raw-tree", progress: nil)
       raise Failure, "unknown boundary #{boundary.inspect} (#{BOUNDARIES.join(', ')})" unless BOUNDARIES.include?(boundary)
 
       @source = source
       @producer = producer
       @boundary = boundary
-      @divergent = divergent
       @progress = progress
     end
 
@@ -526,7 +502,7 @@ module StageCases
         @progress&.call(id)
         { "id" => "#{id}#{ROW_SUFFIXES.fetch(@boundary)}", "input" => Canonical.dump(input),
           "options" => { "decimal" => DECIMAL },
-          "expected" => Outcome.agreed(id, input, @boundary, divergent: @divergent) }
+          "expected" => Outcome.agreed(id, input, @boundary) }
       end
       payload = { "schema" => CASES_SCHEMA, "group" => name, "description" => description(source_path),
                   "boundary" => @boundary, "cases" => cases }
@@ -562,7 +538,7 @@ module StageCases
   module Identity
     module_function
 
-    def producer(source, boundary = "raw-tree", divergent: [])
+    def producer(source, boundary = "raw-tree")
       commit = git("rev-parse", "HEAD").strip
       dirty = git("status", "--porcelain", "--", *PRODUCER_FILES)
       raise Failure, "umath checkout has uncommitted producer files:\n#{dirty}" unless dirty.empty?
@@ -594,7 +570,7 @@ module StageCases
           "lml" => (boundary == "typed-model" ? lml(commit) : nil)
         },
         "semantic_boundary" => boundary,
-        "configuration" => configuration(source, boundary, commit, divergent)
+        "configuration" => configuration(source, boundary)
       }
     end
 
@@ -603,7 +579,7 @@ module StageCases
       names.to_h { |name| [name, Gem.loaded_specs.fetch(name).version.to_s] }
     end
 
-    def configuration(source, boundary, commit, divergent)
+    def configuration(source, boundary)
       config = {
         "decimal" => DECIMAL, "engines" => ENGINES.map(&:to_s),
         "entry_point" => ENTRY_POINTS.fetch(boundary),
@@ -614,17 +590,7 @@ module StageCases
       }
       return config unless boundary == "typed-model"
 
-      ids = source.payloads.select { |entry, _| source.input_entries.include?(entry) }
-                  .flat_map { |_, doc| doc.fetch("cases").map { |c| c["id"] } }
-      config.merge(
-        "engine_agreement" => "required",
-        "native_divergences" => {
-          "list" => file(commit, DIVERGENCES),
-          "rule" => "as spec/parser/oracle_parity_spec.rb: a listed id is a known Parsanol native-engine " \
-                    "divergence; its Ruby outcome is written and the native outcome must still differ",
-          "excluded" => ids & divergent
-        }
-      )
+      config.merge("engine_agreement" => "required")
     end
 
     # The committed LML export the typed-model rows' classes are declared in.
@@ -684,9 +650,8 @@ module StageCases
     def run
       source = Source.new(@options[:testsuite], @options[:generation])
       boundary = @options.fetch(:boundary, "raw-tree")
-      divergent = boundary == "typed-model" ? StageCases.divergent_ids : []
-      generator = Generator.new(source, Identity.producer(source, boundary, divergent: divergent),
-                                boundary: boundary, divergent: divergent, progress: ->(id) { warn "  #{id}" })
+      generator = Generator.new(source, Identity.producer(source, boundary),
+                                boundary: boundary, progress: ->(id) { warn "  #{id}" })
       generator.write(@options[:out])
       entry = generator.ledger_entry
       puts "#{generator.dir}: #{entry['payloads']} payloads, #{entry['rows']} rows, #{entry['snapshot_digest']}"
