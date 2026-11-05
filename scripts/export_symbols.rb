@@ -10,7 +10,7 @@
 #
 # ORACLE_CHECKOUT is a clean Plurimath checkout at ORACLE_COMMIT. The script
 # loads it, reads the catalog the legacy transform resolves symbols with
-# (Plurimath::Utility.all_symbols_classes(:umath): every UnicodeMath
+# (Plurimath::Utility.all_symbols_classes(:unicodemath): every UnicodeMath
 # spelling of every Math::Symbols::Symbol and Math::Symbols::Paren class) and
 # records, per spelling, the Unicode text the class writes as UnicodeMath and
 # whether it is a symbol or a paren. Neither the build nor the gem loads
@@ -43,13 +43,13 @@ loaded = $LOADED_FEATURES.grep(%r{/lib/plurimath\.rb\z}).first
 abort "plurimath was loaded from #{loaded}, not #{checkout}" unless loaded&.start_with?(checkout)
 
 utility = Plurimath::Utility
-parens = utility.parens_hash(:umath)
+parens = utility.parens_hash(:unicodemath)
 # The lookup the transform uses: symbols merged with parens (a paren wins).
-catalog = utility.all_symbols_classes(:umath)
+catalog = utility.all_symbols_classes(:unicodemath)
 entries = catalog.keys.sort.to_h do |spelling|
   klass = catalog.fetch(spelling)
   kind = parens[spelling].equal?(klass) ? "paren" : "symbol"
-  [spelling, { "value" => klass.new.to_umath.to_s, "kind" => kind }]
+  [spelling, { "value" => klass.new.to_unicodemath.to_s, "kind" => kind }]
 end
 
 doc = {
@@ -61,10 +61,10 @@ doc = {
     "ruby" => RUBY_VERSION,
     "files" => SOURCE_FILES.to_h { |f| [f, "sha256:#{Digest::SHA256.file(File.join(checkout, f)).hexdigest}"] },
   },
-  "source" => "Plurimath::Utility.all_symbols_classes(:umath); value is the " \
-              "class's to_umath, kind is paren for Math::Symbols::Paren classes",
+  "source" => "Plurimath::Utility.all_symbols_classes(:unicodemath); value is the " \
+              "class's to_unicodemath, kind is paren for Math::Symbols::Paren classes",
   "symbols" => entries,
 }
-File.write(OUT, "#{JSON.pretty_generate(doc)}\n")
+File.binwrite(OUT, "#{JSON.pretty_generate(doc)}\n")
 puts "symbols #{entries.size} (#{entries.count { |_, v| v['kind'] == 'paren' }} parens)"
 puts "wrote #{OUT} sha256:#{Digest::SHA256.file(OUT).hexdigest}"

@@ -16,7 +16,7 @@ RSpec.describe UmathReplayCorpus do
 
   before do
     next if Umath::Engine.native_available?
-    raise "the native engine is required" if ENV["UNICODEMATH_REQUIRE_NATIVE"] == "1"
+    raise "the native engine is required" if ENV["UMATH_REQUIRE_NATIVE"] == "1"
 
     skip "the native engine is not available"
   end

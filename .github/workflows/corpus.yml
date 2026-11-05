@@ -39,7 +39,7 @@ jobs:
       # Parsanol ships a precompiled native extension for x86_64 Linux; fail
       # there instead of skipping the native-engine examples if it is missing.
       # On Windows and macOS the native examples skip when it is absent.
-      UNICODEMATH_REQUIRE_NATIVE: ${{ matrix.os == 'ubuntu-latest' && '1' || '0' }}
+      UMATH_REQUIRE_NATIVE: ${{ matrix.os == 'ubuntu-latest' && '1' || '0' }}
     timeout-minutes: 60
 
     steps:

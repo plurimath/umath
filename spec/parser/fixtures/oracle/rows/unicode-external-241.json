@@ -658,7 +658,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <msubsup>\n      <mi>a</mi>\n      <msub>\n        <mn>3</mn>\n        <mn>4</mn>\n      </msub>\n      <msub>\n        <mn>1</mn>\n        <mn>2</mn>\n      </msub>\n    </msubsup>\n  </mstyle>\n</math>\n"
           }
         },
-        "umath": {
+        "unicodemath": {
           "status": "ok",
           "output": {
             "t": "str",

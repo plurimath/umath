@@ -19,7 +19,7 @@
 #   on the Ruby and the native engine, as scripts/stage_cases.rb writes it,
 #   and each outcome must equal the row's expected value. Any pin failure, any
 #   difference or a generation with no raw-tree rows exits 1. Runs both
-#   engines whatever UNICODEMATH_ENGINE says.
+#   engines whatever UMATH_ENGINE says.
 #
 # --staging DIR: every DIR/**/*.yml payload (schema umath-model-corpus/1,
 #   rows of id, input, optional decimal, and expected outcome). Per row and
@@ -41,7 +41,7 @@
 #   --report FILE also writes the counts and, per capture, the kinds of
 #   value (hash, array, string, nil) the accepted rows' bound trees held.
 #
-# Runs on the Ruby engine (UNICODEMATH_ENGINE=native to change). Prints one
+# Runs on the Ruby engine (UMATH_ENGINE=native to change). Prints one
 # line per failure and a count summary; exits 1 on any failure, missing or
 # duplicate row id.
 
@@ -59,7 +59,7 @@ require_relative "model_tree"
 require_relative "stage_cases"
 
 SCHEMA = "umath-model-corpus/1"
-ENGINE = (ENV["UNICODEMATH_ENGINE"] || "ruby").to_sym
+ENGINE = (ENV["UMATH_ENGINE"] || "ruby").to_sym
 LOCALE_DECIMALS = { nil => ".", "en" => ".", "fr" => ",", "de" => ",", "ar" => "٫", "fa" => "٫" }.freeze
 
 # The --testsuite mode: replays the plurimath-testsuite stage generation
@@ -125,17 +125,16 @@ module UmathReplayCorpus
     ledger_path = File.join(testsuite, "generations", "#{pin.language}.yaml")
     raise Error, "#{ledger_path} does not exist" unless File.file?(ledger_path)
 
-    entry = YAML.safe_load_file(ledger_path, aliases: false).fetch("entries").find { |e| e["generation"] == pin.generation }
+    ledger = StageCases.committed_file(testsuite, "generations/#{pin.language}.yaml", error: Error)
+    entry = YAML.safe_load(ledger, aliases: false).fetch("entries").find { |e| e["generation"] == pin.generation }
     raise Error, "generations/#{pin.language}.yaml has no generation #{pin.generation}" unless entry
     if entry["snapshot_digest"] != pin.digest
       raise Error, "ledger digest #{entry['snapshot_digest']} of generation #{pin.generation} " \
                    "is not the expected #{pin.digest}"
     end
 
-    dir = File.join(testsuite, entry.fetch("path"))
-    paths = Dir.glob("**/*", File::FNM_DOTMATCH, base: dir).reject { |p| File.directory?(File.join(dir, p)) }
-    paths.each { |p| raise Error, "#{entry['path']}/#{p} is a symlink" if File.symlink?(File.join(dir, p)) }
-    files = paths.to_h { |p| [p, File.binread(File.join(dir, p))] }
+    # The committed bytes: a core.autocrlf checkout has CRLF working files.
+    files = StageCases.committed_files(testsuite, entry.fetch("path"), error: Error)
     digest = StageCases.snapshot_digest(files)
     raise Error, "#{entry['path']}: digest #{digest} does not match the ledger's #{pin.digest}" unless digest == pin.digest
 

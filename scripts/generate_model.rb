@@ -164,13 +164,13 @@ out.chomp!("\n")
 out << "  end\nend\n"
 
 if check
-  if File.exist?(OUT) && File.read(OUT, encoding: "UTF-8") == out
+  if File.exist?(OUT) && File.binread(OUT) == out.b
     puts "#{OUT.delete_prefix("#{ROOT}/")} is up to date"
   else
     warn "#{OUT.delete_prefix("#{ROOT}/")} is stale; run ruby scripts/generate_model.rb"
     exit 1
   end
 else
-  File.write(OUT, out)
+  File.binwrite(OUT, out)
   puts "wrote #{OUT.delete_prefix("#{ROOT}/")}: #{classes.size + 1} classes"
 end

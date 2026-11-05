@@ -13,7 +13,7 @@ require "json"
 require_relative "harness"
 
 C = UmathOracle::Canonical
-WRITERS = %w[asciimath latex mathml umath omml html].freeze
+WRITERS = %w[asciimath latex mathml unicodemath omml html].freeze
 REFUSAL_CLASSES = %w[Parsanol::ParseFailed Parslet::ParseFailed].freeze
 
 def error_data(error)
