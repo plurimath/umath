@@ -11,10 +11,10 @@ generations, named in `spec/fixtures/testsuite-pin.yml`:
 ----
 schema: plurimath-stage/pin/1
 repository: https://github.com/plurimath/plurimath-testsuite
-commit: 337262eda0483ceaa43a02cc52362c5b721e5eb3
+commit: 85c7be8fd56f0cc64b4869e74716acc4f0dbe746
 language: unicode
-generation: 3
-snapshot_digest: sha256:af442da2b04c15cbba9a89f013fab652823a2faec3e847df0e302494853d2cb6
+generation: 4
+snapshot_digest: sha256:cc02870fb6ee5a46c64271733b716f00469d0af46847851ad3db9249ad2571ed
 ----
 
 Generation 2 keeps every case of generation 1 (the legacy corpus, produced by
@@ -25,6 +25,11 @@ cases, rejections included, written by `scripts/stage_cases.rb` at umath
 Generation 3 keeps every payload of generation 2 byte for byte and adds
 typed-model rows beside the raw-tree rows. The replay still compares the
 raw-tree rows only.
+
+Generation 4 keeps every payload of generation 3 byte for byte except the
+five raw-tree payloads, which `scripts/stage_cases.rb` rewrote after the gem
+was renamed to umath: their header comment and description name umath and
+`Umath::RawParser`. No row changed.
 
 == What CI checks
 
@@ -52,7 +57,7 @@ To run the replay locally:
 [source,sh]
 ----
 git clone https://github.com/plurimath/plurimath-testsuite tmp/testsuite
-git -C tmp/testsuite checkout 337262eda0483ceaa43a02cc52362c5b721e5eb3
+git -C tmp/testsuite checkout 85c7be8fd56f0cc64b4869e74716acc4f0dbe746
 bundle exec ruby scripts/replay_corpus.rb --testsuite tmp/testsuite --report tmp/replay.json
 ----
 
@@ -60,7 +65,7 @@ The `replay` workflow checks out the testsuite at the same commit and fails if
 its commit and the pin's differ. The `stage-cases` workflow writes the
 generation after the latest one of its source commit, so it still reads
 generation 1 at b4520d8; it also checks out the pinned commit and requires the
-raw-tree payloads it writes to equal the pinned generation's byte for byte.
+payloads it writes to equal the pinned generation 4's byte for byte.
 The same workflow also writes a typed-model generation (`scripts/stage_cases.rb
 --boundary typed-model`) from the latest generation at 5e32851: every payload
 copied byte for byte plus a `model-<group>.yaml` payload of typed models from
