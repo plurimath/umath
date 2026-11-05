@@ -1,10 +1,10 @@
 # Written by scripts/compile.rb. Envelope checksums are Parsanol's own;
 # the sha256 lines are of the files' bytes.
-artifact_checksum sha256:5af336c0d33c8d27633d861834e1115f4b09212ff954e1a947a788cc6a8be3ee
-compiler_version 1.3.131
+artifact_checksum sha256:71827776dcad9f3ecd687047f70dbbd2fc85b92afb10e1054765db60c9fe0260
+compiler_version 1.3.134
 edition 2
 source_hash sha256:d9f7e226918fd63bda8c0d799c69b3db5a74e7de95feefd6270509e0613a0bcd
-artifacts/unicodemath.json sha256:41faae82dd5f88d80046e1aab2ad68c4f6b859e44dac3cd38f4cfb3e75e3c02b
+artifacts/unicodemath.json sha256:185de4b0f2b07b30a7236cac34da8f0e67d7567b8ac9978aadfccc2649b16566
 bindings python checksum sha256:564b920722c7ce08532937d8e85859278706ba31e3ba2f3a55cc31ea988971f0
 artifacts/unicodemath.bindings.python.json sha256:5f266b09740098e167f815b8a03333ae6cee1bc3acc800881a14ece4a36dee05
 bindings rs checksum sha256:7ac8b34e085747546d7440ee468c8085dbe50410654efb694466ad923698ee18
