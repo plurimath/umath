@@ -5,18 +5,18 @@ require "json"
 require "open3"
 require "rbconfig"
 require "tmpdir"
-require "unicodemath"
+require "umath"
 
 module ArtifactSpecHelpers
   ROOT = File.expand_path("../..", __dir__)
-  ARTIFACT = File.join(ROOT, "artifacts", "unicodemath.json")
-  CHECKSUMS = File.join(ROOT, "artifacts", "unicodemath.checksums.txt")
-  GRAMMAR = File.join(ROOT, "grammars", "unicodemath.parg")
-  EXPORT = File.join(ROOT, "data", "unicodemath-grammar.json")
+  ARTIFACT = File.join(ROOT, "artifacts", "umath.json")
+  CHECKSUMS = File.join(ROOT, "artifacts", "umath.checksums.txt")
+  GRAMMAR = File.join(ROOT, "grammars", "umath.parg")
+  EXPORT = File.join(ROOT, "data", "umath-grammar.json")
   TARGETS = Parsanol::PARG::Bindings::Artifact::TARGETS
 
   def bindings_path(target)
-    File.join(ROOT, "artifacts", "unicodemath.bindings.#{target}.json")
+    File.join(ROOT, "artifacts", "umath.bindings.#{target}.json")
   end
 
   def manifest
@@ -39,14 +39,14 @@ module ArtifactSpecHelpers
     JSON.generate(payload)
   end
 
-  # Runs +block+ with Unicodemath pointed at +parse+/+bindings+, then
+  # Runs +block+ with Umath pointed at +parse+/+bindings+, then
   # restores the bundled artifacts.
   def with_artifacts(parse, bindings)
-    saved = Unicodemath.artifact_paths
-    Unicodemath.use_artifacts(parse, bindings)
+    saved = Umath.artifact_paths
+    Umath.use_artifacts(parse, bindings)
     yield
   ensure
-    Unicodemath.use_artifacts(*saved)
+    Umath.use_artifacts(*saved)
   end
 end
 

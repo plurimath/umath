@@ -3,10 +3,10 @@
 require_relative "spec_helper"
 
 RSpec.describe "the exported symbol catalog" do
-  let(:doc) { JSON.parse(File.read(File.join(ArtifactSpecHelpers::ROOT, "data", "unicodemath-symbols.json"), encoding: "UTF-8")) }
+  let(:doc) { JSON.parse(File.read(File.join(ArtifactSpecHelpers::ROOT, "data", "umath-symbols.json"), encoding: "UTF-8")) }
 
   it "comes from the pinned oracle commit" do
-    expect(doc["format"]).to eq("unicodemath-symbol-catalog/1")
+    expect(doc["format"]).to eq("umath-symbol-catalog/1")
     expect(doc.dig("oracle", "commit")).to eq("e7ab4a5186c9be96f62d670574bc2c72f9365ad4")
   end
 

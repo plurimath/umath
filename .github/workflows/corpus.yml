@@ -41,8 +41,8 @@ jobs:
 
       - name: Use the compiler and Ruby the committed artifact records
         run: |
-          echo "PARSANOL_VERSION=$(awk '$1 == "compiler_version" { print $2 }' artifacts/unicodemath.checksums.txt)" >> "$GITHUB_ENV"
-          echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/unicodemath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
+          echo "PARSANOL_VERSION=$(awk '$1 == "compiler_version" { print $2 }' artifacts/umath.checksums.txt)" >> "$GITHUB_ENV"
+          echo "ARTIFACT_RUBY=$(jq -r '.unicode_tables' artifacts/umath.json | sed -n 's/^onigmo (Ruby \(.*\))$/\1/p')" >> "$GITHUB_ENV"
 
       - uses: ruby/setup-ruby@v1
         with:

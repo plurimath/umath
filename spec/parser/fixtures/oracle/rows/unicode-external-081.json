@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "unicode-external-081",
   "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
   "request_digest": "ba28b248514f7f4478cb4db55c42be09d64dc22b023aa2e9ecee0367ab9a0363",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "unicode-external-081",
     "outcome": "succeeded",
     "environment": {
@@ -2934,7 +2934,7 @@
             "v": "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\">\n  <mstyle displaystyle=\"true\">\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mn>1</mn>\n    </msub>\n    <mi>z</mi>\n    <mi>x</mi>\n    <mo>+</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mi>x</mi>\n    </msub>\n    <mi>z</mi>\n    <msup>\n      <mi>x</mi>\n      <mn>2</mn>\n    </msup>\n    <mo>&#x2212;</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mi>y</mi>\n    </msub>\n    <mi>x</mi>\n    <mi>z</mi>\n    <mi>y</mi>\n    <mo>&#x2212;</mo>\n    <msub>\n      <mi>&#x3b1;</mi>\n      <mrow>\n        <mi>z</mi>\n        <mi>x</mi>\n      </mrow>\n    </msub>\n    <msub>\n      <mi>&#x3b2;</mi>\n      <mi>z</mi>\n    </msub>\n    <mi>x</mi>\n    <mi>z</mi>\n    <mi>z</mi>\n  </mstyle>\n</math>\n"
           }
         },
-        "unicodemath": {
+        "umath": {
           "status": "ok",
           "output": {
             "t": "str",

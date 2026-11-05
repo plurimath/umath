@@ -2,10 +2,10 @@
 
 require "lutaml/model"
 
-module Unicodemath
+module Umath
   # The typed UnicodeMath language model, declared with LutaML Model.
   #
-  # Unicodemath.parse returns a Model::Document. Its tree is built by
+  # Umath.parse returns a Model::Document. Its tree is built by
   # lutaml-model from the declared attribute types (Document.new on the
   # grammar's bound tree, see Parser); no code here walks the parse tree.
   # The node classes in model/nodes.rb are generated from the normalized
@@ -20,7 +20,7 @@ module Unicodemath
     # facade rule). +decimal+ is the decimal marker the input was parsed
     # with; numbers keep their digits and marker as written.
     class Document < Lutaml::Model::Serializable
-      attribute :expression, "Unicodemath::Model::Expression"
+      attribute :expression, "Umath::Model::Expression"
       attribute :label, :string
       attribute :decimal, :string
     end

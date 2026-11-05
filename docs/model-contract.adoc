@@ -3,8 +3,8 @@
 
 == Scope
 
-`Unicodemath.parse(input, decimal: ".", engine: :auto)` returns a
-`Unicodemath::Model::Document`, the typed UnicodeMath language model. This
+`Umath.parse(input, decimal: ".", engine: :auto)` returns a
+`Umath::Model::Document`, the typed UnicodeMath language model. This
 document describes that model: how it is built from the grammar, what its
 fields hold, and how it is checked. The rules shared by all stage gems
 (API shape, errors, engines, artifacts, corpus pins) are in the stage
@@ -33,8 +33,8 @@ After construction, one separate pass resolves symbols (see below).
 === Classes and fields
 
 `scripts/generate_model.rb` writes the classes in
-`lib/unicodemath/model/nodes.rb` from the normalized rules
-(`grammars/unicodemath.normalized-rules.json`). The mapping is mechanical,
+`lib/umath/model/nodes.rb` from the normalized rules
+(`grammars/umath.normalized-rules.json`). The mapping is mechanical,
 because every capture holds one kind:
 
 * A capture that holds a node becomes a class named after it, for example
@@ -65,7 +65,7 @@ because every capture holds one kind:
   (a lookahead that matched).
 
 These rules give 74 classes plus `Document`. The exported declarations,
-with every field and its type, are in `model/unicodemath.lml.json`.
+with every field and its type, are in `model/umath.lml.json`.
 
 Text fields keep the text the grammar matched. The grammar runs on the
 preprocessed, entity-encoded input, so non-ASCII text appears as character
@@ -108,8 +108,8 @@ Numbers are kept as written. `number` is the digit string, and
 
 == Symbol resolution
 
-`Unicodemath::Symbols.resolve` visits every node that has a `spelling` and
-looks it up in `data/unicodemath-symbols.json`. That file is the legacy
+`Umath::Symbols.resolve` visits every node that has a `spelling` and
+looks it up in `data/umath-symbols.json`. That file is the legacy
 symbol catalog exported from the pinned Plurimath commit. Like the legacy
 transform, the lookup uses the spelling with surrounding whitespace
 removed.
@@ -128,7 +128,7 @@ as a plain symbol.
 Errors follow the stage profile. A `ParseError` reports `input` (the
 caller's text as UTF-8), `char_offset` and `byte_offset`, both measured in
 the caller's text. The grammar reports positions in the preprocessed text.
-`Unicodemath::SourceMap` repeats each preprocessing step on the caller's
+`Umath::SourceMap` repeats each preprocessing step on the caller's
 text and records where every character came from, so a grammar position can
 be mapped back. Characters produced by one replacement, such as the
 `&#x3b1;` that stands for `α`, all map to the position of the original
@@ -170,7 +170,7 @@ parentheses, 100 nested fractions) was built and serialized without error.
   must give an empty document. Both checks hold on the native engine too.
 * `scripts/verify_lml.rb` exports every model class with
   `Lutaml::Model::Lml.export`, requires the committed
-  `model/unicodemath.lml.json` and `model/unicodemath.lml.checksums.txt` to
+  `model/umath.lml.json` and `model/umath.lml.checksums.txt` to
   be byte-identical to a fresh export, and runs `Lutaml::Model::Lml.verify`
   on each document. `Lml.verify` re-exports the loaded Ruby class, so it
   does not prove that another implementation can rebuild the model. The

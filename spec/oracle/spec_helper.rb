@@ -14,7 +14,7 @@ module OracleSpecHelpers
   # Writes an inventory whose inputs are commands for the fake worker.
   def write_inventory(dir, rows)
     path = File.join(dir, "inventory.yml")
-    doc = { "schema" => UnicodemathOracle::INVENTORY_SCHEMA,
+    doc = { "schema" => UmathOracle::INVENTORY_SCHEMA,
             "rows" => rows.map { |id, input| { "id" => id, "input" => input } } }
     File.write(path, doc.to_yaml)
     path
@@ -38,7 +38,7 @@ end
 RSpec.configure do |config|
   config.include OracleSpecHelpers
   config.around do |example|
-    Dir.mktmpdir("unicodemath-oracle") do |dir|
+    Dir.mktmpdir("umath-oracle") do |dir|
       @dir = dir
       example.run
     end

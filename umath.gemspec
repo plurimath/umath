@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "lib/unicodemath/version"
+require_relative "lib/umath/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "unicodemath"
-  spec.version = Unicodemath::VERSION
+  spec.name = "umath"
+  spec.version = Umath::VERSION
   spec.authors = ["Ribose Inc."]
   spec.email = ["open.source@ribose.com"]
 
@@ -15,21 +15,21 @@ Gem::Specification.new do |spec|
     Model.
   DESCRIPTION
 
-  spec.homepage = "https://github.com/plurimath/unicodemath"
+  spec.homepage = "https://github.com/plurimath/umath"
   spec.license = "BSD-2-Clause"
 
   spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/plurimath/unicodemath"
-  spec.metadata["changelog_uri"] = "https://github.com/plurimath/unicodemath/blob/main/CHANGELOG.md"
+  spec.metadata["source_code_uri"] = "https://github.com/plurimath/umath"
+  spec.metadata["changelog_uri"] = "https://github.com/plurimath/umath/blob/main/CHANGELOG.md"
   spec.metadata["rubygems_mfa_required"] = "true"
 
   # Only what the gem reads at run time (the code, the parse and Ruby
   # bindings artifacts and the symbol catalog), plus its documentation.
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
-    Dir["lib/**/*.rb", "artifacts/unicodemath.json", "artifacts/unicodemath.bindings.ruby.json",
-        "data/unicodemath-symbols.json", "docs/*.adoc", "README.adoc", "CHANGELOG.md", "LICENSE.md"]
+    Dir["lib/**/*.rb", "artifacts/umath.json", "artifacts/umath.bindings.ruby.json",
+        "data/umath-symbols.json", "docs/*.adoc", "README.adoc", "CHANGELOG.md", "LICENSE.md"]
       .select { |f| File.file?(f) }
   end
   spec.require_paths = ["lib"]

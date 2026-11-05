@@ -2,7 +2,7 @@
 
 require_relative "spec_helper"
 
-RSpec.describe UnicodemathOracle::Canonical do
+RSpec.describe UmathOracle::Canonical do
   def dump(value) = described_class.dump(value)
 
   it "keeps hash vs array, symbol vs string and nil vs missing apart" do

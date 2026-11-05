@@ -2,7 +2,7 @@
 
 require_relative "spec_helper"
 
-RSpec.describe Unicodemath::Preprocessor do
+RSpec.describe Umath::Preprocessor do
   def call(input)
     described_class.call(input).to_h
   end

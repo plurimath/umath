@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module UnicodemathOracle
+module UmathOracle
   # Converts Ruby values into a tagged, JSON-safe form that keeps every
   # distinction the parity comparison needs (see docs/parser-contract.adoc,
   # "Canonical tagged form"):

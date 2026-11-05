@@ -19,7 +19,7 @@ snapshot_digest: sha256:0a6f19b9a7836e71544d1a027e3f3ea2397dc5e9a1aba8b7834079b1
 
 Generation 2 keeps every case of generation 1 (the legacy corpus, produced by
 Plurimath 0.11.12) byte for byte and adds a raw-tree row for each of its 72
-cases, rejections included, written by `scripts/stage_cases.rb` at unicodemath
+cases, rejections included, written by `scripts/stage_cases.rb` at umath
 1929f69.
 
 == What CI checks
@@ -37,7 +37,7 @@ The `corpus` workflow checks out the testsuite at the pinned commit and then:
   `scripts/replay_corpus.rb` fail on a small generated testsuite;
 . runs `scripts/replay_corpus.rb --testsuite`, which repeats the pin checks
   and then parses every row of every raw-tree payload of the generation with
-  `Unicodemath::RawParser.parse` on the Ruby and the native engine. Each
+  `Umath::RawParser.parse` on the Ruby and the native engine. Each
   engine's result, the preprocessed text and the tree in the legacy grammar's
   shape or the refusal and its byte offset, must equal the row's expected
   value in the canonical form of the testsuite's
@@ -60,7 +60,7 @@ raw-tree payloads it writes to equal the pinned generation's byte for byte.
 The same workflow also writes a typed-model generation (`scripts/stage_cases.rb
 --boundary typed-model`) from the latest generation at 5e32851: every payload
 copied byte for byte plus a `model-<group>.yaml` payload of typed models from
-`Unicodemath.parse` for each legacy payload, uploaded as the
+`Umath.parse` for each legacy payload, uploaded as the
 `stage-generation-model` artifact.
 
 == Parity with the legacy parser
@@ -72,7 +72,7 @@ itself is made by the `replay` workflow: it captures the parse tree of the
 pinned Plurimath for every UnicodeMath case of the testsuite's
 `fixtures/unicode-expectations.yaml` and for the rows authored in this
 repository, and requires the raw tree and the typed model built by
-`Unicodemath.parse` to match it on both engines, apart from the listed native
+`Umath.parse` to match it on both engines, apart from the listed native
 divergences. The legacy corpus itself is not changed by this gem: generation 1
 stays as it was imported.
 

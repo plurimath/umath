@@ -2,7 +2,7 @@
 
 require "json"
 
-module Unicodemath
+module Umath
   # The compiled grammar and its declared Ruby bindings, loaded, verified
   # and paired once per pair of paths.
   class Artifact

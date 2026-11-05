@@ -10,9 +10,9 @@ RSpec.describe "the compiled artifacts" do
 
   it "match the checksum manifest" do
     files = manifest.filter_map { |l| l.match(%r{\A(\S+/\S+) sha256:(\h{64})\z}) }
-    expect(files.map { |m| m[1] }).to include("artifacts/unicodemath.json", "grammars/unicodemath.parg",
-                                              "data/unicodemath-grammar.json",
-                                              *ArtifactSpecHelpers::TARGETS.map { |t| "artifacts/unicodemath.bindings.#{t}.json" })
+    expect(files.map { |m| m[1] }).to include("artifacts/umath.json", "grammars/umath.parg",
+                                              "data/umath-grammar.json",
+                                              *ArtifactSpecHelpers::TARGETS.map { |t| "artifacts/umath.bindings.#{t}.json" })
     files.each do |m|
       expect(Digest::SHA256.file(File.join(ArtifactSpecHelpers::ROOT, m[1])).hexdigest).to eq(m[2]), m[1]
     end
@@ -28,22 +28,22 @@ RSpec.describe "the compiled artifacts" do
   end
 
   it "is fresh against the grammar source" do
-    parse = Unicodemath::Artifact.load_parse(ArtifactSpecHelpers::ARTIFACT)
+    parse = Umath::Artifact.load_parse(ArtifactSpecHelpers::ARTIFACT)
     expect(parse.fresh_against?(File.read(ArtifactSpecHelpers::GRAMMAR, encoding: "UTF-8"))).to be(true)
   end
 
   it "binds the tree capture raw (legacy tree) and as plain data (model input) for every entry" do
     envelope["entries"].each_value do |entry|
-      expect(entry["bindings"]).to eq([{ "capture" => "unicodemath_tree", "path" => "unicodemath_tree",
+      expect(entry["bindings"]).to eq([{ "capture" => "umath_tree", "path" => "umath_tree",
                                          "type" => "raw", "card" => nil, "preprocess" => nil },
-                                       { "capture" => "unicodemath_tree", "path" => "model",
+                                       { "capture" => "umath_tree", "path" => "model",
                                          "type" => "any", "card" => nil, "preprocess" => nil }])
     end
   end
 
   ArtifactSpecHelpers::TARGETS.each do |target|
     it "ships a verified #{target} bindings artifact that pairs with the parse artifact" do
-      parse = Unicodemath::Artifact.load_parse(ArtifactSpecHelpers::ARTIFACT)
+      parse = Umath::Artifact.load_parse(ArtifactSpecHelpers::ARTIFACT)
       bindings = Parsanol::PARG::Bindings::Artifact.from_json(File.read(bindings_path(target)), target: target)
       expect(bindings.payload["artifact_kind"]).to eq("parg-bindings")
       expect(bindings.binding_version).to eq(1)
@@ -55,7 +55,7 @@ RSpec.describe "the compiled artifacts" do
   end
 end
 
-RSpec.describe Unicodemath::Artifact do
+RSpec.describe Umath::Artifact do
   let(:parse) { described_class.load_parse(ArtifactSpecHelpers::ARTIFACT) }
 
   def write(dir, name, text)
@@ -68,14 +68,14 @@ RSpec.describe Unicodemath::Artifact do
   end
 
   it "refuses a missing parse artifact" do
-    expect { described_class.load_parse("/nonexistent/unicodemath.json") }
-      .to raise_error(Unicodemath::ArtifactError, /not found/)
+    expect { described_class.load_parse("/nonexistent/umath.json") }
+      .to raise_error(Umath::ArtifactError, /not found/)
   end
 
   it "refuses a parse artifact that is not JSON" do
     Dir.mktmpdir do |dir|
       expect { described_class.load_parse(write(dir, "a.json", "{")) }
-        .to raise_error(Unicodemath::ArtifactError, /not valid JSON/)
+        .to raise_error(Umath::ArtifactError, /not valid JSON/)
     end
   end
 
@@ -83,7 +83,7 @@ RSpec.describe Unicodemath::Artifact do
     Dir.mktmpdir do |dir|
       text = File.read(ArtifactSpecHelpers::ARTIFACT).sub('"version":"0.1.0"', '"version":"0.1.1"')
       expect { described_class.load_parse(write(dir, "a.json", text)) }
-        .to raise_error(Unicodemath::ArtifactError, /checksum/)
+        .to raise_error(Umath::ArtifactError, /checksum/)
     end
   end
 
@@ -95,33 +95,33 @@ RSpec.describe Unicodemath::Artifact do
       doc.delete("byte_checksum")
       doc["checksum"] = Parsanol::PARG::Compiler.checksum(doc)
       expect { described_class.load_parse(write(dir, "a.json", Parsanol::PARG::Compiler.seal_json(doc))) }
-        .to raise_error(Unicodemath::ArtifactError, /lacks required entries: arabic/)
+        .to raise_error(Umath::ArtifactError, /lacks required entries: arabic/)
     end
   end
 
   it "refuses a missing bindings artifact" do
     expect { described_class.load_bindings("/nonexistent/b.json", parse) }
-      .to raise_error(Unicodemath::ArtifactError, /not found/)
+      .to raise_error(Umath::ArtifactError, /not found/)
   end
 
   it "refuses a tampered bindings artifact" do
     Dir.mktmpdir do |dir|
       text = altered_bindings("ruby", keep_checksum: true, grammar_version: "9.9.9")
       expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /checksum mismatch/)
+        .to raise_error(Umath::ArtifactError, /checksum mismatch/)
     end
   end
 
   it "refuses a bindings artifact for another target" do
     Dir.mktmpdir do |dir|
       expect { described_class.load_bindings(bindings_path("ts"), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /targets "ts", not "ruby"/)
+        .to raise_error(Umath::ArtifactError, /targets "ts", not "ruby"/)
       text = altered_bindings("ruby", artifact_kind: "parg-artifact")
       expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /not a parg-bindings artifact/)
+        .to raise_error(Umath::ArtifactError, /not a parg-bindings artifact/)
       text = altered_bindings("ruby", binding_version: 2)
       expect { described_class.load_bindings(write(dir, "c.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /unsupported binding_version/)
+        .to raise_error(Umath::ArtifactError, /unsupported binding_version/)
     end
   end
 
@@ -129,10 +129,10 @@ RSpec.describe Unicodemath::Artifact do
     Dir.mktmpdir do |dir|
       text = altered_bindings("ruby", grammar_source_hash: "0" * 64)
       expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /does not pair .*source_hash/)
+        .to raise_error(Umath::ArtifactError, /does not pair .*source_hash/)
       text = altered_bindings("ruby", grammar_version: "0.0.9")
       expect { described_class.load_bindings(write(dir, "c.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /does not pair .*version/)
+        .to raise_error(Umath::ArtifactError, /does not pair .*version/)
     end
   end
 
@@ -142,7 +142,7 @@ RSpec.describe Unicodemath::Artifact do
       entries["dot"] = { "bindings" => [] }
       text = altered_bindings("ruby", entries: entries)
       expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /does not bind unicodemath_tree -> unicodemath_tree \(raw\), .* for entry dot/)
+        .to raise_error(Umath::ArtifactError, /does not bind umath_tree -> umath_tree \(raw\), .* for entry dot/)
     end
   end
 
@@ -152,7 +152,7 @@ RSpec.describe Unicodemath::Artifact do
       entries["dot"]["bindings"].reject! { |b| b["path"] == "model" }
       text = altered_bindings("ruby", entries: entries)
       expect { described_class.load_bindings(write(dir, "b.json", text), parse) }
-        .to raise_error(Unicodemath::ArtifactError, /does not bind unicodemath_tree -> model \(any\) for entry dot/)
+        .to raise_error(Umath::ArtifactError, /does not bind umath_tree -> model \(any\) for entry dot/)
     end
   end
 
@@ -160,8 +160,8 @@ RSpec.describe Unicodemath::Artifact do
     Dir.mktmpdir do |dir|
       bad = write(dir, "b.json", altered_bindings("ruby", grammar_source_hash: "0" * 64))
       with_artifacts(ArtifactSpecHelpers::ARTIFACT, bad) do
-        expect { Unicodemath::RawParser.parse("a", engine: :ruby) }
-          .to raise_error(Unicodemath::ArtifactError, /does not pair/)
+        expect { Umath::RawParser.parse("a", engine: :ruby) }
+          .to raise_error(Umath::ArtifactError, /does not pair/)
       end
     end
   end

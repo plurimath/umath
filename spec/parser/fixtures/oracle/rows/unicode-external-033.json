@@ -1,5 +1,5 @@
 {
-  "schema": "unicodemath-oracle-row/1",
+  "schema": "umath-oracle-row/1",
   "id": "unicode-external-033",
   "source": "spec/parser/fixtures/oracle/inventory/sample.yml",
   "request_digest": "f09636606dbf66643ccc70ff43bb753f8a8591079854d2604c1265867303bd4d",
@@ -10,7 +10,7 @@
   },
   "detail": null,
   "result": {
-    "protocol": "unicodemath-oracle/1",
+    "protocol": "umath-oracle/1",
     "id": "unicode-external-033",
     "outcome": "refused",
     "environment": {

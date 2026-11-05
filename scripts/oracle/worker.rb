@@ -12,8 +12,8 @@
 require "json"
 require_relative "harness"
 
-C = UnicodemathOracle::Canonical
-WRITERS = %w[asciimath latex mathml unicodemath omml html].freeze
+C = UmathOracle::Canonical
+WRITERS = %w[asciimath latex mathml umath omml html].freeze
 REFUSAL_CLASSES = %w[Parsanol::ParseFailed Parslet::ParseFailed].freeze
 
 def error_data(error)
@@ -134,7 +134,7 @@ model, formula = capture_model(input, options)
 writers = formula ? capture_writers(formula, input, options) : {}
 
 result = {
-  "protocol" => UnicodemathOracle::PROTOCOL,
+  "protocol" => UmathOracle::PROTOCOL,
   "id" => request.fetch("id"),
   "outcome" => outcome_for(preprocess, raw),
   "environment" => environment,

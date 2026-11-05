@@ -9,15 +9,15 @@
 #     --out OUT [--source-generation N] [--boundary raw-tree|typed-model]
 #
 # With --boundary raw-tree (the default) the payloads are raw-<group>.yaml
-# with row ids "<id>.raw": the Unicodemath::RawParser outcome. The tree is
+# with row ids "<id>.raw": the Umath::RawParser outcome. The tree is
 # written in the legacy grammar's shape: the wrappers the capture-shape
 # normalization added are removed with scripts/unwrap.rb, so the rows stay
 # comparable with the legacy rows. Refusals carry their byte offset into the
 # preprocessed text.
 #
 # With --boundary typed-model the payloads are model-<group>.yaml with row
-# ids "<id>.model": the typed model (Unicodemath::Model::Document) that
-# Unicodemath.parse returns. It is written from the bound data the model is
+# ids "<id>.model": the typed model (Umath::Model::Document) that
+# Umath.parse returns. It is written from the bound data the model is
 # built from (the model binding's `(any)` output) and typed by the declared
 # model attributes: each object is {node: <model class>, fields: [...]} with
 # its set fields in declaration order; nil fields are left out. The value
@@ -26,7 +26,7 @@
 # attributes must give the same value, or the run stops; lutaml-model
 # serialization is never used. Refusals carry their byte offset into the
 # caller's input. The producer block names the committed LML export
-# (model/unicodemath.lml.json).
+# (model/umath.lml.json).
 #
 # TESTSUITE_CHECKOUT is a clean plurimath-testsuite checkout. The source
 # generation (default: the latest in generations/unicode.yaml) has its
@@ -53,7 +53,7 @@ require "json"
 require "open3"
 require "optparse"
 require "yaml"
-require "unicodemath"
+require "umath"
 require_relative "unwrap"
 
 module StageCases
@@ -61,7 +61,7 @@ module StageCases
 
   ROOT = File.expand_path("..", __dir__)
   LANGUAGE = "unicode"
-  REPOSITORY = "https://github.com/plurimath/unicodemath"
+  REPOSITORY = "https://github.com/plurimath/umath"
   TESTSUITE_REPOSITORY = "https://github.com/plurimath/plurimath-testsuite"
   GENERATOR_PATH = "scripts/stage_cases.rb"
   CASES_SCHEMA = "plurimath-stage/unicode/cases/1"
@@ -69,12 +69,12 @@ module StageCases
   ENGINES = %i[native ruby].freeze
   DECIMAL = "."
   BOUNDARIES = %w[raw-tree typed-model].freeze
-  PRODUCER_NAMES = { "raw-tree" => "unicodemath-raw", "typed-model" => "unicodemath-model" }.freeze
+  PRODUCER_NAMES = { "raw-tree" => "umath-raw", "typed-model" => "umath-model" }.freeze
   ROW_SUFFIXES = { "raw-tree" => ".raw", "typed-model" => ".model" }.freeze
   PAYLOAD_PREFIXES = { "raw-tree" => "raw-", "typed-model" => "model-" }.freeze
-  ENTRY_POINTS = { "raw-tree" => "Unicodemath::RawParser.parse", "typed-model" => "Unicodemath.parse" }.freeze
-  LML = "model/unicodemath.lml.json"
-  LML_CHECKSUMS = "model/unicodemath.lml.checksums.txt"
+  ENTRY_POINTS = { "raw-tree" => "Umath::RawParser.parse", "typed-model" => "Umath.parse" }.freeze
+  LML = "model/umath.lml.json"
+  LML_CHECKSUMS = "model/umath.lml.checksums.txt"
   # The source payloads whose inputs are read: the rows the legacy facade
   # produced, not earlier stage-case payloads.
   SOURCE_PRODUCER_KIND = "legacy-oracle"
@@ -87,7 +87,7 @@ module StageCases
     "grammars",
     "data",
     "model",
-    "unicodemath.gemspec",
+    "umath.gemspec",
     "Gemfile",
   ].freeze
 
@@ -131,40 +131,40 @@ module StageCases
     module_function
 
     def of(input, engine)
-      result = Unicodemath::RawParser.parse(input, decimal: DECIMAL, engine: engine)
+      result = Umath::RawParser.parse(input, decimal: DECIMAL, engine: engine)
       if result.text && result.engine != engine
         raise Failure, "asked for the #{engine} engine, got #{result.engine}"
       end
 
-      { "preprocessed" => Canonical.dump(result.text), "tree" => Canonical.dump(UnicodemathUnwrap.call(result.tree)) }
-    rescue Unicodemath::NestingTooDeep => e
+      { "preprocessed" => Canonical.dump(result.text), "tree" => Canonical.dump(UmathUnwrap.call(result.tree)) }
+    rescue Umath::NestingTooDeep => e
       raise Failure, "nesting too deep on the #{engine} engine (#{e.message}); not a refusal"
-    rescue Unicodemath::ParseError => e
+    rescue Umath::ParseError => e
       { "refusal" => { "category" => "parse_error", "byte_offset" => e.byte_offset } }
     end
 
     # One input's typed-model outcome on one engine: the Document of
-    # Unicodemath.parse in tagged form, written from its bound data and
+    # Umath.parse in tagged form, written from its bound data and
     # checked against a walk of the built Document.
     def model_of(input, engine)
-      # Unicodemath.parse first: its refusal offsets are in the caller's input.
-      document = Unicodemath.parse(input, decimal: DECIMAL, engine: engine)
-      text = Unicodemath::RawParser.normalize_input(input)
-      raw = Unicodemath::RawParser.parse(text, decimal: DECIMAL, engine: engine)
+      # Umath.parse first: its refusal offsets are in the caller's input.
+      document = Umath.parse(input, decimal: DECIMAL, engine: engine)
+      text = Umath::RawParser.normalize_input(input)
+      raw = Umath::RawParser.parse(text, decimal: DECIMAL, engine: engine)
       raise Failure, "asked for the #{engine} engine, got #{raw.engine}" if raw.text && raw.engine != engine
 
       data = { "label" => raw.label, "decimal" => DECIMAL }
       data["expression"] = raw.model_data if raw.text
-      tree = ModelForm.node(Unicodemath::Model::Document, data)
+      tree = ModelForm.node(Umath::Model::Document, data)
       unless ModelForm.walk(document) == tree
         raise Failure, "#{input.inspect}: #{engine} engine: the built model differs from its bound data"
       end
 
       { "preprocessed" => Canonical.dump(raw.text), "tree" => tree }
-    rescue Unicodemath::NestingTooDeep => e
+    rescue Umath::NestingTooDeep => e
       raise Failure, "nesting too deep on the #{engine} engine (#{e.message}); not a refusal"
-    rescue Unicodemath::ParseError => e
-      ran = Unicodemath.last_engine
+    rescue Umath::ParseError => e
+      ran = Umath.last_engine
       raise Failure, "asked for the #{engine} engine, got #{ran}" unless ran == engine
 
       { "refusal" => { "category" => "parse_error", "byte_offset" => e.byte_offset } }
@@ -219,7 +219,7 @@ module StageCases
       present = %w[value kind] & data.keys
       raise Failure, "#{path}/: bound data already holds #{present.join(', ')}" unless present.empty?
 
-      value, kind = Unicodemath::Symbols.lookup(data["spelling"])
+      value, kind = Umath::Symbols.lookup(data["spelling"])
       data.merge("value" => value, "kind" => kind)
     end
 
@@ -461,12 +461,12 @@ module StageCases
     def rationale
       if model?
         "Keeps every generation #{@source.generation} payload byte for byte and adds typed-model rows " \
-          "(Unicodemath.parse, Ruby and native engines agreeing) for each legacy input, written by " \
-          "#{GENERATOR_PATH} at unicodemath #{@producer['commit']}."
+          "(Umath.parse, Ruby and native engines agreeing) for each legacy input, written by " \
+          "#{GENERATOR_PATH} at umath #{@producer['commit']}."
       else
         "Keeps every generation #{@source.generation} payload byte for byte and adds " \
-          "Unicodemath::RawParser raw-tree rows (Ruby and native engines agreeing) for " \
-          "each of their inputs, written by #{GENERATOR_PATH} at unicodemath " \
+          "Umath::RawParser raw-tree rows (Ruby and native engines agreeing) for " \
+          "each of their inputs, written by #{GENERATOR_PATH} at umath " \
           "#{@producer['commit']}."
       end
     end
@@ -475,13 +475,13 @@ module StageCases
       copied = "Generation #{@source.generation} (#{@source.dir} at plurimath-testsuite #{@source.commit}, " \
                "#{@source.entry['snapshot_digest']}) copied byte for byte, plus one #{prefix}<group> "
       if model?
-        copied + "payload per legacy-oracle payload with the typed model (Unicodemath.parse, LML export " \
+        copied + "payload per legacy-oracle payload with the typed model (Umath.parse, LML export " \
                  "#{LML}) of each of its inputs (row id = source id + #{ROW_SUFFIXES.fetch(@boundary)}). " \
-                 "Written by #{GENERATOR_PATH} at unicodemath #{@producer['commit']}. The legacy rows stay " \
+                 "Written by #{GENERATOR_PATH} at umath #{@producer['commit']}. The legacy rows stay " \
                  "the parity oracle; the typed-model rows sit beside them."
       else
         copied + "payload per copied payload with the stage-gem raw-tree outcome of each of its inputs " \
-                 "(row id = source id + #{ROW_SUFFIXES.fetch(@boundary)}). Written by #{GENERATOR_PATH} at unicodemath " \
+                 "(row id = source id + #{ROW_SUFFIXES.fetch(@boundary)}). Written by #{GENERATOR_PATH} at umath " \
                  "#{@producer['commit']}. The legacy rows stay the parity oracle; the raw-tree rows sit beside them."
       end
     end
@@ -489,7 +489,7 @@ module StageCases
     def provenance_bytes(provenance)
       "# Generation #{number} of the #{LANGUAGE} stage corpus. Immutable: never edit this\n" \
         "# directory; add a new generation instead. See docs/stage-corpus-contract.adoc.\n" \
-        "# Written by #{GENERATOR_PATH} (plurimath/unicodemath).\n" +
+        "# Written by #{GENERATOR_PATH} (plurimath/umath).\n" +
         StageCases.yaml(provenance)
     end
 
@@ -507,19 +507,19 @@ module StageCases
       payload = { "schema" => CASES_SCHEMA, "group" => name, "description" => description(source_path),
                   "boundary" => @boundary, "cases" => cases }
       "# #{model? ? 'Typed-model' : 'Raw-tree'} rows for #{source_path}. Written by #{GENERATOR_PATH}\n" \
-        "# (plurimath/unicodemath). Do not edit; see provenance.yaml.\n" +
+        "# (plurimath/umath). Do not edit; see provenance.yaml.\n" +
         StageCases.yaml(payload)
     end
 
     def description(source_path)
       if model?
-        "Typed model (Unicodemath::Model::Document) from Unicodemath.parse for each input of " \
+        "Typed model (Umath::Model::Document) from Umath.parse for each input of " \
           "#{source_path} (generation #{@source.generation}): the legacy preprocessing and the model, each " \
           "object its model class (#{LML}) with its set fields in declaration order (nil fields left " \
           "out), or a refusal with its byte offset into the caller's input. Default decimal marker; the " \
           "Ruby and native engines agree on every row."
       else
-        "Unicodemath::RawParser outcome for each input of #{source_path} " \
+        "Umath::RawParser outcome for each input of #{source_path} " \
           "(generation #{@source.generation}): the legacy preprocessing and the raw " \
           "grammar tree, or a refusal with its byte offset into the preprocessed text. " \
           "Default decimal marker; the Ruby and native engines agree on every row."
@@ -541,14 +541,14 @@ module StageCases
     def producer(source, boundary = "raw-tree")
       commit = git("rev-parse", "HEAD").strip
       dirty = git("status", "--porcelain", "--", *PRODUCER_FILES)
-      raise Failure, "unicodemath checkout has uncommitted producer files:\n#{dirty}" unless dirty.empty?
-      raise Failure, "the native engine is not available" unless Unicodemath::Engine.native_available?
+      raise Failure, "umath checkout has uncommitted producer files:\n#{dirty}" unless dirty.empty?
+      raise Failure, "the native engine is not available" unless Umath::Engine.native_available?
 
-      checksums = File.read(File.join(ROOT, "artifacts", "unicodemath.checksums.txt"))
+      checksums = File.read(File.join(ROOT, "artifacts", "umath.checksums.txt"))
       field = ->(key) { checksums[/^#{Regexp.escape(key)} (\S+)$/, 1] }
       {
         "kind" => "stage-gem", "repository" => REPOSITORY, "commit" => commit,
-        "version" => Unicodemath::VERSION,
+        "version" => Umath::VERSION,
         "generator" => file(commit, GENERATOR_PATH),
         "inputs" => [source.file_ref("provenance.yaml")] +
           source.input_entries.map { |p| source.file_ref(p["path"]) },
@@ -560,12 +560,12 @@ module StageCases
           "compiler" => {
             "name" => "parsanol", "version" => field.("compiler_version"), "edition" => field.("edition"),
             "artifact_checksum" => field.("artifact_checksum"), "source_hash" => field.("source_hash"),
-            "grammar" => file(commit, "grammars/unicodemath.parg"),
-            "artifact" => file(commit, "artifacts/unicodemath.json")
+            "grammar" => file(commit, "grammars/umath.parg"),
+            "artifact" => file(commit, "artifacts/umath.json")
           },
           "binding" => {
             "ruby_checksum" => field.("bindings ruby checksum"),
-            "artifact" => file(commit, "artifacts/unicodemath.bindings.ruby.json")
+            "artifact" => file(commit, "artifacts/umath.bindings.ruby.json")
           },
           "lml" => (boundary == "typed-model" ? lml(commit) : nil)
         },

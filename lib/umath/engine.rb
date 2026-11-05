@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-module Unicodemath
+module Umath
   # Runs the grammar on the native or Ruby Parsanol engine, always with
   # Parslet-compatible memo decisions (the legacy grammar's mode), maps
-  # failures to Unicodemath errors and records the engine that produced the
+  # failures to Umath errors and records the engine that produced the
   # result per thread.
   #
   # Internal.
   module Engine
-    LAST_ENGINE_KEY = :unicodemath_last_engine
+    LAST_ENGINE_KEY = :umath_last_engine
     OPENING = "([{".chars.freeze
     CLOSING = ")]}".chars.freeze
 

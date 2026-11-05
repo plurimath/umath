@@ -1,5 +1,5 @@
 {
-  "format": "unicodemath-grammar-export/1",
+  "format": "umath-grammar-export/1",
   "oracle": {
     "repository": "https://github.com/plurimath/plurimath",
     "commit": "e7ab4a5186c9be96f62d670574bc2c72f9365ad4",
@@ -25,7 +25,7 @@
   },
   "inputs": {
     "wrapper_symbols": {
-      "source": "Plurimath::UnicodeMath::Constants.wrapper_symbols (Utility.symbols_hash(:unicodemath) keys matching /\"P\\{[^\\}]+\\}/)",
+      "source": "Plurimath::UnicodeMath::Constants.wrapper_symbols (Utility.symbols_hash(:umath) keys matching /\"P\\{[^\\}]+\\}/)",
       "values": [
         "\"P{leftarrowshortrightarrow}\"",
         "\"P{leftrightharpoondowndown}\"",

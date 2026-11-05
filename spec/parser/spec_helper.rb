@@ -2,7 +2,7 @@
 
 require "json"
 require "yaml"
-require "unicodemath"
+require "umath"
 require_relative "../../scripts/oracle/canonical"
 require_relative "../../scripts/unwrap"
 
@@ -19,16 +19,16 @@ module ParserSpecHelpers
   }.freeze
 
   def canonical(value)
-    UnicodemathOracle::Canonical.dump(value)
+    UmathOracle::Canonical.dump(value)
   end
 
   # The legacy tree for a raw tree of the normalized grammar.
   def legacy(tree)
-    UnicodemathUnwrap.call(tree)
+    UmathUnwrap.call(tree)
   end
 
   def canonical_string(value)
-    UnicodemathOracle::Canonical.string(value)
+    UmathOracle::Canonical.string(value)
   end
 
   def native_required?
