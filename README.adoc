@@ -79,6 +79,10 @@ Umath.parse("1,5", decimal: ",")
 Umath.parse("1٫5", decimal: "٫")
 ----
 
+The `decimal` field of the document keeps the marker you passed. Inside the
+number, a non-ASCII marker such as `٫` is spelled as an HTML entity
+(`&#x66b;`), as for any other non-ASCII character.
+
 The rules for each model class are in link:docs/model-contract.adoc[the
 model contract], and the accepted syntax and the preprocessing of the input
 in link:docs/parser-contract.adoc[the parser contract].
