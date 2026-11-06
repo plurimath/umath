@@ -1,0 +1,373 @@
+# UTN 28 v3.2 constructs and the corpus rows that exercise them. Read by
+# scripts/utn28_coverage.rb, which parses every listed row and writes the
+# coverage table of docs/unicodemath.adoc.
+#
+# Each construct has a UTN 28 section and up to three lists of row ids:
+#
+#   rows       inputs of the construct that must parse to the row's expected
+#              model;
+#   refused    inputs UTN 28 defines that the row expects umath to refuse;
+#   malformed  incomplete inputs of the construct (a trailing `/`, an
+#              unclosed bracket) that the row expects umath to refuse. They
+#              are listed, but they do not decide the status.
+#
+# A construct with rows is covered; one with refused rows and no rows is
+# refused; one with neither is untested. A construct may not have both rows
+# and refused rows: split it instead.
+#
+# Row ids come from corpora/model/representative.yml and from the model-*
+# payloads of the plurimath-testsuite generation pinned in
+# spec/fixtures/testsuite-pin.yml. Every row of both must appear here, under
+# a construct or under `unmapped` with the reason.
+schema: umath-utn28-coverage/1
+source:
+  title: "UnicodeMath, A Nearly Plain-Text Encoding of Mathematics"
+  version: "3.2"
+  date: "2023-04-13"
+  url: https://www.unicode.org/notes/tn28/tn28-6.html
+  document: https://www.unicode.org/notes/tn28/UTN28-PlainTextMath-v3.2.pdf
+
+out_of_scope:
+- section: "1"
+  title: Introduction
+- section: "4.2-4.4"
+  title: Math keyboards, hexadecimal input, menus
+- section: "4.7-4.9"
+  title: Handwritten input, dictation, Braille
+- section: "5"
+  title: Recognizing mathematical expressions in plain text
+- section: "6"
+  title: UnicodeMath in programming languages
+- section: "7"
+  title: Conclusions
+
+constructs:
+# 2.1 Fractions
+- name: Fraction `a/b`
+  section: "2.1"
+  rows: [model-fraction]
+  malformed:
+  - unicode-lone-slash.model
+  - unicode-trailing-slash.model
+  - unicode-number-trailing-slash.model
+  - unicode-leading-slash.model
+  - unicode-greek-trailing-slash.model
+  - unicode-double-trailing-slash.model
+- name: Outer parentheses of a numerator or denominator removed, `(a+c)/d`
+  section: "2.1"
+- name: Left-to-right association of `/`, `1+a/b/c/d`
+  section: "2.1"
+- name: Decimal point in a denominator, `1/3.1416`
+  section: "2.1"
+- name: Skewed fraction `⁄` (`\sdiv`)
+  section: "2.1"
+- name: Linear fraction `∕` (`\ldiv`)
+  section: "2.1"
+- name: Normal-size linear fraction `\/`
+  section: "2.1"
+- name: Stack `¦` (`\atop`)
+  section: "2.1"
+  rows: [model-binomial]
+  malformed:
+  - unicode-lone-broken-bar.model
+  - unicode-trailing-broken-bar.model
+  - unicode-greek-broken-bar.model
+- name: Binomial `⒞` (`\choose`)
+  section: "2.1"
+
+# 2.2 Subscripts and superscripts
+- name: Subscript `_` and superscript `^`
+  section: "2.2"
+  rows: [model-sup, model-subsup, unicode-number-exponent.model]
+  malformed:
+  - unicode-lone-sup.model
+  - unicode-trailing-sup.model
+  - unicode-greek-trailing-sup.model
+  - unicode-lone-sub.model
+  - unicode-trailing-sub.model
+  - unicode-infinity-trailing-sub.model
+  - unicode-doubled-sup.model
+  - unicode-doubled-sub.model
+  - unicode-sub-then-sup.model
+- name: Nested scripts, associating right to left, `a_b_c`
+  section: "2.2"
+- name: Comma or period followed by a letter inside a subscript
+  section: "2.2"
+
+# 2.3 Use of the blank
+- name: Space ending an operand
+  section: "2.3"
+  rows: [model-nary, model-integral]
+- name: Space after `+` or `-` making it binary
+  section: "2.3"
+
+# 3.1 Delimiters
+- name: Brackets `( )`, `[ ]`, `{ }`
+  section: "3.1"
+  rows:
+  - unicode-fence-round.model
+  - unicode-fence-square.model
+  - unicode-fence-curly.model
+  malformed:
+  - unicode-unclosed-paren.model
+  - unicode-stray-close-paren.model
+  - unicode-lone-close-paren.model
+  - unicode-close-paren-mid.model
+  - unicode-unclosed-paren-after-operator.model
+  - unicode-close-paren-after-operator.model
+  - unicode-unclosed-square.model
+  - unicode-stray-close-square.model
+  - unicode-unclosed-curly.model
+  - unicode-stray-close-curly.model
+  - unicode-greek-stray-close-paren.model
+  - unicode-greek-unclosed-paren.model
+  - refusal-close-paren
+  - refusal-multibyte
+- name: Other bracket characters, such as `⟨ ⟩` and `⌈ ⌉`
+  section: "3.1"
+  rows: [unicode-fence-angle.model, unicode-fence-ceiling.model]
+  malformed:
+  - unicode-unclosed-angle.model
+  - unicode-stray-close-angle.model
+  - unicode-unclosed-ceiling.model
+  - unicode-stray-close-ceiling.model
+- name: Brackets of different kinds paired, `[a,b)`
+  section: "3.1"
+  rows: [model-parens]
+- name: "`\\open` `├` and `\\close` `┤`"
+  section: "3.1"
+  # A lone `┤` closes nothing; UTN 28 does not say what it means alone.
+  malformed: [unicode-lone-right-tack.model]
+- name: Size digit after `├` or `┤`
+  section: "3.1"
+- name: Absolute value `|x|`
+  section: "3.1"
+  malformed: [unicode-unclosed-vert.model]
+- name: "`\\abs` `⒜`"
+  section: "3.1"
+  malformed: [unicode-lone-parenthesized-letter.model]
+- name: Norm `‖x‖`
+  section: "3.1"
+- name: Separators `│` (`\vbar`), `∣` (`\mid`) and `\middle`
+  section: "3.1"
+- name: Cases `Ⓒ` (`\cases`)
+  section: "3.1"
+
+# 3.2 Literal operators
+- name: Literal operator `\`, such as `\[`
+  section: "3.2"
+
+# 3.3 Prescripts and above/below scripts
+- name: Prescripts `(_c^b)a`
+  section: "3.3"
+- name: Prescripts written before the base, `_c^b a`
+  section: "3.3"
+- name: Below script `┬` and above script `┴`
+  section: "3.3"
+  malformed: [unicode-trailing-down-tack.model]
+- name: Below limit with `_` after `lim`, `max` and similar
+  section: "3.3"
+
+# 3.4 n-ary operators
+- name: n-ary operators with limits, `∑_(i=1)^n i`
+  section: "3.4"
+  rows: [model-nary, model-integral]
+- name: n-aryand operator `▒` (`\naryand`, `\of`)
+  section: "3.4"
+  malformed: [unicode-lone-naryand.model]
+- name: Limit placement digit after an n-ary operator
+  section: "3.4"
+
+# 3.5 Mathematical functions
+- name: Function names, `sin x`
+  section: "3.5"
+  rows: [model-function]
+- name: Function apply `⁡` (U+2061, `\funcapply`)
+  section: "3.5"
+  malformed:
+  - unicode-lone-function-apply.model
+  - unicode-trailing-function-apply.model
+  - unicode-greek-function-apply.model
+- name: Scripted function name, `sin^2 x`
+  section: "3.5"
+- name: Function name with a no-break space, `lim sup`
+  section: "3.5"
+
+# 3.6 Square roots and radicals
+- name: Square root `√`
+  section: "3.6"
+  rows: [model-sqrt]
+- name: Cube root `∛` and fourth root `∜`
+  section: "3.6"
+- name: n-th root `√(n&a)`
+  section: "3.6"
+  rows: [model-nthroot]
+- name: "`\\root n\\of(a)`"
+  section: "3.6"
+
+# 3.7 Enclosures
+- name: Rectangle `▭` (`\rect`)
+  section: "3.7"
+- name: Enclosure with a border mask, `▭(n&x)`
+  section: "3.7"
+- name: Overbar `¯` and underbar `▁`
+  section: "3.7"
+- name: Other enclosure characters, such as `▢` and `⬭`
+  section: "3.7"
+- name: Abstract box `□`, `□(n&x)`
+  section: "3.7"
+
+# 3.8 Stretchy characters
+- name: Horizontal brackets `⏜ ⏝ ⏞ ⏟ ⏠ ⏡ ⎴ ⎵`
+  section: "3.8"
+  rows: [model-overbrace]
+- name: Stretchy character over or under text, `(a+b)┴→`
+  section: "3.8"
+
+# 3.9 Matrices
+- name: Matrix `■(a&b@c&d)`
+  section: "3.9"
+  rows: [model-matrix]
+  malformed:
+  - unicode-matrix-unclosed.model
+  - unicode-lone-at.model
+  - unicode-at-operator.model
+  - unicode-greek-at-operator.model
+- name: Bracketed matrices `ⓢ ⒨ ⒱ Ⓢ ⒩`
+  section: "3.9"
+- name: Identity matrix, a matrix character and a digit
+  section: "3.9"
+- name: Empty matrix, `2×3⒨`
+  section: "3.9"
+
+# 3.10 Accent operators
+- name: Primes `′`
+  section: "3.10"
+  rows: [model-primes]
+- name: Combining accent after an operand, such as `x̂`
+  section: "3.10"
+  # model-accent is the precomposed letter U+00E2, not a combining mark; it
+  # is listed under operand characters (3.22).
+- name: Combining accent after a parenthesized expression, `(a+b)̂`
+  section: "3.10"
+- name: Asterisk in a script, `a^*2`
+  section: "3.10"
+
+# 3.11 Differential, exponential and imaginary symbols
+- name: Double-struck `ⅅ ⅆ ⅇ ⅈ ⅉ`
+  section: "3.11"
+
+# 3.12 Unicode subscripts and superscripts
+- name: Subscript and superscript characters, `x²`, `y₁`
+  section: "3.12"
+  rows: [model-mini-scripts]
+
+# 3.13 Concatenation operators
+- name: Binary and relational operators
+  section: "3.13"
+  rows:
+  - model-operators
+  - unicode-operator-plus.model
+  - unicode-operator-times.model
+  - unicode-operator-leq.model
+  - unicode-operator-equiv.model
+  - unicode-operator-plus-minus.model
+  - unicode-operator-minus-plus.model
+  - unicode-number-negative.model
+
+# 3.14 Comma, period and colon
+- name: Numbers, with `.` or `,` between digits
+  section: "3.14"
+  rows:
+  - unicode-number-integer.model
+  - unicode-number-decimal.model
+  - unicode-number-decimal-comma.model
+  - model-decimal-dot
+  - model-decimal-comma
+- name: Comma as punctuation, `a,b`
+  section: "3.14"
+  rows: [model-parens]
+- name: Leading decimal point, `.5`
+  section: "3.14"
+- name: Colon after a space, read as ratio
+  section: "3.14"
+
+# 3.15 Ordinary text
+- name: Ordinary text in double quotes
+  section: "3.15"
+  rows: [model-text]
+  malformed: [unicode-unclosed-quote.model, unicode-greek-unclosed-quote.model]
+- name: Escaped quote `\"` inside text
+  section: "3.15"
+
+# 3.16 to 3.21
+- name: Space characters U+00A0, U+2000 to U+200B, U+202F, U+205F
+  section: "3.16"
+- name: Phantoms and smashes `⟡ ⬄ ⇳ ⬍ ⬆ ⬇ ⬌`, `\phantom(n&x)`
+  section: "3.17"
+- name: Invisible grouping `〖 〗` (`\begin`, `\end`)
+  section: "3.18"
+- name: Equation array `█` (`\eqarray`)
+  section: "3.19"
+- name: Math zone delimiters `⁅ ⁆`
+  section: "3.20"
+- name: Equation number `#`
+  section: "3.21"
+  rows: [model-label]
+
+# 3.22 Characters and operands
+- name: Letters, digits and operand symbols such as `∞` and `∅`
+  section: "3.22"
+  rows:
+  - unicode-symbol-greek-alpha.model
+  - unicode-symbol-greek-pi.model
+  - unicode-symbol-infinity.model
+  - unicode-symbol-empty-set.model
+  - model-greek-unicode
+  - model-accent
+- name: Mathematical alphanumeric and letterlike characters, `𝐀`, `ℂ`
+  section: "3.22"
+  rows: [model-font]
+- name: Factorial `!`
+  section: "3.22"
+
+# 3.23 to 3.25
+- name: Soft break `⁢` (U+2062, `\itimes`)
+  section: "3.23"
+- name: Alignment mark `&` outside a matrix, `a&=b`
+  section: "3.23"
+  refused: [unicode-ampersand-operator.model, unicode-greek-ampersand.model]
+  malformed: [unicode-lone-ampersand.model]
+- name: Size override `Ⅎ`
+  section: "3.24"
+- name: Text colour `✎(red&x)`
+  section: "3.25"
+  rows: [model-color]
+- name: Background colour `☁(lime&x)`
+  section: "3.25"
+
+# 4 Input methods
+- name: Negated operators with `/`, such as `/=`
+  section: "4.1"
+  rows: [model-negated]
+- name: ASCII pairs such as `+-`, `<=`, `->`
+  section: "4.1"
+- name: Symbol control words, such as `\alpha`
+  section: "4.5, 4.6, App. B"
+  rows: [model-greek-control-word]
+- name: Structure control words, such as `\sqrt`, `\rect`, `\matrix`
+  section: "4.6, App. B"
+
+unmapped:
+- id: model-decimal-arabic
+  reason: the Arabic decimal separator `٫` is a umath option; UTN 28 names only `.` and `,`.
+- id: model-comment
+  reason: "`⫷...⫸` comments are a Plurimath notation, not UTN 28."
+- id: model-u-escape
+  reason: "`\\uXXXX` escapes are a Plurimath notation, not UTN 28."
+- id: empty-input
+  reason: no formula.
+- id: empty-label-only
+  reason: no formula; the `#` starts an empty label.
+- id: unicode-whitespace-only.model
+  reason: no formula.

@@ -90,6 +90,29 @@ jobs:
       - name: Replay the staged model corpus (raw and model boundaries)
         run: bundle exec ruby scripts/replay_corpus.rb --staging corpora/model --boundary raw,model
 
+  docs:
+    name: generated UTN 28 coverage table
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      # The script checks the checkout against the pin before reading it.
+      - name: Read the pinned testsuite commit
+        id: pin
+        run: echo "commit=$(ruby -ryaml -e 'puts YAML.safe_load_file("spec/fixtures/testsuite-pin.yml").fetch("commit")')" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: plurimath/plurimath-testsuite
+          ref: ${{ steps.pin.outputs.commit }}
+          path: tmp/testsuite
+          persist-credentials: false
+      - name: Require docs/unicodemath.adoc to match the coverage it states
+        run: bundle exec ruby scripts/utn28_coverage.rb --check
+      - run: bundle exec rspec spec/docs
+
   gem:
     name: gem build and installed smoke test (Ruby ${{ matrix.ruby }})
     runs-on: ubuntu-latest

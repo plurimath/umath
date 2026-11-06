@@ -10,8 +10,9 @@ UnicodeMath is the linear format described in
 https://www.unicode.org/notes/tn28/[Unicode Technical Note 28]. Umath reads
 the subset and the variations of it that Plurimath reads at commit
 `e7ab4a5186c9be96f62d670574bc2c72f9365ad4` (Plurimath 0.11.17). It does not
-claim to read all of UTN 28, and this page does not list which parts of
-UTN 28 are missing.
+read all of UTN 28; <<utn28-coverage>> lists the constructs of UTN 28
+version 3.2 and, for each, whether the corpus shows umath reading it,
+refusing it or neither.
 
 Everything here is taken from three sources in this repository:
 
@@ -247,14 +248,469 @@ raises `Umath::NestingTooDeep`.
 * `spec/model/` checks construction of the model and its shape.
 * `spec/corpus/replay_corpus_spec.rb` and `spec/stage_cases/` replay the
   stage corpus generation pinned in `spec/fixtures/testsuite-pin.yml`
-  (plurimath-testsuite `stages/unicode/`, generation 2, 72 cases).
+  (plurimath-testsuite `stages/unicode/`, generation 4, 72 cases).
 * The oracle specs compare the raw tree with captures of the Plurimath
   parser.
 
+[[utn28-coverage]]
+== Coverage of UTN 28
+
+The constructs are taken from
+https://www.unicode.org/notes/tn28/tn28-6.html[UTN 28 version 3.2]
+(April 13, 2023). The mapping from construct to rows is
+`docs/utn28-coverage.yml`. `scripts/utn28_coverage.rb` parses every mapped
+row, checks that its outcome is the one the row expects, and writes the
+summary and the table below; `--check` fails when they are out of date. A
+construct marked untested may still be read by the grammar: the table only
+says what the corpus shows.
+
+// BEGIN GENERATED utn28-summary
+The table lists 82 constructs of UTN 28 version 3.2 with the rows that
+exercise them, out of the 32 rows of `corpora/model/representative.yml` and
+the 72 typed-model rows of plurimath-testsuite generation 4. Of the 82
+constructs, 25 are covered, 1 is refused and 56 are untested.
+
+Covered means that every row listed for the construct parses to the model
+the row expects. Refused means that the rows give input UTN 28 defines and
+that umath refuses it on purpose; this is the case for the alignment mark
+`&` outside a matrix, `a&=b` (3.23). Untested means that no row exercises
+the construct, so the corpus does not show whether umath reads it.
+
+Of the rows, 51 give incomplete input, such as a trailing `/` or an unclosed
+bracket, and umath refuses them. They are listed with their construct and do
+not change its status. The rows `model-decimal-arabic`, `model-comment`,
+`model-u-escape`, `empty-input`, `empty-label-only` and
+`unicode-whitespace-only.model` belong to no UTN 28 construct. Sections 1,
+4.2-4.4, 4.7-4.9, 5, 6 and 7 define no notation and are left out.
+// END GENERATED utn28-summary
+
+// BEGIN GENERATED utn28-coverage
+[cols="2,7,2,9",options="header"]
+|===
+|Section |Construct |Status |Rows
+
+|2.1
+|Fraction `a/b`
+|covered
+|`model-fraction` +
+incomplete input refused: `unicode-lone-slash.model`, `unicode-trailing-slash.model`, `unicode-number-trailing-slash.model`, `unicode-leading-slash.model`, `unicode-greek-trailing-slash.model`, `unicode-double-trailing-slash.model`
+
+|2.1
+|Outer parentheses of a numerator or denominator removed, `(a+c)/d`
+|untested
+|
+
+|2.1
+|Left-to-right association of `/`, `1+a/b/c/d`
+|untested
+|
+
+|2.1
+|Decimal point in a denominator, `1/3.1416`
+|untested
+|
+
+|2.1
+|Skewed fraction `⁄` (`\sdiv`)
+|untested
+|
+
+|2.1
+|Linear fraction `∕` (`\ldiv`)
+|untested
+|
+
+|2.1
+|Normal-size linear fraction `\/`
+|untested
+|
+
+|2.1
+|Stack `¦` (`\atop`)
+|covered
+|`model-binomial` +
+incomplete input refused: `unicode-lone-broken-bar.model`, `unicode-trailing-broken-bar.model`, `unicode-greek-broken-bar.model`
+
+|2.1
+|Binomial `⒞` (`\choose`)
+|untested
+|
+
+|2.2
+|Subscript `_` and superscript `^`
+|covered
+|`model-sup`, `model-subsup`, `unicode-number-exponent.model` +
+incomplete input refused: `unicode-lone-sup.model`, `unicode-trailing-sup.model`, `unicode-greek-trailing-sup.model`, `unicode-lone-sub.model`, `unicode-trailing-sub.model`, `unicode-infinity-trailing-sub.model`, `unicode-doubled-sup.model`, `unicode-doubled-sub.model`, `unicode-sub-then-sup.model`
+
+|2.2
+|Nested scripts, associating right to left, `a_b_c`
+|untested
+|
+
+|2.2
+|Comma or period followed by a letter inside a subscript
+|untested
+|
+
+|2.3
+|Space ending an operand
+|covered
+|`model-nary`, `model-integral`
+
+|2.3
+|Space after `+` or `-` making it binary
+|untested
+|
+
+|3.1
+|Brackets `( )`, `[ ]`, `{ }`
+|covered
+|`unicode-fence-round.model`, `unicode-fence-square.model`, `unicode-fence-curly.model` +
+incomplete input refused: `unicode-unclosed-paren.model`, `unicode-stray-close-paren.model`, `unicode-lone-close-paren.model`, `unicode-close-paren-mid.model`, `unicode-unclosed-paren-after-operator.model`, `unicode-close-paren-after-operator.model`, `unicode-unclosed-square.model`, `unicode-stray-close-square.model`, `unicode-unclosed-curly.model`, `unicode-stray-close-curly.model`, `unicode-greek-stray-close-paren.model`, `unicode-greek-unclosed-paren.model`, `refusal-close-paren`, `refusal-multibyte`
+
+|3.1
+|Other bracket characters, such as `⟨ ⟩` and `⌈ ⌉`
+|covered
+|`unicode-fence-angle.model`, `unicode-fence-ceiling.model` +
+incomplete input refused: `unicode-unclosed-angle.model`, `unicode-stray-close-angle.model`, `unicode-unclosed-ceiling.model`, `unicode-stray-close-ceiling.model`
+
+|3.1
+|Brackets of different kinds paired, `[a,b)`
+|covered
+|`model-parens`
+
+|3.1
+|`\open` `├` and `\close` `┤`
+|untested
+|incomplete input refused: `unicode-lone-right-tack.model`
+
+|3.1
+|Size digit after `├` or `┤`
+|untested
+|
+
+|3.1
+|Absolute value `\|x\|`
+|untested
+|incomplete input refused: `unicode-unclosed-vert.model`
+
+|3.1
+|`\abs` `⒜`
+|untested
+|incomplete input refused: `unicode-lone-parenthesized-letter.model`
+
+|3.1
+|Norm `‖x‖`
+|untested
+|
+
+|3.1
+|Separators `│` (`\vbar`), `∣` (`\mid`) and `\middle`
+|untested
+|
+
+|3.1
+|Cases `Ⓒ` (`\cases`)
+|untested
+|
+
+|3.2
+|Literal operator `\`, such as `\[`
+|untested
+|
+
+|3.3
+|Prescripts `(_c^b)a`
+|untested
+|
+
+|3.3
+|Prescripts written before the base, `_c^b a`
+|untested
+|
+
+|3.3
+|Below script `┬` and above script `┴`
+|untested
+|incomplete input refused: `unicode-trailing-down-tack.model`
+
+|3.3
+|Below limit with `_` after `lim`, `max` and similar
+|untested
+|
+
+|3.4
+|n-ary operators with limits, `∑_(i=1)^n i`
+|covered
+|`model-nary`, `model-integral`
+
+|3.4
+|n-aryand operator `▒` (`\naryand`, `\of`)
+|untested
+|incomplete input refused: `unicode-lone-naryand.model`
+
+|3.4
+|Limit placement digit after an n-ary operator
+|untested
+|
+
+|3.5
+|Function names, `sin x`
+|covered
+|`model-function`
+
+|3.5
+|Function apply `⁡` (U+2061, `\funcapply`)
+|untested
+|incomplete input refused: `unicode-lone-function-apply.model`, `unicode-trailing-function-apply.model`, `unicode-greek-function-apply.model`
+
+|3.5
+|Scripted function name, `sin^2 x`
+|untested
+|
+
+|3.5
+|Function name with a no-break space, `lim sup`
+|untested
+|
+
+|3.6
+|Square root `√`
+|covered
+|`model-sqrt`
+
+|3.6
+|Cube root `∛` and fourth root `∜`
+|untested
+|
+
+|3.6
+|n-th root `√(n&a)`
+|covered
+|`model-nthroot`
+
+|3.6
+|`\root n\of(a)`
+|untested
+|
+
+|3.7
+|Rectangle `▭` (`\rect`)
+|untested
+|
+
+|3.7
+|Enclosure with a border mask, `▭(n&x)`
+|untested
+|
+
+|3.7
+|Overbar `¯` and underbar `▁`
+|untested
+|
+
+|3.7
+|Other enclosure characters, such as `▢` and `⬭`
+|untested
+|
+
+|3.7
+|Abstract box `□`, `□(n&x)`
+|untested
+|
+
+|3.8
+|Horizontal brackets `⏜ ⏝ ⏞ ⏟ ⏠ ⏡ ⎴ ⎵`
+|covered
+|`model-overbrace`
+
+|3.8
+|Stretchy character over or under text, `(a+b)┴→`
+|untested
+|
+
+|3.9
+|Matrix `■(a&b@c&d)`
+|covered
+|`model-matrix` +
+incomplete input refused: `unicode-matrix-unclosed.model`, `unicode-lone-at.model`, `unicode-at-operator.model`, `unicode-greek-at-operator.model`
+
+|3.9
+|Bracketed matrices `ⓢ ⒨ ⒱ Ⓢ ⒩`
+|untested
+|
+
+|3.9
+|Identity matrix, a matrix character and a digit
+|untested
+|
+
+|3.9
+|Empty matrix, `2×3⒨`
+|untested
+|
+
+|3.10
+|Primes `′`
+|covered
+|`model-primes`
+
+|3.10
+|Combining accent after an operand, such as `x̂`
+|untested
+|
+
+|3.10
+|Combining accent after a parenthesized expression, `(a+b)̂`
+|untested
+|
+
+|3.10
+|Asterisk in a script, `a^*2`
+|untested
+|
+
+|3.11
+|Double-struck `ⅅ ⅆ ⅇ ⅈ ⅉ`
+|untested
+|
+
+|3.12
+|Subscript and superscript characters, `x²`, `y₁`
+|covered
+|`model-mini-scripts`
+
+|3.13
+|Binary and relational operators
+|covered
+|`model-operators`, `unicode-operator-plus.model`, `unicode-operator-times.model`, `unicode-operator-leq.model`, `unicode-operator-equiv.model`, `unicode-operator-plus-minus.model`, `unicode-operator-minus-plus.model`, `unicode-number-negative.model`
+
+|3.14
+|Numbers, with `.` or `,` between digits
+|covered
+|`unicode-number-integer.model`, `unicode-number-decimal.model`, `unicode-number-decimal-comma.model`, `model-decimal-dot`, `model-decimal-comma`
+
+|3.14
+|Comma as punctuation, `a,b`
+|covered
+|`model-parens`
+
+|3.14
+|Leading decimal point, `.5`
+|untested
+|
+
+|3.14
+|Colon after a space, read as ratio
+|untested
+|
+
+|3.15
+|Ordinary text in double quotes
+|covered
+|`model-text` +
+incomplete input refused: `unicode-unclosed-quote.model`, `unicode-greek-unclosed-quote.model`
+
+|3.15
+|Escaped quote `\"` inside text
+|untested
+|
+
+|3.16
+|Space characters U+00A0, U+2000 to U+200B, U+202F, U+205F
+|untested
+|
+
+|3.17
+|Phantoms and smashes `⟡ ⬄ ⇳ ⬍ ⬆ ⬇ ⬌`, `\phantom(n&x)`
+|untested
+|
+
+|3.18
+|Invisible grouping `〖 〗` (`\begin`, `\end`)
+|untested
+|
+
+|3.19
+|Equation array `█` (`\eqarray`)
+|untested
+|
+
+|3.20
+|Math zone delimiters `⁅ ⁆`
+|untested
+|
+
+|3.21
+|Equation number `#`
+|covered
+|`model-label`
+
+|3.22
+|Letters, digits and operand symbols such as `∞` and `∅`
+|covered
+|`unicode-symbol-greek-alpha.model`, `unicode-symbol-greek-pi.model`, `unicode-symbol-infinity.model`, `unicode-symbol-empty-set.model`, `model-greek-unicode`, `model-accent`
+
+|3.22
+|Mathematical alphanumeric and letterlike characters, `𝐀`, `ℂ`
+|covered
+|`model-font`
+
+|3.22
+|Factorial `!`
+|untested
+|
+
+|3.23
+|Soft break `⁢` (U+2062, `\itimes`)
+|untested
+|
+
+|3.23
+|Alignment mark `&` outside a matrix, `a&=b`
+|refused
+|`unicode-ampersand-operator.model`, `unicode-greek-ampersand.model` +
+incomplete input refused: `unicode-lone-ampersand.model`
+
+|3.24
+|Size override `Ⅎ`
+|untested
+|
+
+|3.25
+|Text colour `✎(red&x)`
+|covered
+|`model-color`
+
+|3.25
+|Background colour `☁(lime&x)`
+|untested
+|
+
+|4.1
+|Negated operators with `/`, such as `/=`
+|covered
+|`model-negated`
+
+|4.1
+|ASCII pairs such as `+-`, `<=`, `->`
+|untested
+|
+
+|4.5, 4.6, App. B
+|Symbol control words, such as `\alpha`
+|covered
+|`model-greek-control-word`
+
+|4.6, App. B
+|Structure control words, such as `\sqrt`, `\rect`, `\matrix`
+|untested
+|
+|===
+// END GENERATED utn28-coverage
+
 == Open questions
 
-* Which parts of UTN 28 the gem is meant to cover beyond what Plurimath
-  reads: not specified.
 * The grammar spells `\cbrt` for both the cube root and the fourth root
   (rules `cbrt_symbols` and `qdrt_symbols`), so the fourth root has no
   command name of its own. Whether that is intended: not specified.
