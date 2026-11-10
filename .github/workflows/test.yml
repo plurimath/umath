@@ -130,9 +130,9 @@ jobs:
         run: |
           gem spec ./umath-*.gem files | sed -n 's/^- //p' | sort > "$RUNNER_TEMP/files.txt"
           cat "$RUNNER_TEMP/files.txt"
-          unexpected=$(grep -Ev '^(lib/.*\.rb|artifacts/umath\.json|artifacts/umath\.bindings\.ruby\.json|data/umath-symbols\.json|docs/[^/]+\.adoc|README\.adoc|CHANGELOG\.md|LICENSE\.md)$' "$RUNNER_TEMP/files.txt" || true)
+          unexpected=$(grep -Ev '^(lib/.*\.rb|artifacts/umath\.json|artifacts/umath\.bindings\.ruby\.json|data/umath-symbols\.json|schema/(umath\.bundle|manifest)\.json|docs/[^/]+\.adoc|README\.adoc|CHANGELOG\.md|LICENSE\.md)$' "$RUNNER_TEMP/files.txt" || true)
           test -z "$unexpected" || { echo "unexpected files: $unexpected"; exit 1; }
-          for f in lib/umath.rb lib/umath/model/nodes.rb artifacts/umath.json artifacts/umath.bindings.ruby.json data/umath-symbols.json LICENSE.md; do
+          for f in lib/umath.rb lib/umath/model/nodes.rb artifacts/umath.json artifacts/umath.bindings.ruby.json data/umath-symbols.json lib/umath/schema.rb schema/umath.bundle.json schema/manifest.json LICENSE.md; do
             grep -qx "$f" "$RUNNER_TEMP/files.txt" || { echo "missing $f"; exit 1; }
           done
       - name: Install the built gem alone and parse with it
@@ -148,6 +148,8 @@ jobs:
             abort "symbols unresolved" unless d.expression.frac.numerator.atom.alphanumeric.kind
             empty = Umath.parse("", engine: :ruby)
             abort "empty input #{empty.inspect}" unless empty.is_a?(Umath::Model::Document) && empty.expression.nil?
+            require "umath/schema"
+            abort "incomplete schema" unless Umath::Schema.bundle.fetch("models").size == 75
             p Umath.parse("a/b")
             abort "plurimath loaded" if defined?(Plurimath)
             puts "ok #{Umath::VERSION} #{Umath.last_engine} #{d.to_json} #{Umath.artifact_paths.first}"
