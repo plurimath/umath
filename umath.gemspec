@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   # bindings artifacts and the symbol catalog), plus its documentation.
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
     Dir["lib/**/*.rb", "artifacts/umath.json", "artifacts/umath.bindings.ruby.json",
-        "data/umath-symbols.json", "docs/*.adoc", "README.adoc", "CHANGELOG.md", "LICENSE.md"]
+        "data/umath-symbols.json", "schema/*.json", "docs/*.adoc", "README.adoc", "CHANGELOG.md", "LICENSE.md"]
       .select { |f| File.file?(f) }
   end
   spec.require_paths = ["lib"]

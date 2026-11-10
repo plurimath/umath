@@ -154,3 +154,23 @@ output formats.
 
 Copyright Ribose Inc. Licensed under the BSD 2-Clause License; see
 link:LICENSE.md[].
+
+== Portable model declarations
+
+`require "umath/schema"` exposes `Umath::Schema.bundle_json`, `bundle` and
+`bundle_path`. Each access verifies the packaged declaration checksum. The
+bundle contains all 75 reachable models and explicit identity JSON field
+mappings for the portable data projection; it does not replace Ruby model
+runtime behavior or claim wire-byte identity for every serialization mode.
+
+Regenerate from this checkout with the LML declaration exporter available:
+
+[source,sh]
+----
+ruby -I/path/to/lutaml-model/lib -Ilib scripts/export_model_declarations.rb
+----
+
+The exporter preserves existing explicit JSON mappings and makes otherwise
+implicit field names explicit for declaration export only. `schema/manifest.json`
+records definition-file and producer-script hashes, the actual exporter Git
+revision, and the bundle hash. The artifact matches the shared TS/Rust input.
