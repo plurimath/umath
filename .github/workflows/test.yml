@@ -26,7 +26,7 @@ jobs:
 
   artifact:
     name: grammar and artifact regeneration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       # The envelope records the compiler and the Ruby whose Unicode tables

@@ -55,7 +55,7 @@ jobs:
 
   generate:
     name: generate the next unicode generation (run ${{ matrix.run }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         # Two independent runs; the validate job requires equal bytes.
@@ -149,7 +149,7 @@ jobs:
 
   generate-model:
     name: generate the typed-model unicode generation (run ${{ matrix.run }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         # Two independent runs; the validate-model job requires equal bytes.
