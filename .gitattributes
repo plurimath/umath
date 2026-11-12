@@ -5,3 +5,6 @@
 *.parg text eol=lf
 *.txt text eol=lf
 *.rb text eol=lf
+
+# Model declaration checksums are computed over LF bytes.
+schema/*.json text eol=lf

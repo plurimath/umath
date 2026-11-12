@@ -1,0 +1,14 @@
+{
+  "projection": "implicit-json-attribute-mappings-v1",
+  "definition_repository": "https://github.com/plurimath/umath",
+  "definition_files_sha256": {
+    "lib/umath/model.rb": "442e8c34ac021acbc224198f912a59a403256ba69a40bc1ab853148d379c8e5e",
+    "lib/umath/model/nodes.rb": "3e7e26bd6ba5595141ad6984ed5ce8e28ac08905c8bc50d26a1c2eac508ac897"
+  },
+  "producer_script_sha256": "6628ca07f622acb08dfdfa515d45e29c83e18f917b3838989f6e0091d344bf76",
+  "exporter_revision": "fd2989fd8478b1ecb2508d98fa2d66792c09c72b",
+  "model_count": 75,
+  "files": {
+    "umath.bundle.json": "0d14e7e8c5971c9bb304f14362784bbb49baa1a208195c4151090524cd425d8b"
+  }
+}
