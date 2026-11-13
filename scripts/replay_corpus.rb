@@ -4,7 +4,7 @@
 #
 # Usage:
 #   bundle exec ruby scripts/replay_corpus.rb --testsuite PATH [--pin FILE] \
-#     [--language unicode] [--generation N] [--report FILE]
+#     [--language unicode] [--generation N] [--report FILE] [--executed-ids FILE]
 #   bundle exec ruby scripts/replay_corpus.rb --staging DIR [--boundary raw,model] [--write]
 #   bundle exec ruby scripts/replay_corpus.rb --inventory FILE --rows DIR
 #
@@ -15,10 +15,15 @@
 #   snapshot digest, that the digest recomputed from the generation's files
 #   is the same and that every payload has its recorded checksum.
 #   --language and --generation, when given, must equal the pin's. Then every
-#   row of every raw-tree payload is parsed with Umath::RawParser.parse
-#   on the Ruby and the native engine, as scripts/stage_cases.rb writes it,
-#   and each outcome must equal the row's expected value. Any pin failure, any
-#   difference or a generation with no raw-tree rows exits 1. Runs both
+#   row of every raw-tree payload is parsed with Umath::RawParser.parse and
+#   every row of every typed-model payload with Umath.parse, on the Ruby and
+#   the native engine, as scripts/stage_cases.rb writes them, and each outcome
+#   must equal the row's expected value. Any pin failure, any difference, a
+#   row id repeated across those payloads or a generation with no raw-tree
+#   rows exits 1. --report records per boundary the payload and row counts
+#   and the sha256 of the sorted executed ids; --executed-ids FILE writes
+#   those ids, one per line, for the testsuite's expected-versus-executed
+#   check (scripts/validate-unicode-external.rb --executed). Runs both
 #   engines whatever UMATH_ENGINE says.
 #
 # --staging DIR: every DIR/**/*.yml payload (schema umath-model-corpus/1,
@@ -169,38 +174,64 @@ module UmathReplayCorpus
     end
   end
 
-  # Every raw-tree row of the generation, with its payload path.
-  def raw_rows(payloads)
-    payloads.flat_map do |rel, bytes|
-      doc = YAML.safe_load(bytes, aliases: false)
-      next [] unless doc["boundary"] == "raw-tree"
+  # The boundaries whose rows the replay recomputes, and the outcome each
+  # row's expected value is compared with.
+  BOUNDARIES = %w[raw-tree typed-model].freeze
 
-      doc.fetch("cases").map { |row| [rel, row] }
+  # Every raw-tree and typed-model row of the generation, as
+  # [payload path, boundary, row]. Payloads at other boundaries (the legacy
+  # oracle rows) are not replayed. A row id seen twice is an error: every
+  # executed id must name exactly one row.
+  def stage_rows(payloads)
+    rows = payloads.flat_map do |rel, bytes|
+      doc = YAML.safe_load(bytes, aliases: false)
+      next [] unless BOUNDARIES.include?(doc["boundary"])
+
+      doc.fetch("cases").map { |row| [rel, doc["boundary"], row] }
     end
+    dups = rows.map { |_, _, row| row["id"] }.tally.select { |_, n| n > 1 }.keys
+    raise Error, "row ids repeated across replayed payloads: #{dups.join(', ')}" unless dups.empty?
+
+    rows
   end
 
-  def outcome(input, engine)
-    StageCases::Outcome.of(input, engine)
+  def outcome(input, engine, boundary)
+    boundary == "typed-model" ? StageCases::Outcome.model_of(input, engine) : StageCases::Outcome.of(input, engine)
   rescue StageCases::Failure => e
     raise Error, e.message
   end
 
   # The rows whose outcome on some engine differs from the expected one.
   def replay(rows)
-    rows.filter_map do |rel, row|
+    rows.filter_map do |rel, boundary, row|
       where = "#{rel} #{row['id']}"
       input = decode(row.fetch("input"), where)
       check_options(row, where)
       expected = row.fetch("expected")
       wrong = ENGINES.filter_map do |engine|
-        actual = outcome(input, engine)
+        actual = outcome(input, engine, boundary)
         { "engine" => engine.to_s, "actual" => actual } unless actual == expected
       end
-      { "id" => row["id"], "payload" => rel, "expected" => expected, "mismatches" => wrong } unless wrong.empty?
+      unless wrong.empty?
+        { "id" => row["id"], "payload" => rel, "boundary" => boundary, "expected" => expected,
+          "mismatches" => wrong }
+      end
     end
   end
 
-  def run(testsuite:, pin: DEFAULT_PIN, language: nil, generation: nil, report: nil, log: $stderr)
+  # Per boundary: payload and row counts and the sha256 of the sorted,
+  # newline-joined executed row ids, so a report names exactly what ran.
+  def tally(rows)
+    BOUNDARIES.to_h do |boundary|
+      mine = rows.select { |_, b, _| b == boundary }
+      ids = mine.map { |_, _, row| row["id"] }.sort
+      [boundary, { "payloads" => mine.map(&:first).uniq.size, "rows" => mine.size,
+                   "ids_sha256" => Digest::SHA256.hexdigest(ids.join("\n")) }]
+    end
+  end
+
+  def run(testsuite:, pin: DEFAULT_PIN, language: nil, generation: nil, report: nil, executed_ids: nil,
+          log: $stderr)
     pinned = load_pin(pin)
     raise Error, "--language #{language} is not the pinned #{pinned.language}" if language && language != pinned.language
     if generation && generation != pinned.generation
@@ -209,21 +240,31 @@ module UmathReplayCorpus
     raise Error, "the native engine is not available" unless Umath::Engine.native_available?
 
     _dir, payloads = verify(File.expand_path(testsuite), pinned)
-    rows = raw_rows(payloads)
-    raise Error, "#{pinned.language} generation #{pinned.generation} has no raw-tree rows" if rows.empty?
+    rows = stage_rows(payloads)
+    if rows.none? { |_, boundary, _| boundary == "raw-tree" }
+      raise Error, "#{pinned.language} generation #{pinned.generation} has no raw-tree rows"
+    end
 
     log.puts "pin ok: #{pinned.language} generation #{pinned.generation} at #{pinned.commit}, #{pinned.digest}"
     failures = replay(rows)
+    if executed_ids
+      FileUtils.mkdir_p(File.dirname(executed_ids))
+      File.binwrite(executed_ids, rows.map { |_, _, row| "#{row['id']}\n" }.sort.join)
+    end
+    counts = tally(rows)
     summary = { "commit" => pinned.commit, "language" => pinned.language, "generation" => pinned.generation,
                 "snapshot_digest" => pinned.digest, "engines" => ENGINES.map(&:to_s),
-                "raw_tree_payloads" => rows.map(&:first).uniq.size, "raw_tree_rows" => rows.size,
+                "raw_tree_payloads" => counts["raw-tree"]["payloads"], "raw_tree_rows" => counts["raw-tree"]["rows"],
+                "boundaries" => counts, "executed_rows" => rows.size,
                 "mismatched_rows" => failures.size, "failures" => failures }
     if report
       FileUtils.mkdir_p(File.dirname(report))
       File.binwrite(report, "#{JSON.pretty_generate(summary, max_nesting: false)}\n")
     end
-    log.puts "#{rows.size} raw-tree rows from #{summary['raw_tree_payloads']} payloads on " \
-             "#{ENGINES.join(' and ')}: #{failures.size} differ"
+    counts.each do |boundary, c|
+      log.puts "#{c['rows']} #{boundary} rows from #{c['payloads']} payloads on #{ENGINES.join(' and ')}"
+    end
+    log.puts "#{rows.size} rows replayed: #{failures.size} differ"
     raise Error, "#{failures.size} rows differ: #{failures.map { |f| f['id'] }.join(', ')}" unless failures.empty?
 
     summary
@@ -233,12 +274,13 @@ module UmathReplayCorpus
     options = {}
     OptionParser.new do |o|
       o.banner = "usage: scripts/replay_corpus.rb --testsuite PATH [--pin FILE] [--language NAME] " \
-                 "[--generation N] [--report FILE]"
+                 "[--generation N] [--report FILE] [--executed-ids FILE]"
       o.on("--testsuite PATH") { |v| options[:testsuite] = v }
       o.on("--pin FILE") { |v| options[:pin] = v }
       o.on("--language NAME") { |v| options[:language] = v }
       o.on("--generation N", Integer) { |v| options[:generation] = v }
       o.on("--report FILE") { |v| options[:report] = v }
+      o.on("--executed-ids FILE") { |v| options[:executed_ids] = v }
     end.parse!(argv)
     raise OptionParser::MissingArgument, "--testsuite" unless options[:testsuite]
     raise OptionParser::InvalidOption, argv.join(" ") unless argv.empty?

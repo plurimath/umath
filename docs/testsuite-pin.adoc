@@ -11,10 +11,10 @@ generations, named in `spec/fixtures/testsuite-pin.yml`:
 ----
 schema: plurimath-stage/pin/1
 repository: https://github.com/plurimath/plurimath-testsuite
-commit: 85c7be8fd56f0cc64b4869e74716acc4f0dbe746
+commit: 6138a102589093cdb3587334ff312ece5f17e428
 language: unicode
-generation: 4
-snapshot_digest: sha256:cc02870fb6ee5a46c64271733b716f00469d0af46847851ad3db9249ad2571ed
+generation: 5
+snapshot_digest: sha256:282fb3eead874618dda3229320a3a5d061434ea3766c8c95c641e07d49444b10
 ----
 
 Generation 2 keeps every case of generation 1 (the legacy corpus, produced by
@@ -23,13 +23,28 @@ cases, rejections included, written by `scripts/stage_cases.rb` at umath
 1929f69.
 
 Generation 3 keeps every payload of generation 2 byte for byte and adds
-typed-model rows beside the raw-tree rows. The replay still compares the
-raw-tree rows only.
+typed-model rows beside the raw-tree rows.
 
 Generation 4 keeps every payload of generation 3 byte for byte except the
 five raw-tree payloads, which `scripts/stage_cases.rb` rewrote after the gem
 was renamed to umath: their header comment and description name umath and
 `Umath::RawParser`. No row changed.
+
+Generation 5 keeps every payload of generation 4 byte for byte and adds a
+raw-tree row (`unicode-external-NNN.raw`) and a typed-model row
+(`unicode-external-NNN.model`) for each of the 675 external UnicodeMath
+inputs of the testsuite's `fixtures/unicode-expectations.yaml`, in the
+`raw-external-*` and `model-external-*` payloads: 33 payloads and 1566 rows
+in all. The inputs are the fixture's, without the leading `0` or `1` that
+marks inline or display math; three inputs occur twice in the fixture and
+keep both of their ids. The expected values were computed by
+`scripts/stage_cases.rb` at umath c7587f0 (the 0.2.0 version bump), with
+the Ruby and the native engine agreeing on every row; 7 inputs of each
+boundary are refusals, the fixture's parse-error cases. The upstream MathML
+of these inputs stays in the fixture as reference and is not compared here.
+The fixture's inputs come from the MIT-licensed UnicodeMathML test data
+(copyright 2019 Noah Doersing); the testsuite records the source and the
+licence in its provenance and in `LICENSES/UnicodeMathML-MIT.txt`.
 
 == What CI checks
 
@@ -46,26 +61,38 @@ The `corpus` workflow checks out the testsuite at the pinned commit and then:
   `scripts/replay_corpus.rb` fail on a small generated testsuite;
 . runs `scripts/replay_corpus.rb --testsuite`, which repeats the pin checks
   and then parses every row of every raw-tree payload of the generation with
-  `Umath::RawParser.parse` on the Ruby and the native engine. Each
+  `Umath::RawParser.parse` and every row of every typed-model payload with
+  `Umath.parse`, on the Ruby and the native engine. For a raw-tree row each
   engine's result, the preprocessed text and the tree in the legacy grammar's
   shape or the refusal and its byte offset, must equal the row's expected
   value in the canonical form of the testsuite's
-  `docs/tree-parity-contract.adoc`.
+  `docs/tree-parity-contract.adoc`; for a typed-model row the built
+  `Umath::Model::Document` in tagged form, or the refusal, must. It writes
+  the ids of the rows it ran to a file (1494 for generation 5: 747 raw-tree
+  and 747 typed-model);
+. runs the testsuite's `scripts/validate-unicode-external.rb` on that file,
+  which fails unless every external row of the generation (675 `.raw` and
+  675 `.model`) is listed exactly once, and checks that the same file with
+  one id removed fails it.
 
 To run the replay locally:
 
 [source,sh]
 ----
 git clone https://github.com/plurimath/plurimath-testsuite tmp/testsuite
-git -C tmp/testsuite checkout 85c7be8fd56f0cc64b4869e74716acc4f0dbe746
-bundle exec ruby scripts/replay_corpus.rb --testsuite tmp/testsuite --report tmp/replay.json
+git -C tmp/testsuite checkout 6138a102589093cdb3587334ff312ece5f17e428
+bundle exec ruby scripts/replay_corpus.rb --testsuite tmp/testsuite \
+  --report tmp/replay.json --executed-ids tmp/executed-ids.txt
+ruby tmp/testsuite/scripts/validate-unicode-external.rb tmp/testsuite \
+  --generation 5 --executed tmp/executed-ids.txt
 ----
 
 The `replay` workflow checks out the testsuite at the same commit and fails if
 its commit and the pin's differ. The `stage-cases` workflow writes the
 generation after the latest one of its source commit, so it still reads
 generation 1 at b4520d8; it also checks out the pinned commit and requires the
-payloads it writes to equal the pinned generation 4's byte for byte.
+payloads it writes to equal generation 4's at the pinned commit byte for
+byte (generation 5 keeps them unchanged).
 The same workflow also writes a typed-model generation (`scripts/stage_cases.rb
 --boundary typed-model`) from the latest generation at 5e32851: every payload
 copied byte for byte plus a `model-<group>.yaml` payload of typed models from
@@ -84,6 +111,24 @@ repository, and requires the raw tree and the typed model built by
 `Umath.parse` to match it on both engines, apart from the listed native
 divergences. The legacy corpus itself is not changed by this gem: generation 1
 stays as it was imported.
+
+== Coverage of UTN 28
+
+`scripts/utn28_coverage.rb` reads the typed-model rows of the pinned
+generation. The 675 external rows are declared in `docs/utn28-coverage.yml`
+under `unmapped_payloads`: they are replayed, but which UTN 28 constructs each
+one exercises is not recorded, so they change no construct's status.
+
+== The release and the pin
+
+The pin states what this repository's code reproduces, not what a released
+gem does. The `lib/` files of umath 0.2.0 on RubyGems are those of c7587f0,
+the commit at which `scripts/stage_cases.rb` produced the expected values of
+the 675 external rows, so the 0.2.0 parser is the one generation 5 was
+written from. A commit after 0.2.0
+is checked against the pin by CI, but it reaches gem users only in a later
+release; until then a fix that exists only in Git is not in the published
+gem. umath 0.1.0 predates generation 5 and is not tested against it.
 
 == Moving the pin
 

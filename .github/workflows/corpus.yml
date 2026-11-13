@@ -2,9 +2,12 @@ name: corpus
 
 # Replays the plurimath-testsuite stage generation pinned in
 # spec/fixtures/testsuite-pin.yml: the testsuite's own validator checks the
-# pin, tampered copies of the pin must fail that check, and every raw-tree
-# row of the pinned generation must parse to its expected value on the Ruby
-# and native engines (scripts/replay_corpus.rb).
+# pin, tampered copies of the pin must fail that check, every raw-tree and
+# typed-model row of the pinned generation must parse to its expected value
+# on the Ruby and native engines (scripts/replay_corpus.rb), and the
+# testsuite's expected-versus-executed check must find every external row
+# (the 675 UnicodeMath inputs of fixtures/unicode-expectations.yaml, .raw
+# and .model) among the ids the replay ran.
 
 on:
   push:
@@ -24,7 +27,7 @@ defaults:
 # The testsuite commit is a literal here (not read from a step output) so the
 # checkout ref is fixed by this file; a step checks it against the pin.
 env:
-  TESTSUITE_COMMIT: 85c7be8fd56f0cc64b4869e74716acc4f0dbe746
+  TESTSUITE_COMMIT: 6138a102589093cdb3587334ff312ece5f17e428
   PIN: spec/fixtures/testsuite-pin.yml
 
 jobs:
@@ -97,14 +100,31 @@ jobs:
       - name: Pin and replay specs
         run: bundle exec rspec spec/corpus
 
-      - name: Replay every raw-tree row of the pinned generation on both engines
+      - name: Replay every raw-tree and typed-model row of the pinned generation on both engines
         run: >-
           mkdir -p tmp/corpus &&
           bundle exec ruby scripts/replay_corpus.rb
           --testsuite tmp/testsuite
           --pin "$PIN"
           --report tmp/corpus/replay-report.json
+          --executed-ids tmp/corpus/executed-ids.txt
           2>&1 | tee tmp/corpus/replay.log
+
+      - name: Every external row of the pinned generation was executed
+        run: |
+          generation=$(ruby -ryaml -e 'puts YAML.safe_load_file(ARGV[0]).fetch("generation")' "$PIN")
+          ruby tmp/testsuite/scripts/validate-unicode-external.rb tmp/testsuite \
+            --generation "$generation" --executed tmp/corpus/executed-ids.txt
+
+      - name: Dropping an executed id fails the check
+        run: |
+          grep -v '^unicode-external-239\.model$' tmp/corpus/executed-ids.txt > tmp/corpus/executed-ids-short.txt
+          test "$(wc -l < tmp/corpus/executed-ids-short.txt)" -lt "$(wc -l < tmp/corpus/executed-ids.txt)"
+          generation=$(ruby -ryaml -e 'puts YAML.safe_load_file(ARGV[0]).fetch("generation")' "$PIN")
+          if ruby tmp/testsuite/scripts/validate-unicode-external.rb tmp/testsuite \
+               --generation "$generation" --executed tmp/corpus/executed-ids-short.txt; then
+            echo "the check accepted an executed-ids list without unicode-external-239.model"; exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         if: always()

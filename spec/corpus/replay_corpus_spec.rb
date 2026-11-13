@@ -8,8 +8,8 @@ require "tmpdir"
 require "yaml"
 require_relative "../../scripts/replay_corpus"
 
-# scripts/replay_corpus.rb --testsuite: the pin checks and the raw-tree
-# replay, against a small testsuite checkout built in a temporary git
+# scripts/replay_corpus.rb --testsuite: the pin checks and the raw-tree and
+# typed-model replay, against a small testsuite checkout built in a temporary git
 # repository.
 RSpec.describe UmathReplayCorpus do
   PIN_FILE = File.expand_path("../fixtures/testsuite-pin.yml", __dir__)
@@ -42,10 +42,21 @@ RSpec.describe UmathReplayCorpus do
     ]
   end
 
+  # Typed-model rows for "a" and ")". The expected values come from
+  # scripts/stage_cases.rb, the producer of the testsuite's typed-model rows;
+  # these examples check that the replay runs and compares such rows.
+  let(:model_rows) do
+    [["letter.model", "a"], ["refused.model", ")"]].map do |id, input|
+      { "id" => id, "input" => { "str" => input }, "options" => { "decimal" => "." },
+        "expected" => StageCases::Outcome.model_of(input, :ruby) }
+    end
+  end
+
   # A testsuite checkout with one unicode generation: a legacy payload,
-  # which the replay skips, and a raw-tree payload of +rows+. Returns
+  # which the replay skips, a raw-tree payload of +rows+ and, given
+  # +model_rows+, a typed-model payload of them. Returns
   # [commit, snapshot digest].
-  def build_testsuite(dir, rows)
+  def build_testsuite(dir, rows, model_rows: nil)
     gen = File.join(dir, "stages/unicode/generations/000001")
     FileUtils.mkdir_p(File.join(gen, "payloads"))
     payloads = {
@@ -54,6 +65,11 @@ RSpec.describe UmathReplayCorpus do
       "payloads/raw-sample.yaml" => YAML.dump("schema" => "plurimath-stage/unicode/cases/1", "group" => "raw-sample",
                                               "boundary" => "raw-tree", "cases" => rows),
     }
+    if model_rows
+      payloads["payloads/model-sample.yaml"] =
+        YAML.dump("schema" => "plurimath-stage/unicode/cases/1", "group" => "model-sample",
+                  "boundary" => "typed-model", "cases" => model_rows)
+    end
     payloads.each { |path, bytes| File.binwrite(File.join(gen, path), bytes) }
     provenance = YAML.dump(
       "schema" => "plurimath-stage/provenance/1", "language" => "unicode", "generation" => 1,
@@ -85,10 +101,10 @@ RSpec.describe UmathReplayCorpus do
   end
 
   describe "the committed pin" do
-    it "names unicode generation 4 at an exact testsuite commit" do
+    it "names unicode generation 5 at an exact testsuite commit" do
       pin = described_class.load_pin(PIN_FILE)
       expect(pin.language).to eq("unicode")
-      expect(pin.generation).to eq(4)
+      expect(pin.generation).to eq(5)
       expect(pin.commit).to match(/\A\h{40}\z/)
       expect(pin.digest).to match(/\Asha256:\h{64}\z/)
     end
@@ -206,6 +222,48 @@ RSpec.describe UmathReplayCorpus do
         failures = JSON.parse(File.read(report)).fetch("failures")
         expect(failures.map { |f| [f["id"], f["mismatches"].map { |m| m["engine"] }] })
           .to eq([["refused.raw", %w[ruby native]]])
+      end
+    end
+
+    it "replays the typed-model rows beside the raw-tree rows and reports both" do
+      Dir.mktmpdir do |dir|
+        testsuite = File.join(dir, "testsuite")
+        commit, digest = build_testsuite(testsuite, raw_rows, model_rows: model_rows)
+        pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
+        ids = File.join(dir, "executed-ids.txt")
+        summary = run_replay(testsuite, pin, executed_ids: ids)
+        expect(summary.values_at("raw_tree_rows", "executed_rows", "mismatched_rows")).to eq([2, 4, 0])
+        expect(File.read(ids)).to eq("letter.model\nletter.raw\nrefused.model\nrefused.raw\n")
+        expect(summary["boundaries"].transform_values { |c| c.values_at("payloads", "rows") })
+          .to eq("raw-tree" => [1, 2], "typed-model" => [1, 2])
+        expect(summary["boundaries"]["typed-model"]["ids_sha256"])
+          .to eq(Digest::SHA256.hexdigest("letter.model\nrefused.model"))
+      end
+    end
+
+    it "fails and names the boundary when a typed model differs from the expected value" do
+      Dir.mktmpdir do |dir|
+        testsuite = File.join(dir, "testsuite")
+        rows = model_rows.dup
+        rows[0] = rows[0].merge("expected" => Marshal.load(Marshal.dump(model_rows[1]["expected"])))
+        commit, digest = build_testsuite(testsuite, raw_rows, model_rows: rows)
+        pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
+        report = File.join(dir, "report.json")
+        expect { run_replay(testsuite, pin, report: report) }
+          .to raise_error(described_class::Error, /1 rows differ: letter\.model/)
+        failures = JSON.parse(File.read(report)).fetch("failures")
+        expect(failures.map { |f| [f["id"], f["boundary"]] }).to eq([["letter.model", "typed-model"]])
+      end
+    end
+
+    it "fails when a row id is repeated across the replayed payloads" do
+      Dir.mktmpdir do |dir|
+        testsuite = File.join(dir, "testsuite")
+        rows = model_rows.map { |r| r.merge("id" => r["id"].sub(".model", ".raw")) }
+        commit, digest = build_testsuite(testsuite, raw_rows, model_rows: rows)
+        pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
+        expect { run_replay(testsuite, pin) }
+          .to raise_error(described_class::Error, /row ids repeated across replayed payloads: letter\.raw, refused\.raw/)
       end
     end
 

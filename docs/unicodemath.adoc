@@ -248,7 +248,9 @@ raises `Umath::NestingTooDeep`.
 * `spec/model/` checks construction of the model and its shape.
 * `spec/corpus/replay_corpus_spec.rb` and `spec/stage_cases/` replay the
   stage corpus generation pinned in `spec/fixtures/testsuite-pin.yml`
-  (plurimath-testsuite `stages/unicode/`, generation 4, 72 cases).
+  (plurimath-testsuite `stages/unicode/`, generation 5: the 72 legacy
+  cases and the 675 external inputs, each as a raw-tree and a typed-model
+  row).
 * The oracle specs compare the raw tree with captures of the Plurimath
   parser.
 
@@ -267,7 +269,7 @@ says what the corpus shows.
 // BEGIN GENERATED utn28-summary
 The table lists 82 constructs of UTN 28 version 3.2 with the rows that
 exercise them, out of the 32 rows of `corpora/model/representative.yml` and
-the 72 typed-model rows of plurimath-testsuite generation 4. Of the 82
+the 747 typed-model rows of plurimath-testsuite generation 5. Of the 82
 constructs, 25 are covered, 1 is refused and 56 are untested.
 
 Covered means that every row listed for the construct parses to the model
@@ -280,8 +282,13 @@ Of the rows, 51 give incomplete input, such as a trailing `/` or an unclosed
 bracket, and umath refuses them. They are listed with their construct and do
 not change its status. The rows `model-decimal-arabic`, `model-comment`,
 `model-u-escape`, `empty-input`, `empty-label-only` and
-`unicode-whitespace-only.model` belong to no UTN 28 construct. Sections 1,
-4.2-4.4, 4.7-4.9, 5, 6 and 7 define no notation and are left out.
+`unicode-whitespace-only.model` belong to no UTN 28 construct. The 675 rows
+of the testsuite payloads `model-external-*` are not mapped to constructs:
+they are the typed models of the 675 external UnicodeMath inputs of
+plurimath-testsuite `fixtures/unicode-expectations.yaml`, which the `corpus`
+workflow replays on both engines; which UTN 28 constructs each one exercises
+is not recorded yet, so they decide no status here. Sections 1, 4.2-4.4,
+4.7-4.9, 5, 6 and 7 define no notation and are left out.
 // END GENERATED utn28-summary
 
 // BEGIN GENERATED utn28-coverage
