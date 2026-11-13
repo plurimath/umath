@@ -18,7 +18,8 @@
 # Row ids come from corpora/model/representative.yml and from the model-*
 # payloads of the plurimath-testsuite generation pinned in
 # spec/fixtures/testsuite-pin.yml. Every row of both must appear here, under
-# a construct or under `unmapped` with the reason.
+# a construct or under `unmapped` with the reason, or belong to a payload
+# listed under `unmapped_payloads` (by file name prefix, with its row count).
 schema: umath-utn28-coverage/1
 source:
   title: "UnicodeMath, A Nearly Plain-Text Encoding of Mathematics"
@@ -371,3 +372,11 @@ unmapped:
   reason: no formula; the `#` starts an empty label.
 - id: unicode-whitespace-only.model
   reason: no formula.
+unmapped_payloads:
+- prefix: model-external-
+  rows: 675
+  reason: >-
+    they are the typed models of the 675 external UnicodeMath inputs of
+    plurimath-testsuite `fixtures/unicode-expectations.yaml`, which the
+    `corpus` workflow replays on both engines; which UTN 28 constructs each
+    one exercises is not recorded yet, so they decide no status here.

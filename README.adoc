@@ -24,7 +24,7 @@ Add it to your `Gemfile`:
 
 [source,ruby]
 ----
-gem "umath", "~> 0.1.0"
+gem "umath", "~> 0.2.0"
 ----
 
 Umath needs Ruby 3.2 or later. Its runtime dependencies are
@@ -135,8 +135,9 @@ The UnicodeMath cases of
 https://github.com/plurimath/plurimath-testsuite[plurimath-testsuite] are
 kept there as numbered, immutable generations.
 `spec/fixtures/testsuite-pin.yml` names the exact commit, generation and
-digest this gem is tested against, and CI replays every raw-tree row of that
-generation on both engines. CI also compares the parse tree with the one the
+digest this gem is tested against, and CI replays every raw-tree and
+typed-model row of that generation on both engines, including the rows for
+the 675 external UnicodeMath inputs of the testsuite's fixtures. CI also compares the parse tree with the one the
 pinned Plurimath commit produces for every UnicodeMath case of the testsuite.
 See link:docs/testsuite-pin.adoc[the testsuite pin].
 

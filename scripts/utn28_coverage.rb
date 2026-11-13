@@ -19,6 +19,13 @@
 #   before the gem was renamed, so their class names start with
 #   Unicodemath::Model:: where the gem now has Umath::Model::.
 #
+# The mapping's `unmapped_payloads` names testsuite payloads, by file name
+# prefix, whose rows are not mapped to constructs, with the row count each
+# entry must match and the reason: the typed-model rows of the 675 external
+# UnicodeMath inputs (model-external-*) are replayed by
+# scripts/replay_corpus.rb --testsuite but not tied to UTN 28 constructs.
+# Their rows count as unmapped unless a construct lists them.
+#
 # Every listed row is parsed on the Ruby engine. A construct is covered when
 # its rows parse to their expected models, refused when its rows are refused
 # as expected and it has no other rows, and untested when no row is listed.
@@ -50,12 +57,10 @@ module Utn28Coverage
   LISTS = %w[rows refused malformed].freeze
   STATUSES = %w[covered refused untested].freeze
   ENGINE = :ruby
-  LEGACY_MODEL = "Unicodemath::Model::"
-  MODEL = "Umath::Model::"
 
   # One corpus row: where it comes from, its input and decimal marker, and
   # its expected outcome in the form its corpus writes.
-  Row = Struct.new(:id, :source, :input, :decimal, :expected, keyword_init: true) do
+  Row = Struct.new(:id, :source, :input, :decimal, :expected, :payload, keyword_init: true) do
     def refusal?
       expected.key?("refusal")
     end
@@ -92,6 +97,12 @@ module Utn28Coverage
         raise Error, "#{c['name']}: has both rows and refused rows; split the construct"
       end
     end
+    doc.fetch("unmapped_payloads", []).each do |u|
+      unless u.is_a?(Hash) && u.keys.sort == %w[prefix reason rows] && u["prefix"].is_a?(String) &&
+             !u["prefix"].empty? && u["rows"].is_a?(Integer) && u["rows"].positive? && u["reason"].is_a?(String)
+        raise Error, "#{relative(path)}: unmapped_payloads entry #{u.inspect} needs prefix, rows and reason"
+      end
+    end
     doc
   rescue KeyError, Psych::Exception => e
     raise Error, "#{relative(path)}: #{e.message}"
@@ -120,7 +131,8 @@ module Utn28Coverage
         UmathReplayCorpus.check_options(row, where)
         Row.new(id: row.fetch("id"), source: "testsuite",
                 input: UmathReplayCorpus.decode(row.fetch("input"), where),
-                decimal: StageCases::DECIMAL, expected: renamed(row.fetch("expected")))
+                decimal: StageCases::DECIMAL, expected: renamed(row.fetch("expected")),
+                payload: File.basename(rel))
       end
     end
     raise Error, "generation #{pin.generation} has no typed-model rows" if rows.empty?
@@ -132,15 +144,7 @@ module Utn28Coverage
 
   # +value+ with the pre-rename model class names replaced.
   def renamed(value)
-    case value
-    when Hash
-      value.to_h do |k, v|
-        legacy = k == "node" && v.is_a?(String) && v.start_with?(LEGACY_MODEL)
-        [k, legacy ? MODEL + v.delete_prefix(LEGACY_MODEL) : renamed(v)]
-      end
-    when Array then value.map { |v| renamed(v) }
-    else value
-    end
+    UmathReplayCorpus.renamed(value)
   end
 
   # The row's outcome on the Ruby engine, in its corpus's form.
@@ -193,6 +197,14 @@ module Utn28Coverage
     mapped = mapping.fetch("constructs").flat_map { |c| LISTS.flat_map { |l| c.fetch(l, []) } }.uniq
     unmapped = mapping.fetch("unmapped", []).map { |u| u.fetch("id") }
     missing = (mapped + unmapped) - ids
+    mapping.fetch("unmapped_payloads", []).each do |u|
+      held = rows.select { |r| r.payload&.start_with?(u["prefix"]) }.map(&:id)
+      unless held.size == u["rows"]
+        raise Error, "unmapped_payloads #{u['prefix']}*: #{held.size} rows, not the declared #{u['rows']}"
+      end
+
+      unmapped += held - mapped
+    end
     raise Error, "mapped ids that name no row: #{missing.join(', ')}" unless missing.empty?
 
     both = mapped & unmapped
@@ -270,6 +282,10 @@ module Utn28Coverage
     unless unmapped.empty?
       third << " The rows #{sentence_list(unmapped.map { |u| "`#{u.fetch('id')}`" })} belong to no " \
                "UTN 28 construct."
+    end
+    result["mapping"].fetch("unmapped_payloads", []).each do |u|
+      third << " The #{u['rows']} rows of the testsuite payloads `#{u['prefix']}*` are not mapped to " \
+               "constructs: #{u['reason']}"
     end
     third << " Sections #{sentence_list(out_of_scope)} define no notation and are left out." unless out_of_scope.empty?
     "#{[first, second, third].map { |p| wrap(p) }.join("\n\n")}\n"
