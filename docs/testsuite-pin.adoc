@@ -67,7 +67,11 @@ The `corpus` workflow checks out the testsuite at the pinned commit and then:
   shape or the refusal and its byte offset, must equal the row's expected
   value in the canonical form of the testsuite's
   `docs/tree-parity-contract.adoc`; for a typed-model row the built
-  `Umath::Model::Document` in tagged form, or the refusal, must. It writes
+  `Umath::Model::Document` in tagged form, or the refusal, must. The
+  typed-model rows of generation 3 were written before the gem was renamed
+  and tag their nodes `Unicodemath::Model::...`; the replay reads that
+  prefix as `Umath::Model::` and changes nothing else (20 rows of generation
+  5, counted in the report). It writes
   the ids of the rows it ran to a file (1494 for generation 5: 747 raw-tree
   and 747 typed-model);
 . runs the testsuite's `scripts/validate-unicode-external.rb` on that file,

@@ -57,8 +57,6 @@ module Utn28Coverage
   LISTS = %w[rows refused malformed].freeze
   STATUSES = %w[covered refused untested].freeze
   ENGINE = :ruby
-  LEGACY_MODEL = "Unicodemath::Model::"
-  MODEL = "Umath::Model::"
 
   # One corpus row: where it comes from, its input and decimal marker, and
   # its expected outcome in the form its corpus writes.
@@ -146,15 +144,7 @@ module Utn28Coverage
 
   # +value+ with the pre-rename model class names replaced.
   def renamed(value)
-    case value
-    when Hash
-      value.to_h do |k, v|
-        legacy = k == "node" && v.is_a?(String) && v.start_with?(LEGACY_MODEL)
-        [k, legacy ? MODEL + v.delete_prefix(LEGACY_MODEL) : renamed(v)]
-      end
-    when Array then value.map { |v| renamed(v) }
-    else value
-    end
+    UmathReplayCorpus.renamed(value)
   end
 
   # The row's outcome on the Ruby engine, in its corpus's form.

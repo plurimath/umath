@@ -241,6 +241,20 @@ RSpec.describe UmathReplayCorpus do
       end
     end
 
+    it "reads the pre-rename Unicodemath::Model:: node tags of a typed-model row as Umath::Model::" do
+      Dir.mktmpdir do |dir|
+        testsuite = File.join(dir, "testsuite")
+        legacy = model_rows.map do |r|
+          r.merge("expected" => JSON.parse(JSON.generate(r["expected"]).gsub('"Umath::Model::', '"Unicodemath::Model::')))
+        end
+        expect(legacy[0]["expected"]).not_to eq(model_rows[0]["expected"])
+        commit, digest = build_testsuite(testsuite, raw_rows, model_rows: legacy)
+        pin = write_pin(File.join(dir, "pin.yml"), commit: commit, snapshot_digest: digest)
+        summary = run_replay(testsuite, pin)
+        expect(summary.values_at("mismatched_rows", "renamed_typed_model_rows")).to eq([0, 1])
+      end
+    end
+
     it "fails and names the boundary when a typed model differs from the expected value" do
       Dir.mktmpdir do |dir|
         testsuite = File.join(dir, "testsuite")

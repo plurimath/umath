@@ -18,7 +18,10 @@
 #   row of every raw-tree payload is parsed with Umath::RawParser.parse and
 #   every row of every typed-model payload with Umath.parse, on the Ruby and
 #   the native engine, as scripts/stage_cases.rb writes them, and each outcome
-#   must equal the row's expected value. Any pin failure, any difference, a
+#   must equal the row's expected value. Typed-model rows written before the
+#   gem was renamed (generation 3) name their classes Unicodemath::Model::;
+#   that prefix of a "node" tag is read as Umath::Model:: and nothing else
+#   is changed (the report counts these rows). Any pin failure, any difference, a
 #   row id repeated across those payloads or a generation with no raw-tree
 #   rows exits 1. --report records per boundary the payload and row counts
 #   and the sha256 of the sorted executed ids; --executed-ids FILE writes
@@ -174,6 +177,23 @@ module UmathReplayCorpus
     end
   end
 
+  LEGACY_MODEL = "Unicodemath::Model::"
+  MODEL = "Umath::Model::"
+
+  # +value+ with every "node" tag that starts with the pre-rename model
+  # namespace moved to the current one.
+  def renamed(value)
+    case value
+    when Hash
+      value.to_h do |k, v|
+        legacy = k == "node" && v.is_a?(String) && v.start_with?(LEGACY_MODEL)
+        [k, legacy ? MODEL + v.delete_prefix(LEGACY_MODEL) : renamed(v)]
+      end
+    when Array then value.map { |v| renamed(v) }
+    else value
+    end
+  end
+
   # The boundaries whose rows the replay recomputes, and the outcome each
   # row's expected value is compared with.
   BOUNDARIES = %w[raw-tree typed-model].freeze
@@ -208,6 +228,11 @@ module UmathReplayCorpus
       input = decode(row.fetch("input"), where)
       check_options(row, where)
       expected = row.fetch("expected")
+      if boundary == "typed-model"
+        current = renamed(expected)
+        @renamed_rows += 1 unless current == expected
+        expected = current
+      end
       wrong = ENGINES.filter_map do |engine|
         actual = outcome(input, engine, boundary)
         { "engine" => engine.to_s, "actual" => actual } unless actual == expected
@@ -246,6 +271,7 @@ module UmathReplayCorpus
     end
 
     log.puts "pin ok: #{pinned.language} generation #{pinned.generation} at #{pinned.commit}, #{pinned.digest}"
+    @renamed_rows = 0
     failures = replay(rows)
     if executed_ids
       FileUtils.mkdir_p(File.dirname(executed_ids))
@@ -255,7 +281,7 @@ module UmathReplayCorpus
     summary = { "commit" => pinned.commit, "language" => pinned.language, "generation" => pinned.generation,
                 "snapshot_digest" => pinned.digest, "engines" => ENGINES.map(&:to_s),
                 "raw_tree_payloads" => counts["raw-tree"]["payloads"], "raw_tree_rows" => counts["raw-tree"]["rows"],
-                "boundaries" => counts, "executed_rows" => rows.size,
+                "boundaries" => counts, "executed_rows" => rows.size, "renamed_typed_model_rows" => @renamed_rows,
                 "mismatched_rows" => failures.size, "failures" => failures }
     if report
       FileUtils.mkdir_p(File.dirname(report))
@@ -264,6 +290,7 @@ module UmathReplayCorpus
     counts.each do |boundary, c|
       log.puts "#{c['rows']} #{boundary} rows from #{c['payloads']} payloads on #{ENGINES.join(' and ')}"
     end
+    log.puts "#{@renamed_rows} typed-model rows name the pre-rename Unicodemath::Model:: classes" if @renamed_rows.positive?
     log.puts "#{rows.size} rows replayed: #{failures.size} differ"
     raise Error, "#{failures.size} rows differ: #{failures.map { |f| f['id'] }.join(', ')}" unless failures.empty?
 
