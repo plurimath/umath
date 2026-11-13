@@ -21,7 +21,9 @@ RSpec.describe "require \"umath\"" do
       puts [d.class, frac.numerator.atom.alphanumeric.spelling, Umath::VERSION].join(" ")
     RUBY
     expect(status).to be_success, err
-    expect(out).to eq("Umath::Model::Document a 0.1.0\n")
+    # The version the gemspec builds, so a version bump needs no spec edit.
+    version = Gem::Specification.load(File.join(root, "umath.gemspec")).version
+    expect(out).to eq("Umath::Model::Document a #{version}\n")
   end
 
   it "raises ParseError with offsets into the caller's input" do

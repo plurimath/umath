@@ -24,7 +24,7 @@ Add it to your `Gemfile`:
 
 [source,ruby]
 ----
-gem "umath", "~> 0.1.0"
+gem "umath", "~> 0.2.0"
 ----
 
 Umath needs Ruby 3.2 or later. Its runtime dependencies are
