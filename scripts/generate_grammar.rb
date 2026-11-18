@@ -471,7 +471,8 @@ class Generator
   # holds every branch that can start with its text, so a branch may sit in
   # several groups; a branch with a leading text that ends at +known+ could
   # match beside any group, so it sits in every group and in a last group
-  # for any other character. The lookahead guards consume nothing.
+  # for any other character. The lookahead guards consume nothing, and at
+  # most one group's guard matches, so no branch is tried twice.
   def lead_dispatch(members, entry, dependent, known)
     depth = known.length
     leaf = -> { alt(members.map(&:first), entry, dependent, known, split: false) }
@@ -503,7 +504,12 @@ class Generator
 
       "(&(#{literal(key)}) (#{body}))"
     end
-    parts << "(#{alt(rest, entry, dependent, known, split: false)})" unless rest.empty?
+    unless rest.empty?
+      # Behind a guard that fails where a group's guard matched: there the
+      # group has already tried every branch of the last one.
+      keys = groups.keys.map { |ch| literal(known + ch) }.join(" / ")
+      parts << "(!(#{keys}) (#{alt(rest, entry, dependent, known, split: false)}))"
+    end
     parts.join(" / ")
   end
 
