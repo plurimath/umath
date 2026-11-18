@@ -40,6 +40,13 @@ RSpec.describe "the grammar build inputs" do
     expect(header).to include("data/umath-grammar.json sha256:#{Digest::SHA256.file(ArtifactSpecHelpers::EXPORT).hexdigest}")
   end
 
+  # Without the guard every operand position tried all 1,492 wrapper
+  # spellings in turn (most of the parse time of a long formula).
+  it "guards a wide literal table with the prefix its branches share" do
+    rule = File.foreach(ArtifactSpecHelpers::GRAMMAR).find { |l| l.start_with?("  wrapper_symbols = ") }
+    expect(rule).to start_with('  wrapper_symbols = &("\"P{") (')
+  end
+
   it "is pure ASCII" do
     expect(File.binread(ArtifactSpecHelpers::GRAMMAR)).to be_ascii_only
   end
