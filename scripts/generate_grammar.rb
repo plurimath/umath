@@ -406,10 +406,21 @@ class Generator
   # compiler's order lint, which compares the branches of one alternation
   # pairwise, stays small (a flat 3,000-branch table makes the artifact grow
   # to over 100 MB).
-  def alt(branches, entry, dependent)
+  #
+  # Each group of such a table is guarded by a lookahead of the text that
+  # every branch in it starts with (see #prefix_guard), so a position that
+  # cannot start any of its branches costs one probe instead of one per
+  # branch. The guard consumes nothing and every branch it skips would fail,
+  # so acceptance and trees stay the same.
+  def alt(branches, entry, dependent, known = "")
     if branches.size > NEST && branches.all? { |c| literal_branch?(c) }
-      groups = branches.each_slice((branches.size.to_f / NEST).ceil)
-      return groups.map { |g| "(#{alt(g, entry, dependent)})" }.join(" / ")
+      table = prefix_guard(branches, known) do |prefix|
+        groups = branches.each_slice((branches.size.to_f / NEST).ceil)
+        groups.map do |g|
+          prefix_guard(g, prefix) { |p| alt(g, entry, dependent, p) }.then { |t| "(#{t})" }
+        end.join(" / ")
+      end
+      return table
     end
 
     seen = []
@@ -446,6 +457,40 @@ class Generator
     when "seq" then node["seq"].all? { |c| literal_branch?(c) || c.keys.first == "look" }
     else false
     end
+  end
+
+  # The text every branch of +branches+ (literal branches) must start with,
+  # beyond +known+ (already guarded by an enclosing lookahead): yields that
+  # longer prefix and returns the block's text behind its lookahead, or
+  # yields +known+ and returns the text unguarded.
+  def prefix_guard(branches, known)
+    prefix = common_prefix(branches.map { |c| literal_prefix(c) })
+    return yield(known) unless prefix.length > known.length
+
+    "&(#{literal(prefix)}) (#{yield(prefix)})"
+  end
+
+  # The literal a literal branch starts with: lookaheads before it consume
+  # nothing, so the first consuming element decides.
+  def literal_prefix(node)
+    case node.keys.first
+    when "str" then node["str"]
+    when "as" then literal_prefix(node["of"])
+    when "seq"
+      first = node["seq"].find { |c| c.keys.first != "look" }
+      first ? literal_prefix(first) : ""
+    else ""
+    end
+  end
+
+  def common_prefix(strings)
+    first = strings.min_by(&:length) || ""
+    len = first.length
+    strings.each do |s|
+      len = (0...len).find { |i| s[i] != first[i] } || len
+      break if len.zero?
+    end
+    first[0, len]
   end
 
   def hoist(text)
