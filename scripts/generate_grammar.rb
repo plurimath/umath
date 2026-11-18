@@ -70,6 +70,15 @@ KEYWORDS = %w[grammar as alt from_table column bindings render derive preprocess
 NEST = 16
 DISPATCH = 4
 GUARD = 3
+# Choices of other branches are split by up to LEAD_DEPTH leading
+# characters (see Generator#lead_dispatch), while a level has at most
+# LEAD_GROUPS groups holding at most LEAD_COPIES times its branches.
+# Character classes over LEAD_CLASS characters count as any start.
+LEAD_DEPTH = 6
+LEAD_LIMIT = 4096
+LEAD_CLASS = 128
+LEAD_GROUPS = 32
+LEAD_COPIES = 3
 
 # Walks the legacy atom graph. Runs only under --export.
 class Exporter
@@ -416,11 +425,18 @@ class Generator
   # so acceptance and trees stay the same.
   #
   # A literal table of at least DISPATCH branches is first split by the
-  # character that follows the text all its branches share (see #dispatch).
-  def alt(branches, entry, dependent, known = "")
-    if branches.size >= DISPATCH && branches.all? { |c| literal_branch?(c) }
+  # character that follows the text all its branches share (see #dispatch);
+  # any other choice of at least DISPATCH branches is split by the texts its
+  # branches can start with (see #lead_dispatch).
+  def alt(branches, entry, dependent, known = "", split: true)
+    literal_table = branches.all? { |c| literal_branch?(c) }
+    if branches.size >= DISPATCH && literal_table
       table = dispatch(branches, entry, dependent, known)
       return table if table
+    end
+
+    if split && !literal_table && branches.size >= DISPATCH
+      return lead_dispatch(branches.map { |c| [c, leads(c)] }, entry, dependent, known)
     end
 
     if branches.size > NEST && branches.all? { |c| literal_branch?(c) }
@@ -446,6 +462,113 @@ class Generator
       end
       wrap(text)
     end.join(" / ")
+  end
+
+  # Splits an ordered choice by the character after +known+. At one position
+  # a branch whose leading texts (see #leads) all disagree with the input
+  # there cannot match, so leaving it out keeps the first branch that
+  # matches, and with it the tree. Each group keeps the table's order and
+  # holds every branch that can start with its text, so a branch may sit in
+  # several groups; a branch with a leading text that ends at +known+ could
+  # match beside any group, so it sits in every group and in a last group
+  # for any other character. The lookahead guards consume nothing.
+  def lead_dispatch(members, entry, dependent, known)
+    depth = known.length
+    leaf = -> { alt(members.map(&:first), entry, dependent, known, split: false) }
+    return leaf.call if members.size < DISPATCH || depth >= LEAD_DEPTH
+
+    texts = members.map { |_, set| set.select { |t| t.start_with?(known) || known.start_with?(t) } }
+    wild = texts.map { |ts| ts.any? { |t| t.length <= depth } }
+    chars = texts.zip(wild).flat_map { |ts, w| w ? [] : ts.map { |t| t[depth] } }.uniq
+    return leaf.call if chars.empty?
+
+    groups = chars.to_h do |ch|
+      [ch, members.each_index.select { |i| wild[i] || texts[i].any? { |t| t[depth] == ch } }
+                  .map { |i| [members[i].first, texts[i]] }]
+    end
+    rest = members.each_index.select { |i| wild[i] }.map { |i| members[i].first }
+    # Copies of a branch in several groups grow the grammar; split only
+    # while the groups stay few and hold few copies.
+    copies = groups.values.sum(&:size) + rest.size
+    return leaf.call if groups.size > LEAD_GROUPS || copies > LEAD_COPIES * members.size
+    if rest.empty? && groups.size == 1
+      return lead_dispatch(groups.values.first, entry, dependent, known + chars.first)
+    end
+
+    parts = groups.map do |ch, group|
+      key = known + ch
+      body = lead_dispatch(group, entry, dependent, key)
+      # A lone literal fails as fast as its guard would.
+      next wrap(body) if group.size == 1 && group[0][0].keys.first == "str"
+
+      "(&(#{literal(key)}) (#{body}))"
+    end
+    parts << "(#{alt(rest, entry, dependent, known, split: false)})" unless rest.empty?
+    parts.join(" / ")
+  end
+
+  # The texts (up to LEAD_DEPTH characters) one of which every match of
+  # +node+ starts with. "" (any start) when that is unknown: a rule reached
+  # again through itself, a wide character class, a set over LEAD_LIMIT.
+  def leads(node)
+    set = lead_pairs(node, Set.new)
+    return [""] if set.nil? || set.size > LEAD_LIMIT
+
+    set.map(&:first).uniq
+  end
+
+  # [text, complete] pairs: complete when the match is exactly that text
+  # so far (a following element extends it); otherwise only a prefix.
+  def lead_pairs(node, seen)
+    case (k = node.keys.first)
+    when "str" then [[node["str"][0, LEAD_DEPTH], node["str"].length <= LEAD_DEPTH]]
+    when "as" then lead_pairs(node["of"], seen)
+    when "look" then [["", true]]
+    when "ref"
+      name = node["ref"]
+      return [["", false]] if seen.include?(name)
+
+      (@leads ||= {}).fetch(name) { @leads[name] = lead_pairs(@rules.fetch(name), seen | [name]) }
+    when "alt"
+      out = []
+      node["alt"].each do |c|
+        pairs = lead_pairs(c, seen) or return nil
+        out |= pairs
+        return nil if out.size > LEAD_LIMIT
+      end
+      out
+    when "seq"
+      out = [["", true]]
+      node["seq"].each do |c|
+        break if out.none?(&:last)
+
+        # An element with unknown leads ends what is known so far.
+        pairs = lead_pairs(c, seen)
+        next out = out.map { |t, _| [t, false] }.uniq unless pairs
+
+        out = out.flat_map do |t, done|
+          next [[t, false]] unless done
+
+          pairs.map { |u, d| [(t + u)[0, LEAD_DEPTH], d && (t + u).length <= LEAD_DEPTH] }
+        end.uniq
+        return nil if out.size > LEAD_LIMIT
+      end
+      out
+    when "rep"
+      pairs = lead_pairs(node["rep"], seen) or return nil
+      pairs = pairs.map { |t, _| [t, false] }
+      node["min"].zero? ? pairs | [["", false]] : pairs
+    when "re"
+      ranges = @classes.fetch(node["re"])
+      size = ranges.sum { |lo, hi| hi - lo + 1 }
+      return [["", false]] if size > LEAD_CLASS
+
+      ranges.flat_map { |lo, hi| (lo..hi).map { |c| [c.chr(Encoding::UTF_8), LEAD_DEPTH > 1] } }
+    when "decimal_marker"
+      @markers.map { |m| [m["grammar_literal"][0, LEAD_DEPTH], m["grammar_literal"].length <= LEAD_DEPTH] }
+    else
+      raise "unknown node #{k.inspect}"
+    end
   end
 
   def rep(node, entry, dependent)

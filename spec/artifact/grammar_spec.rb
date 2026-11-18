@@ -55,6 +55,18 @@ RSpec.describe "the grammar build inputs" do
     expect(rule).to include('(&("c") (')
   end
 
+  # Without the split every branch of a choice of rules was called in
+  # turn, although only those that can start with the next character can
+  # match.
+  it "splits a choice of rules by the text its branches can start with" do
+    rules = File.foreach(ArtifactSpecHelpers::GRAMMAR)
+    opener = rules.find { |l| l.start_with?("  op_opener = ") }
+    expect(opener).to start_with('  op_opener = (&("\\\\") (open_paren / op_open)) / ' \
+                                 '(&("&") (open_paren / op_open_unicode)) / ')
+    absent = rules.find { |l| l.start_with?("  absent_chars = ") }
+    expect(absent).to start_with('  absent_chars = !((&("&") ((&("&#x2") (')
+  end
+
   it "is pure ASCII" do
     expect(File.binread(ArtifactSpecHelpers::GRAMMAR)).to be_ascii_only
   end
