@@ -47,6 +47,14 @@ RSpec.describe "the grammar build inputs" do
     expect(rule).to start_with('  wrapper_symbols = &("\"P{") (')
   end
 
+  # Without the split every branch of a small table was tried in turn,
+  # although only those starting with the next character can match.
+  it "splits a literal table by the character after its shared text" do
+    rule = File.foreach(ArtifactSpecHelpers::GRAMMAR).find { |l| l.start_with?("  op_unary_functions = ") }
+    expect(rule).to start_with('  op_unary_functions = (&("ar") (')
+    expect(rule).to include('(&("c") (')
+  end
+
   it "is pure ASCII" do
     expect(File.binread(ArtifactSpecHelpers::GRAMMAR)).to be_ascii_only
   end

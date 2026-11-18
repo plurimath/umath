@@ -68,6 +68,8 @@ KEYWORDS = %w[grammar as alt from_table column bindings render derive preprocess
 # A literal alternation with more branches than this is regrouped into
 # nested alternations of at most this many branches (see Generator#alt).
 NEST = 16
+DISPATCH = 4
+GUARD = 3
 
 # Walks the legacy atom graph. Runs only under --export.
 class Exporter
@@ -412,7 +414,15 @@ class Generator
   # cannot start any of its branches costs one probe instead of one per
   # branch. The guard consumes nothing and every branch it skips would fail,
   # so acceptance and trees stay the same.
+  #
+  # A literal table of at least DISPATCH branches is first split by the
+  # character that follows the text all its branches share (see #dispatch).
   def alt(branches, entry, dependent, known = "")
+    if branches.size >= DISPATCH && branches.all? { |c| literal_branch?(c) }
+      table = dispatch(branches, entry, dependent, known)
+      return table if table
+    end
+
     if branches.size > NEST && branches.all? { |c| literal_branch?(c) }
       table = prefix_guard(branches, known) do |prefix|
         groups = branches.each_slice((branches.size.to_f / NEST).ceil)
@@ -459,6 +469,33 @@ class Generator
     end
   end
 
+  # Splits a literal table by the character each branch has after the text
+  # all of them share, keeping the table's order inside each group. At one
+  # position the input has a single character there, so only one group can
+  # match and the order between groups does not matter. Groups of at least
+  # GUARD branches sit behind a lookahead of all the text they share and are split
+  # again. Returns nil (no split) when a branch's literal is no longer than
+  # the shared text, because such a branch could match beside any group.
+  def dispatch(branches, entry, dependent, known)
+    prefixes = branches.map { |c| literal_prefix(c) }
+    shared = common_prefix(prefixes)
+    return nil unless shared.start_with?(known) && prefixes.all? { |p| p.length > shared.length }
+
+    groups = branches.zip(prefixes).group_by { |_, p| p[shared.length] }
+    return nil if groups.size < 2
+
+    body = groups.map do |char, members|
+      group = members.map(&:first)
+      key = shared + char
+      next alt(group, entry, dependent, key) if group.size < GUARD
+
+      guard = common_prefix(members.map(&:last))
+      "&(#{literal(guard)}) (#{alt(group, entry, dependent, guard)})"
+    end
+    body = body.map { |t| "(#{t})" }.join(" / ")
+    shared.length > known.length ? "&(#{literal(shared)}) (#{body})" : body
+  end
+
   # The text every branch of +branches+ (literal branches) must start with,
   # beyond +known+ (already guarded by an enclosing lookahead): yields that
   # longer prefix and returns the block's text behind its lookahead, or
@@ -477,9 +514,20 @@ class Generator
     when "str" then node["str"]
     when "as" then literal_prefix(node["of"])
     when "seq"
-      first = node["seq"].find { |c| c.keys.first != "look" }
+      first = node["seq"].find { |c| !zero_width?(c) }
       first ? literal_prefix(first) : ""
     else ""
+    end
+  end
+
+  # Lookaheads and empty markers (str("").as(:name)) consume nothing.
+  def zero_width?(node)
+    case node.keys.first
+    when "look" then true
+    when "str" then node["str"].empty?
+    when "as" then zero_width?(node["of"])
+    when "seq" then node["seq"].all? { |c| zero_width?(c) }
+    else false
     end
   end
 
