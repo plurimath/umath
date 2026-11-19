@@ -24,9 +24,14 @@ value: text, a node (hash) or a list (see the parser contract). The grammar
 binds its one root capture twice. The `raw` binding keeps the tree with its
 slices and offsets, for parity replay and error positions. The `any`
 binding (path `model`) gives the same tree as plain hashes, arrays and
-strings. `Model::Document.new` receives that tree, and lutaml-model builds
-every nested node from the declared attribute types. No gem code walks the
-parse tree to build the model, and no class has a cast hook.
+strings. The model is the tree that `Model::Document.new` builds from it,
+every nested node from the declared attribute types. `Model::Builder`
+builds that tree without the constructor's walk over every declared
+attribute of every node: it allocates each node with lutaml-model's
+compiled default state and writes only the attributes present in the
+data, through their writers. It has no code for any one class, and no
+class has a cast hook. With a lutaml-model release that lacks this
+allocation, `Model::Document.new` builds the tree.
 
 After construction, one separate pass resolves symbols (see below).
 

@@ -5,9 +5,9 @@ require "lutaml/model"
 module Umath
   # The typed UnicodeMath language model, declared with LutaML Model.
   #
-  # Umath.parse returns a Model::Document. Its tree is built by
-  # lutaml-model from the declared attribute types (Document.new on the
-  # grammar's bound tree, see Parser); no code here walks the parse tree.
+  # Umath.parse returns a Model::Document. Its tree is built from the
+  # declared attribute types: the tree Document.new builds from the
+  # grammar's bound tree, through Model::Builder (see Parser).
   # The node classes in model/nodes.rb are generated from the normalized
   # grammar's capture shapes (scripts/generate_model.rb), one class per
   # capture; see docs/model-contract.adoc.
@@ -28,3 +28,4 @@ module Umath
 end
 
 require_relative "model/nodes"
+require_relative "model/builder"
