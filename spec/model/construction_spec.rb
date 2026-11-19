@@ -58,6 +58,27 @@ RSpec.describe "typed model construction" do
     end
   end
 
+  it "builds the tree that Document.new builds from the same data" do
+    state = lambda do |node|
+      case node
+      when Lutaml::Model::Serializable
+        [node.class, node.class.attributes.keys.map { |n| [n, node.using_default?(n), state.call(node.public_send(n))] }]
+      when Array then node.map { |item| state.call(item) }
+      else node
+      end
+    end
+    rows = YAML.safe_load_file(File.join(ModelSpecHelpers::ROOT, "corpora", "model", "representative.yml"))["rows"]
+    inputs = rows.select { |row| row["expected"].key?("model") }.map { |row| [row["input"], row.fetch("decimal", ".")] } +
+             [["E=mc^2#(1)", "."], ["3,14", ","], ["α_(1) β_(x y) + α_(x y) β_(1)", "."]]
+    inputs.each do |input, decimal|
+      raw = Umath::RawParser.parse(input, decimal: decimal)
+      built = M::Builder.document(raw.model_data, label: raw.label, decimal: decimal)
+      constructed = M::Document.new(expression: raw.model_data, label: raw.label, decimal: decimal)
+      expect(state.call(built)).to eq(state.call(constructed)), input
+      expect(built).to eq(constructed), input
+    end
+  end
+
   it "reports an attribute holding a value of another type" do
     node = M::Frac.new
     node.instance_variable_set(:@numerator, "bare text")
