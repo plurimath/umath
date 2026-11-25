@@ -26,7 +26,7 @@ module Umath
     end
 
     def build(raw, decimal, text)
-      document = Model::Document.new(expression: raw.model_data, label: raw.label, decimal: decimal)
+      document = Model::Builder.document(raw.model_data, label: raw.label, decimal: decimal)
       Symbols.resolve(document)
     rescue SystemStackError
       raise NestingTooDeep.new("UnicodeMath input nests too deeply to build its model (Ruby stack exhausted)",
